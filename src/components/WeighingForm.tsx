@@ -238,7 +238,7 @@ export const WeighingForm = () => {
                 <SelectValue placeholder="Select destination lot (if transferring)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No transfer</SelectItem>
+                <SelectItem value="no-transfer">No transfer</SelectItem>
                 {lots.map((lot) => (
                   <SelectItem key={lot.id} value={lot.id}>
                     {lot.name} {lot.id === selectedLotId ? '(Current)' : ''}
