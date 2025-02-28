@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,27 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Farm management specific colors
+				pasture: {
+					DEFAULT: '#4D8B31',
+					light: '#8CBA80',
+					dark: '#2E5A1C',
+				},
+				cattle: {
+					DEFAULT: '#8B4513',
+					light: '#BC9171',
+					dark: '#5A2D0C',
+				},
+				soil: {
+					DEFAULT: '#6B4F2E',
+					light: '#A98867',
+					dark: '#3E2D1A',
+				},
+				sky: {
+					DEFAULT: '#87CEEB',
+					light: '#C4E4F3',
+					dark: '#5D99B3',
 				}
 			},
 			borderRadius: {
@@ -84,11 +106,38 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					from: {
+						opacity: '0'
+					},
+					to: {
+						opacity: '1'
+					}
+				},
+				'fade-out': {
+					from: {
+						opacity: '1'
+					},
+					to: {
+						opacity: '0'
+					}
+				},
+				'slide-in': {
+					from: {
+						transform: 'translateY(5%)'
+					},
+					to: {
+						transform: 'translateY(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-out': 'fade-out 0.3s ease-out',
+				'slide-in': 'slide-in 0.3s ease-out',
 			}
 		}
 	},
