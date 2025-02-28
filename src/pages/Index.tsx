@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { 
   LayoutDashboard, 
-  Bull, 
+  Cow, 
   Package, 
   MapPin, 
   Weight, 
@@ -50,7 +50,7 @@ const Index = () => {
           <Card className="card-hover-effect">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Animals</CardTitle>
-              <Bull className="h-4 w-4 text-accent" />
+              <Cow className="h-4 w-4 text-accent" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{farmSummary.totalAnimals}</div>

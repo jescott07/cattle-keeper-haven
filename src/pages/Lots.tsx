@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Bull, Plus, Search } from 'lucide-react';
+import { Cow, Plus, Search } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -130,7 +130,7 @@ const Lots = () => {
           </div>
         ) : (
           <div className="text-center py-12 border rounded-lg bg-background">
-            <Bull className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <Cow className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
             
             {lots.length === 0 ? (
               <div>

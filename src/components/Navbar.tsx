@@ -5,7 +5,7 @@ import {
   LayoutDashboard, 
   PackagePlus, 
   MapPin, 
-  Bull, 
+  Cow, 
   Weight, 
   Menu, 
   X,
@@ -24,7 +24,7 @@ const Navbar = () => {
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-    { path: '/lots', label: 'Lots', icon: <Bull className="h-5 w-5" /> },
+    { path: '/lots', label: 'Lots', icon: <Cow className="h-5 w-5" /> },
     { path: '/inventory', label: 'Inventory', icon: <PackagePlus className="h-5 w-5" /> },
     { path: '/pastures', label: 'Pastures', icon: <MapPin className="h-5 w-5" /> },
     { path: '/weighing', label: 'Weighing', icon: <Weight className="h-5 w-5" /> }
@@ -39,7 +39,7 @@ const Navbar = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link to="/" className="flex items-center space-x-2">
-                <Bull className="h-8 w-8 text-accent" />
+                <Cow className="h-8 w-8 text-accent" />
                 <span className="text-lg font-semibold hidden sm:inline-block">Cattle Keeper</span>
               </Link>
             </div>

@@ -109,6 +109,7 @@ export const WeighingForm = () => {
           }
         } else {
           // If all animals are being transferred, update with a direct replacement
+          const destinationLot = lots.find(lot => lot.id === data.destinationLotId);
           updateLot(data.lotId, {
             currentPastureId: destinationLot?.currentPastureId || selectedLot.currentPastureId
           });
