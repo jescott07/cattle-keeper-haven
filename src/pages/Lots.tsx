@@ -9,8 +9,11 @@ import { LotCard } from '@/components/LotCard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Lot, LotStatus } from '@/lib/types';
+import { AddLotForm } from '@/components/AddLotForm';
+import { useToast } from '@/hooks/use-toast';
 
 const Lots = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<LotStatus | 'all'>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -46,6 +49,17 @@ const Lots = () => {
     setSelectedLot(lot);
     setIsAddDialogOpen(true);
   };
+  
+  const handleFormSuccess = () => {
+    setIsAddDialogOpen(false);
+    setSelectedLot(null);
+    toast({
+      title: selectedLot ? "Lot Updated" : "Lot Added",
+      description: selectedLot 
+        ? "The lot has been updated successfully."
+        : "A new lot has been added successfully."
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,12 +89,10 @@ const Lots = () => {
                 </DialogDescription>
               </DialogHeader>
               
-              {/* In a complete app, this would be a form component */}
-              <div className="py-4">
-                <p className="text-center text-muted-foreground">
-                  Form would go here in a complete implementation
-                </p>
-              </div>
+              <AddLotForm 
+                lot={selectedLot || undefined} 
+                onSuccess={handleFormSuccess} 
+              />
             </DialogContent>
           </Dialog>
         </div>

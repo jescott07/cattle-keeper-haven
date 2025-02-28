@@ -8,8 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { PastureCard } from '@/components/PastureCard';
 import { useStore } from '@/lib/store';
 import { Pasture } from '@/lib/types';
+import { AddPastureForm } from '@/components/AddPastureForm';
+import { useToast } from '@/hooks/use-toast';
 
 const Pastures = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPasture, setSelectedPasture] = useState<Pasture | null>(null);
@@ -33,6 +36,17 @@ const Pastures = () => {
     // For now, we'll just open the edit dialog
     setSelectedPasture(pasture);
     setIsAddDialogOpen(true);
+  };
+  
+  const handleFormSuccess = () => {
+    setIsAddDialogOpen(false);
+    setSelectedPasture(null);
+    toast({
+      title: selectedPasture ? "Pasture Updated" : "Pasture Added",
+      description: selectedPasture 
+        ? "The pasture has been updated successfully."
+        : "A new pasture has been added successfully."
+    });
   };
 
   return (
@@ -63,12 +77,10 @@ const Pastures = () => {
                 </DialogDescription>
               </DialogHeader>
               
-              {/* In a complete app, this would be a form component */}
-              <div className="py-4">
-                <p className="text-center text-muted-foreground">
-                  Form would go here in a complete implementation
-                </p>
-              </div>
+              <AddPastureForm 
+                pasture={selectedPasture || undefined} 
+                onSuccess={handleFormSuccess} 
+              />
             </DialogContent>
           </Dialog>
         </div>

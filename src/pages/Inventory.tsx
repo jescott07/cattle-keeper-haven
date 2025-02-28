@@ -10,6 +10,7 @@ import { InventoryItem } from '@/components/InventoryItem';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { InventoryItem as InventoryItemType, InventoryType } from '@/lib/types';
+import { AddInventoryForm } from '@/components/AddInventoryForm';
 
 const Inventory = () => {
   const { toast } = useToast();
@@ -48,6 +49,17 @@ const Inventory = () => {
     setSearchQuery('');
     setTypeFilter('all');
   };
+  
+  const handleFormSuccess = () => {
+    setIsAddDialogOpen(false);
+    setSelectedItem(null);
+    toast({
+      title: selectedItem ? "Item Updated" : "Item Added",
+      description: selectedItem 
+        ? "The inventory item has been updated successfully."
+        : "A new inventory item has been added successfully."
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,12 +89,10 @@ const Inventory = () => {
                 </DialogDescription>
               </DialogHeader>
               
-              {/* In a complete app, this would be a form component */}
-              <div className="py-4">
-                <p className="text-center text-muted-foreground">
-                  Form would go here in a complete implementation
-                </p>
-              </div>
+              <AddInventoryForm 
+                item={selectedItem || undefined} 
+                onSuccess={handleFormSuccess} 
+              />
             </DialogContent>
           </Dialog>
         </div>
