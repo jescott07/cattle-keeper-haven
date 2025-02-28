@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Cow, Calendar, PackagePlus, MapPin, AlertCircle, ExternalLink } from 'lucide-react';
+import { Beef, Calendar, PackagePlus, MapPin, AlertCircle, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ const statusColorMap: Record<LotStatus, { bg: string; text: string; icon: JSX.El
   'active': { 
     bg: 'bg-emerald-500/10', 
     text: 'text-emerald-500', 
-    icon: <Cow className="h-4 w-4" />
+    icon: <Beef className="h-4 w-4" />
   },
   'sold': { 
     bg: 'bg-blue-500/10', 
@@ -82,7 +82,7 @@ export const LotCard = ({ lot, pastureName, onEdit, onViewDetail }: LotCardProps
       <CardContent className="p-4 pt-0 pb-2">
         <div className="flex justify-between text-sm">
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Cow className="h-4 w-4" />
+            <Beef className="h-4 w-4" />
             <span>{lot.numberOfAnimals} animals</span>
           </div>
           
