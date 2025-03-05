@@ -1,12 +1,12 @@
 
 import { useState } from 'react';
-import { Beef, Plus, Search } from 'lucide-react';
+import { Beef, Plus, Search, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LotCard } from '@/components/LotCard';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Lot, LotStatus } from '@/lib/types';
 import { AddLotForm } from '@/components/AddLotForm';
@@ -79,7 +79,7 @@ const Lots = () => {
                 Add New Lot
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{selectedLot ? 'Edit Lot' : 'Add New Lot'}</DialogTitle>
                 <DialogDescription>
@@ -93,6 +93,13 @@ const Lots = () => {
                 lot={selectedLot || undefined} 
                 onSuccess={handleFormSuccess} 
               />
+              
+              <DialogClose asChild className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                <Button variant="ghost" size="icon" onClick={() => setIsAddDialogOpen(false)}>
+                  <span className="sr-only">Close</span>
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogClose>
             </DialogContent>
           </Dialog>
         </div>

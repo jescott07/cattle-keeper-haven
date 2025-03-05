@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
-import { MapPin, Plus, Search } from 'lucide-react';
+import { MapPin, Plus, Search, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { PastureCard } from '@/components/PastureCard';
 import { useStore } from '@/lib/store';
 import { Pasture } from '@/lib/types';

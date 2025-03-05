@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
-import { Package, Plus, Search, FilterX } from 'lucide-react';
+import { Package, Plus, Search, FilterX, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { InventoryItem } from '@/components/InventoryItem';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
@@ -79,7 +79,7 @@ const Inventory = () => {
                 Add Inventory Item
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{selectedItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
                 <DialogDescription>
@@ -93,6 +93,13 @@ const Inventory = () => {
                 item={selectedItem || undefined} 
                 onSuccess={handleFormSuccess} 
               />
+              
+              <DialogClose asChild className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                <Button variant="ghost" size="icon" onClick={() => setIsAddDialogOpen(false)}>
+                  <span className="sr-only">Close</span>
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogClose>
             </DialogContent>
           </Dialog>
         </div>
