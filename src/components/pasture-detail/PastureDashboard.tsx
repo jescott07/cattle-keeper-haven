@@ -1,9 +1,22 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pasture, Lot } from '@/lib/types';
+import { Pasture, Lot, SoilAnalysis, MaintenanceRecord } from '@/lib/types';
 import { useStore } from '@/lib/store';
-import { BarChart, MapPin, Droplet, Ruler, Gauge, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { BarChart, MapPin, Droplet, Ruler, Gauge, Activity, AlertTriangle, CheckCircle, ChartPieIcon, LineChart } from 'lucide-react';
+import { format, subMonths } from 'date-fns';
+import { 
+  LineChart as RechartsLineChart, 
+  Line, 
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface PastureDashboardProps {
   pasture: Pasture;
@@ -11,6 +24,9 @@ interface PastureDashboardProps {
 
 const PastureDashboard = ({ pasture }: PastureDashboardProps) => {
   const lots = useStore(state => state.lots);
+  const soilAnalyses = useStore(state => state.soilAnalyses).filter(a => a.pastureId === pasture.id);
+  const maintenanceRecords = useStore(state => state.maintenanceRecords).filter(r => r.pastureId === pasture.id);
+  
   const lotsInPasture = lots.filter(lot => lot.currentPastureId === pasture.id);
   const totalAnimals = lotsInPasture.reduce((sum, lot) => sum + lot.numberOfAnimals, 0);
   
@@ -30,7 +46,125 @@ const PastureDashboard = ({ pasture }: PastureDashboardProps) => {
       default: return 'text-muted-foreground';
     }
   };
+
+  // Prepare data for quality tracking chart
+  const prepareQualityData = () => {
+    if (!pasture.evaluations || pasture.evaluations.length === 0) return [];
+    
+    // Sort evaluations by date (oldest to newest)
+    const sortedEvaluations = [...pasture.evaluations].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    return sortedEvaluations.map(evaluation => {
+      // Map grass color to a numeric value for the chart
+      const colorMap = {
+        'deep-green': 5,
+        'green': 4,
+        'yellow-green': 3,
+        'yellow': 2,
+        'brown': 1
+      };
+      
+      return {
+        date: format(new Date(evaluation.date), 'MMM d'),
+        height: evaluation.grassHeightCm,
+        ndvi: evaluation.ndviValue !== undefined ? evaluation.ndviValue : null,
+        color: colorMap[evaluation.grassColor as keyof typeof colorMap] || 0,
+        colorName: evaluation.grassColor.replace('-', ' ')
+      };
+    });
+  };
+
+  // Prepare data for soil analysis chart
+  const prepareSoilAnalysisData = () => {
+    if (!soilAnalyses || soilAnalyses.length === 0) return [];
+    
+    // Sort analyses by date (oldest to newest)
+    const sortedAnalyses = [...soilAnalyses].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    return sortedAnalyses.map(analysis => ({
+      date: format(new Date(analysis.date), 'MMM d, yy'),
+      pH: analysis.properties.ph,
+      P: analysis.properties.phosphorus,
+      K: analysis.properties.potassium,
+      Ca: analysis.properties.calcium,
+      Mg: analysis.properties.magnesium,
+      S: analysis.properties.sulfur || 0
+    }));
+  };
+
+  // Prepare data for maintenance tracking chart
+  const prepareMaintenanceData = () => {
+    if (!maintenanceRecords || maintenanceRecords.length === 0) return { timeline: [], costs: [] };
+    
+    // Count maintenance by type
+    const typeCount = maintenanceRecords.reduce((acc, record) => {
+      acc[record.type] = (acc[record.type] || 0) + 1;
+      return acc;
+    }, {} as {[key: string]: number});
+    
+    // Prepare timeline data
+    // Group by month-year
+    const monthlyData: {[key: string]: {[key: string]: number}} = {};
+    
+    maintenanceRecords.forEach(record => {
+      const monthYear = format(new Date(record.date), 'MMM yy');
+      if (!monthlyData[monthYear]) {
+        monthlyData[monthYear] = {};
+      }
+      const type = record.type;
+      monthlyData[monthYear][type] = (monthlyData[monthYear][type] || 0) + 1;
+    });
+    
+    // Convert to array for recharts
+    const timelineData = Object.entries(monthlyData).map(([monthYear, types]) => {
+      return {
+        month: monthYear,
+        ...types
+      };
+    }).sort((a, b) => {
+      // Sort by date
+      const dateA = new Date(a.month);
+      const dateB = new Date(b.month);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    // Prepare cost data (sum costs by month)
+    const costData = maintenanceRecords
+      .filter(record => record.cost !== undefined)
+      .reduce((acc, record) => {
+        const monthYear = format(new Date(record.date), 'MMM yy');
+        if (!acc[monthYear]) {
+          acc[monthYear] = 0;
+        }
+        acc[monthYear] += record.cost || 0;
+        return acc;
+      }, {} as {[key: string]: number});
+    
+    // Convert to array for recharts
+    const costChartData = Object.entries(costData).map(([month, cost]) => ({
+      month,
+      cost
+    })).sort((a, b) => {
+      // Sort by date
+      const dateA = new Date(a.month);
+      const dateB = new Date(b.month);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    return {
+      timeline: timelineData,
+      costs: costChartData
+    };
+  };
   
+  const qualityData = prepareQualityData();
+  const soilData = prepareSoilAnalysisData();
+  const maintenanceData = prepareMaintenanceData();
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,6 +302,169 @@ const PastureDashboard = ({ pasture }: PastureDashboardProps) => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Data Trend Charts */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <LineChart className="h-5 w-5 text-primary" />
+            Data Trends
+          </CardTitle>
+          <CardDescription>
+            Track the evolution of pasture quality, soil composition, and maintenance over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="quality" className="w-full">
+            <TabsList className="grid grid-cols-3 mb-6">
+              <TabsTrigger value="quality">Quality Metrics</TabsTrigger>
+              <TabsTrigger value="soil">Soil Analysis</TabsTrigger>
+              <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="quality">
+              {qualityData.length > 1 ? (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart
+                      data={qualityData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 5]} />
+                      <RechartsTooltip 
+                        formatter={(value, name) => {
+                          if (name === 'color') {
+                            // Convert numeric value back to color name
+                            const entry = qualityData.find(e => e.date === (value as any)?.date);
+                            return [entry?.colorName || '', 'Grass Color'];
+                          }
+                          return [value, name];
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        yAxisId="left"
+                        type="monotone" 
+                        dataKey="height" 
+                        name="Grass Height (cm)"
+                        stroke="#8884d8" 
+                        activeDot={{ r: 8 }} 
+                      />
+                      {qualityData.some(d => d.ndvi !== null) && (
+                        <Line 
+                          yAxisId="left"
+                          type="monotone" 
+                          dataKey="ndvi" 
+                          name="NDVI Value"
+                          stroke="#82ca9d" 
+                        />
+                      )}
+                      <Line 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="color" 
+                        name="Grass Color"
+                        stroke="#ff7300" 
+                      />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ChartPieIcon className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                  <p>Not enough quality data to display trends.</p>
+                  <p className="text-sm">Add at least two quality evaluations to see the chart.</p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="soil">
+              {soilData.length > 1 ? (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart
+                      data={soilData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="pH" stroke="#8884d8" />
+                      <Line type="monotone" dataKey="P" name="Phosphorus" stroke="#82ca9d" />
+                      <Line type="monotone" dataKey="K" name="Potassium" stroke="#ffc658" />
+                      <Line type="monotone" dataKey="Ca" name="Calcium" stroke="#ff8042" />
+                      <Line type="monotone" dataKey="Mg" name="Magnesium" stroke="#0088fe" />
+                      <Line type="monotone" dataKey="S" name="Sulfur" stroke="#00C49F" />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ChartPieIcon className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                  <p>Not enough soil analysis data to display trends.</p>
+                  <p className="text-sm">Add at least two soil analyses to see the chart.</p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="maintenance">
+              {maintenanceData.timeline.length > 1 ? (
+                <div className="space-y-6">
+                  <div className="h-72">
+                    <h3 className="text-base font-medium mb-2">Maintenance Activities by Month</h3>
+                    <ResponsiveContainer width="100%" height="90%">
+                      <RechartsBarChart
+                        data={maintenanceData.timeline}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Legend />
+                        <Bar dataKey="fertilization" name="Fertilization" fill="#8884d8" />
+                        <Bar dataKey="weed-control" name="Weed Control" fill="#82ca9d" />
+                        <Bar dataKey="fence-repair" name="Fence Repair" fill="#ffc658" />
+                        <Bar dataKey="water-system-check" name="Water System" fill="#ff8042" />
+                        <Bar dataKey="seeding" name="Seeding" fill="#0088fe" />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {maintenanceData.costs.length > 1 && (
+                    <div className="h-72">
+                      <h3 className="text-base font-medium mb-2">Maintenance Costs by Month</h3>
+                      <ResponsiveContainer width="100%" height="90%">
+                        <RechartsLineChart
+                          data={maintenanceData.costs}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <RechartsTooltip formatter={(value) => [`$${value}`, 'Cost']} />
+                          <Line type="monotone" dataKey="cost" name="Maintenance Cost" stroke="#8884d8" />
+                        </RechartsLineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ChartPieIcon className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                  <p>Not enough maintenance data to display trends.</p>
+                  <p className="text-sm">Add at least two maintenance records to see the chart.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
       
       {/* Notes Section */}
       {pasture.notes && (
