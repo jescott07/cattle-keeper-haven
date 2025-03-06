@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,10 +8,11 @@ import {
   Pasture,
   WeighingRecord,
   ConsumptionRecord,
-  FarmSummary
+  FarmSummary,
+  SoilAnalysis,
+  MaintenanceRecord
 } from './types';
 
-// Extend the store state with all our model collections
 interface StoreState {
   // Data collections
   inventory: InventoryItem[];
@@ -20,6 +20,8 @@ interface StoreState {
   pastures: Pasture[];
   weighings: WeighingRecord[];
   consumptions: ConsumptionRecord[];
+  soilAnalyses: SoilAnalysis[];
+  maintenanceRecords: MaintenanceRecord[];
   
   // Connection status
   isOnline: boolean;
@@ -47,6 +49,17 @@ interface StoreState {
   // Actions for consumption
   addConsumptionRecord: (record: Omit<ConsumptionRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   
+  // Actions for soil analyses
+  addSoilAnalysis: (analysis: Omit<SoilAnalysis, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateSoilAnalysis: (id: string, updates: Partial<SoilAnalysis>) => void;
+  removeSoilAnalysis: (id: string) => void;
+  
+  // Actions for maintenance records
+  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateMaintenanceRecord: (id: string, updates: Partial<MaintenanceRecord>) => void;
+  removeMaintenanceRecord: (id: string) => void;
+  completeMaintenanceRecord: (id: string, completedDate: Date, notes?: string) => void;
+  
   // Sync actions
   setOnlineStatus: (isOnline: boolean) => void;
   setSyncTime: (time: Date) => void;
@@ -57,7 +70,6 @@ interface StoreState {
   getPendingSyncs: () => number;
 }
 
-// Create the store with persistence
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
@@ -67,6 +79,8 @@ export const useStore = create<StoreState>()(
       pastures: [],
       weighings: [],
       consumptions: [],
+      soilAnalyses: [],
+      maintenanceRecords: [],
       isOnline: navigator.onLine,
       lastSyncTime: null,
       
@@ -230,6 +244,97 @@ export const useStore = create<StoreState>()(
         }));
       },
       
+      // Soil Analysis actions
+      addSoilAnalysis: (analysis) => {
+        const now = new Date();
+        const newAnalysis: SoilAnalysis = {
+          ...analysis,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          soilAnalyses: [...state.soilAnalyses, newAnalysis]
+        }));
+      },
+      
+      updateSoilAnalysis: (id, updates) => {
+        set(state => ({
+          soilAnalyses: state.soilAnalyses.map(analysis => 
+            analysis.id === id 
+              ? { 
+                  ...analysis, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : analysis
+          )
+        }));
+      },
+      
+      removeSoilAnalysis: (id) => {
+        set(state => ({
+          soilAnalyses: state.soilAnalyses.filter(analysis => analysis.id !== id)
+        }));
+      },
+      
+      // Maintenance Record actions
+      addMaintenanceRecord: (record) => {
+        const now = new Date();
+        const newRecord: MaintenanceRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          maintenanceRecords: [...state.maintenanceRecords, newRecord]
+        }));
+      },
+      
+      updateMaintenanceRecord: (id, updates) => {
+        set(state => ({
+          maintenanceRecords: state.maintenanceRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeMaintenanceRecord: (id) => {
+        set(state => ({
+          maintenanceRecords: state.maintenanceRecords.filter(record => record.id !== id)
+        }));
+      },
+      
+      completeMaintenanceRecord: (id, completedDate, notes) => {
+        set(state => ({
+          maintenanceRecords: state.maintenanceRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record,
+                  status: 'completed',
+                  completedDate,
+                  notes: notes || record.notes,
+                  updatedAt: new Date(),
+                  syncStatus: 'pending'
+                } 
+              : record
+          )
+        }));
+      },
+      
       // Sync actions
       setOnlineStatus: (isOnline) => {
         set({ isOnline });
@@ -270,6 +375,18 @@ export const useStore = create<StoreState>()(
             case 'consumptions':
               return {
                 consumptions: state.consumptions.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'soilAnalyses':
+              return {
+                soilAnalyses: state.soilAnalyses.map(analysis => 
+                  analysis.id === id ? { ...analysis, syncStatus: status } : analysis
+                )
+              };
+            case 'maintenanceRecords':
+              return {
+                maintenanceRecords: state.maintenanceRecords.map(record => 
                   record.id === id ? { ...record, syncStatus: status } : record
                 )
               };
@@ -324,8 +441,12 @@ export const useStore = create<StoreState>()(
         const pendingPastures = state.pastures.filter(i => i.syncStatus === 'pending').length;
         const pendingWeighings = state.weighings.filter(i => i.syncStatus === 'pending').length;
         const pendingConsumptions = state.consumptions.filter(i => i.syncStatus === 'pending').length;
+        const pendingSoilAnalyses = state.soilAnalyses.filter(i => i.syncStatus === 'pending').length;
+        const pendingMaintenanceRecords = state.maintenanceRecords.filter(i => i.syncStatus === 'pending').length;
         
-        return pendingInventory + pendingLots + pendingPastures + pendingWeighings + pendingConsumptions;
+        return pendingInventory + pendingLots + pendingPastures + 
+               pendingWeighings + pendingConsumptions + 
+               pendingSoilAnalyses + pendingMaintenanceRecords;
       }
     }),
     {
@@ -337,13 +458,14 @@ export const useStore = create<StoreState>()(
         pastures: state.pastures,
         weighings: state.weighings,
         consumptions: state.consumptions,
+        soilAnalyses: state.soilAnalyses,
+        maintenanceRecords: state.maintenanceRecords,
         lastSyncTime: state.lastSyncTime
       })
     }
   )
 );
 
-// Setup event listeners for online/offline status
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     useStore.getState().setOnlineStatus(true);

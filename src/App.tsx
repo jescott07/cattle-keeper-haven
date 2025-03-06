@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Lots from "./pages/Lots";
 import Inventory from "./pages/Inventory";
 import Pastures from "./pages/Pastures";
+import PastureDetail from "./pages/PastureDetail"; // Add this import
 import Weighing from "./pages/Weighing";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/lots" element={<Lots />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/pastures" element={<Pastures />} />
+          <Route path="/pastures/:pastureId" element={<PastureDetail />} /> {/* Add this route */}
           <Route path="/weighing" element={<Weighing />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

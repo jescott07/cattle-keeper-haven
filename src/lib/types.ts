@@ -1,4 +1,3 @@
-
 // Sync status for all data models
 export type SyncStatus = 'synced' | 'pending' | 'error';
 
@@ -105,4 +104,58 @@ export interface FarmSummary {
   totalPastureArea: number;
   inventoryValue: number;
   pendingSyncs: number;
+}
+
+// NEW TYPES FOR SOIL ANALYSIS
+export interface SoilAnalysis {
+  id: string;
+  pastureId: string;
+  date: Date;
+  labName: string;
+  
+  // Chemical properties
+  phLevel: number;
+  organicMatter: number; // percentage
+  phosphorus: number; // ppm
+  potassium: number; // ppm
+  calcium: number; // ppm
+  magnesium: number; // ppm
+  sulfur: number; // ppm
+  
+  // Micronutrients
+  zinc?: number; // ppm
+  copper?: number; // ppm
+  manganese?: number; // ppm
+  
+  // Physical properties
+  clayContent?: number; // percentage
+  sandContent?: number; // percentage
+  siltContent?: number; // percentage
+  cec?: number; // Cation Exchange Capacity
+  baseSaturation?: number; // percentage
+  
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  syncStatus: SyncStatus;
+}
+
+// MAINTENANCE TYPES
+export type MaintenanceType = 'fertilization' | 'weed-control' | 'fence-repair' | 'water-system' | 'planting' | 'harvesting' | 'other';
+export type MaintenanceStatus = 'scheduled' | 'completed' | 'canceled';
+
+export interface MaintenanceRecord {
+  id: string;
+  pastureId: string;
+  type: MaintenanceType;
+  title: string;
+  description?: string;
+  scheduledDate: Date;
+  completedDate?: Date;
+  status: MaintenanceStatus;
+  cost?: number;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  syncStatus: SyncStatus;
 }
