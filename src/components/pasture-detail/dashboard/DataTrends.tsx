@@ -47,52 +47,92 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
           
           <TabsContent value="quality">
             {qualityData.length > 1 ? (
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsLineChart
-                    data={qualityData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" domain={[0, 5]} />
-                    <RechartsTooltip 
-                      formatter={(value, name) => {
-                        if (name === 'color') {
-                          const entry = qualityData.find(e => e.date === (value as any)?.date);
-                          return [entry?.colorName || '', 'Grass Color'];
-                        }
-                        return [value, name];
-                      }}
-                    />
-                    <Legend />
-                    <Line 
-                      yAxisId="left"
-                      type="monotone" 
-                      dataKey="height" 
-                      name="Grass Height (cm)"
-                      stroke="#8884d8" 
-                      activeDot={{ r: 8 }} 
-                    />
-                    {qualityData.some(d => d.ndvi !== null) && (
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="ndvi" 
-                        name="NDVI Value"
-                        stroke="#82ca9d" 
-                      />
-                    )}
-                    <Line 
-                      yAxisId="right"
-                      type="monotone" 
-                      dataKey="color" 
-                      name="Grass Color"
-                      stroke="#ff7300" 
-                    />
-                  </RechartsLineChart>
-                </ResponsiveContainer>
+              <div className="space-y-8">
+                {/* Grass Height Chart */}
+                <div>
+                  <h3 className="text-base font-medium mb-2">Grass Height (cm)</h3>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart
+                        data={qualityData}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="height" 
+                          name="Grass Height (cm)"
+                          stroke="#8884d8" 
+                          activeDot={{ r: 8 }} 
+                        />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                {/* NDVI Value Chart (Only if data exists) */}
+                {qualityData.some(d => d.ndvi !== null) && (
+                  <div>
+                    <h3 className="text-base font-medium mb-2">NDVI Value</h3>
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsLineChart
+                          data={qualityData}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <RechartsTooltip />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="ndvi" 
+                            name="NDVI Value"
+                            stroke="#82ca9d" 
+                          />
+                        </RechartsLineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Grass Color Chart */}
+                <div>
+                  <h3 className="text-base font-medium mb-2">Grass Color (1-5 scale)</h3>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart
+                        data={qualityData}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis domain={[0, 5]} />
+                        <RechartsTooltip 
+                          formatter={(value, name) => {
+                            if (name === 'Grass Color') {
+                              const entry = qualityData.find(e => e.date === (value as any)?.date);
+                              return [entry?.colorName || '', 'Grass Color'];
+                            }
+                            return [value, name];
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="color" 
+                          name="Grass Color"
+                          stroke="#ff7300" 
+                        />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -105,25 +145,50 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
           
           <TabsContent value="soil">
             {soilData.length > 1 ? (
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsLineChart
-                    data={soilData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="pH" stroke="#8884d8" />
-                    <Line type="monotone" dataKey="P" name="Phosphorus" stroke="#82ca9d" />
-                    <Line type="monotone" dataKey="K" name="Potassium" stroke="#ffc658" />
-                    <Line type="monotone" dataKey="Ca" name="Calcium" stroke="#ff8042" />
-                    <Line type="monotone" dataKey="Mg" name="Magnesium" stroke="#0088fe" />
-                    <Line type="monotone" dataKey="S" name="Sulfur" stroke="#00C49F" />
-                  </RechartsLineChart>
-                </ResponsiveContainer>
+              <div className="space-y-8">
+                {/* pH Chart */}
+                <div>
+                  <h3 className="text-base font-medium mb-2">Soil pH</h3>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart
+                        data={soilData}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="pH" name="pH" stroke="#8884d8" />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                {/* Macronutrients Chart */}
+                <div>
+                  <h3 className="text-base font-medium mb-2">Macronutrients (P, K, Ca, Mg, S)</h3>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart
+                        data={soilData}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="P" name="Phosphorus" stroke="#82ca9d" />
+                        <Line type="monotone" dataKey="K" name="Potassium" stroke="#ffc658" />
+                        <Line type="monotone" dataKey="Ca" name="Calcium" stroke="#ff8042" />
+                        <Line type="monotone" dataKey="Mg" name="Magnesium" stroke="#0088fe" />
+                        <Line type="monotone" dataKey="S" name="Sulfur" stroke="#00C49F" />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -136,43 +201,48 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
           
           <TabsContent value="maintenance">
             {maintenanceData.timeline.length > 1 ? (
-              <div className="space-y-6">
-                <div className="h-72">
+              <div className="space-y-8">
+                <div>
                   <h3 className="text-base font-medium mb-2">Maintenance Activities by Month</h3>
-                  <ResponsiveContainer width="100%" height="90%">
-                    <RechartsBarChart
-                      data={maintenanceData.timeline}
-                      margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <RechartsTooltip />
-                      <Legend />
-                      <Bar dataKey="fertilization" name="Fertilization" fill="#8884d8" />
-                      <Bar dataKey="weed-control" name="Weed Control" fill="#82ca9d" />
-                      <Bar dataKey="fence-repair" name="Fence Repair" fill="#ffc658" />
-                      <Bar dataKey="water-system-check" name="Water System" fill="#ff8042" />
-                      <Bar dataKey="seeding" name="Seeding" fill="#0088fe" />
-                    </RechartsBarChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                {maintenanceData.costs.length > 1 && (
                   <div className="h-72">
-                    <h3 className="text-base font-medium mb-2">Maintenance Costs by Month</h3>
-                    <ResponsiveContainer width="100%" height="90%">
-                      <RechartsLineChart
-                        data={maintenanceData.costs}
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart
+                        data={maintenanceData.timeline}
                         margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
-                        <RechartsTooltip formatter={(value) => [`$${value}`, 'Cost']} />
-                        <Line type="monotone" dataKey="cost" name="Maintenance Cost" stroke="#8884d8" />
-                      </RechartsLineChart>
+                        <RechartsTooltip />
+                        <Legend />
+                        <Bar dataKey="fertilization" name="Fertilization" fill="#8884d8" />
+                        <Bar dataKey="weed-control" name="Weed Control" fill="#82ca9d" />
+                        <Bar dataKey="fence-repair" name="Fence Repair" fill="#ffc658" />
+                        <Bar dataKey="water-system-check" name="Water System" fill="#ff8042" />
+                        <Bar dataKey="seeding" name="Seeding" fill="#0088fe" />
+                      </RechartsBarChart>
                     </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                {maintenanceData.costs.length > 1 && (
+                  <div>
+                    <h3 className="text-base font-medium mb-2">Maintenance Costs by Month</h3>
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsLineChart
+                          data={maintenanceData.costs}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <RechartsTooltip formatter={(value) => [`$${value}`, 'Cost']} />
+                          <Legend />
+                          <Line type="monotone" dataKey="cost" name="Maintenance Cost" stroke="#8884d8" />
+                        </RechartsLineChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 )}
               </div>
