@@ -11,7 +11,6 @@ import { Pasture, FenceCondition } from '@/lib/types';
 interface PastureCardProps {
   pasture: Pasture;
   onEdit: (pasture: Pasture) => void;
-  onViewDetail: (pasture: Pasture) => void;
 }
 
 // Fence condition color mapping
@@ -22,7 +21,8 @@ const fenceColorMap: Record<FenceCondition, { bg: string; text: string }> = {
   'poor': { bg: 'bg-red-500/10', text: 'text-red-500' }
 };
 
-export const PastureCard = ({ pasture, onEdit, onViewDetail }: PastureCardProps) => {
+export const PastureCard = ({ pasture, onEdit }: PastureCardProps) => {
+  const navigate = useNavigate(); // Add this hook
   const [isHovered, setIsHovered] = useState(false);
   
   const { bg, text } = fenceColorMap[pasture.fenceCondition];
@@ -30,6 +30,11 @@ export const PastureCard = ({ pasture, onEdit, onViewDetail }: PastureCardProps)
   const latestEvaluation = pasture.evaluations.length > 0 
     ? pasture.evaluations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] 
     : null;
+  
+  // Function to navigate to the pasture detail page
+  const handleViewDetail = () => {
+    navigate(`/pastures/${pasture.id}`);
+  };
   
   return (
     <Card 
@@ -99,7 +104,7 @@ export const PastureCard = ({ pasture, onEdit, onViewDetail }: PastureCardProps)
         <Button 
           size="sm" 
           className="gap-2"
-          onClick={() => onViewDetail(pasture)}
+          onClick={handleViewDetail}
         >
           <ExternalLink className="h-4 w-4" />
           Details

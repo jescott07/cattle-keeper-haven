@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { MapPin, Plus, Search, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -27,13 +26,6 @@ const Pastures = () => {
   );
 
   const handleEditPasture = (pasture: Pasture) => {
-    setSelectedPasture(pasture);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleViewPastureDetail = (pasture: Pasture) => {
-    // In a more complete app, we would navigate to a detail page
-    // For now, we'll just open the edit dialog
     setSelectedPasture(pasture);
     setIsAddDialogOpen(true);
   };
@@ -106,7 +98,6 @@ const Pastures = () => {
                 key={pasture.id}
                 pasture={pasture}
                 onEdit={handleEditPasture}
-                onViewDetail={handleViewPastureDetail}
               />
             ))}
           </div>
