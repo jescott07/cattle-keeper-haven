@@ -60,7 +60,7 @@ const Pastures = () => {
                 Add New Pasture
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] md:max-h-[85vh] md:overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{selectedPasture ? 'Edit Pasture' : 'Add New Pasture'}</DialogTitle>
                 <DialogDescription>
