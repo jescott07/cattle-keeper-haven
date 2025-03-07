@@ -116,7 +116,7 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                         <RechartsTooltip 
                           formatter={(value, name) => {
                             if (name === 'Grass Color') {
-                              const entry = qualityData.find(e => e.date === (value as any)?.date);
+                              const entry = qualityData.find(e => e.color === value);
                               return [entry?.colorName || '', 'Grass Color'];
                             }
                             return [value, name];
@@ -200,7 +200,7 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
           </TabsContent>
           
           <TabsContent value="maintenance">
-            {maintenanceData.timeline.length > 1 ? (
+            {maintenanceData.timeline.length > 0 ? (
               <div className="space-y-8">
                 <div>
                   <h3 className="text-base font-medium mb-2">Maintenance Activities by Month</h3>
@@ -218,14 +218,16 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                         <Bar dataKey="fertilization" name="Fertilization" fill="#8884d8" />
                         <Bar dataKey="weed-control" name="Weed Control" fill="#82ca9d" />
                         <Bar dataKey="fence-repair" name="Fence Repair" fill="#ffc658" />
-                        <Bar dataKey="water-system-check" name="Water System" fill="#ff8042" />
-                        <Bar dataKey="seeding" name="Seeding" fill="#0088fe" />
+                        <Bar dataKey="water-system" name="Water System" fill="#ff8042" />
+                        <Bar dataKey="planting" name="Planting" fill="#0088fe" />
+                        <Bar dataKey="harvesting" name="Harvesting" fill="#00C49F" />
+                        <Bar dataKey="other" name="Other" fill="#FFBB28" />
                       </RechartsBarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
                 
-                {maintenanceData.costs.length > 1 && (
+                {maintenanceData.costs.length > 0 && (
                   <div>
                     <h3 className="text-base font-medium mb-2">Maintenance Costs by Month</h3>
                     <div className="h-72">
@@ -249,8 +251,8 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <ChartPieIcon className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                <p>Not enough maintenance data to display trends.</p>
-                <p className="text-sm">Add at least two maintenance records to see the chart.</p>
+                <p>No completed maintenance records to display.</p>
+                <p className="text-sm">Add maintenance records and mark them as completed to see the charts.</p>
               </div>
             )}
           </TabsContent>

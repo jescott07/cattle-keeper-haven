@@ -52,18 +52,27 @@ export const prepareSoilAnalysisData = (analyses: SoilAnalysis[]) => {
 export const prepareMaintenanceData = (records: MaintenanceRecord[]) => {
   if (!records || records.length === 0) return { timeline: [], costs: [] };
   
+  // Filter for completed records only and ensure they have a completedDate
+  const completedRecords = records.filter(record => 
+    record.status === 'completed' && record.completedDate
+  );
+  
+  if (completedRecords.length === 0) return { timeline: [], costs: [] };
+  
   // Count maintenance by type
-  const typeCount = records.reduce((acc, record) => {
+  const typeCount = completedRecords.reduce((acc, record) => {
     acc[record.type] = (acc[record.type] || 0) + 1;
     return acc;
   }, {} as {[key: string]: number});
   
   // Prepare timeline data
-  // Group by month-year
+  // Group by month-year using completedDate
   const monthlyData: {[key: string]: {[key: string]: number}} = {};
   
-  records.forEach(record => {
-    const monthYear = format(new Date(record.scheduledDate), 'MMM yy');
+  completedRecords.forEach(record => {
+    if (!record.completedDate) return; // Skip if no completedDate
+    
+    const monthYear = format(new Date(record.completedDate), 'MMM yy');
     if (!monthlyData[monthYear]) {
       monthlyData[monthYear] = {};
     }
@@ -84,11 +93,11 @@ export const prepareMaintenanceData = (records: MaintenanceRecord[]) => {
     return dateA.getTime() - dateB.getTime();
   });
   
-  // Prepare cost data (sum costs by month)
-  const costData = records
-    .filter(record => record.cost !== undefined)
+  // Prepare cost data (sum costs by month using completedDate)
+  const costData = completedRecords
+    .filter(record => record.cost !== undefined && record.completedDate)
     .reduce((acc, record) => {
-      const monthYear = format(new Date(record.scheduledDate), 'MMM yy');
+      const monthYear = format(new Date(record.completedDate!), 'MMM yy');
       if (!acc[monthYear]) {
         acc[monthYear] = 0;
       }
