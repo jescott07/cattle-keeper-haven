@@ -19,8 +19,7 @@ import { SyncStatus } from './SyncStatus';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const pendingSyncs = useStore(state => state.getPendingSyncs());
-  const { syncPending, isOnline } = useSyncService();
+  const { syncPending, isOnline, pendingCount } = useSyncService();
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -64,14 +63,14 @@ const Navbar = () => {
           </div>
           
           <div className="hidden sm:flex sm:items-center sm:ml-6 gap-4">
-            <SyncStatus pendingSyncs={pendingSyncs} isOnline={isOnline} />
+            <SyncStatus pendingSyncs={pendingCount} isOnline={isOnline} />
             
             <Button 
               variant="outline" 
               size="sm" 
               className="gap-2"
               onClick={syncPending}
-              disabled={!isOnline || pendingSyncs === 0}
+              disabled={!isOnline || pendingCount === 0}
             >
               <Database className="h-4 w-4" />
               Sync Data
@@ -113,14 +112,14 @@ const Navbar = () => {
           ))}
           
           <div className="px-3 py-3 flex justify-between items-center border-t mt-3">
-            <SyncStatus pendingSyncs={pendingSyncs} isOnline={isOnline} />
+            <SyncStatus pendingSyncs={pendingCount} isOnline={isOnline} />
             
             <Button 
               variant="outline" 
               size="sm" 
               className="gap-2"
               onClick={syncPending}
-              disabled={!isOnline || pendingSyncs === 0}
+              disabled={!isOnline || pendingCount === 0}
             >
               <Database className="h-4 w-4" />
               Sync

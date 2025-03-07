@@ -33,6 +33,12 @@ const syncData = async (type: string, id: string) => {
     case 'consumptions':
       dataToSync = store.consumptions.find(record => record.id === id);
       break;
+    case 'soilAnalyses':
+      dataToSync = store.soilAnalyses.find(analysis => analysis.id === id);
+      break;
+    case 'maintenanceRecords':
+      dataToSync = store.maintenanceRecords.find(record => record.id === id);
+      break;
     default:
       throw new Error(`Unknown data type: ${type}`);
   }
@@ -62,11 +68,16 @@ export const useSyncService = () => {
   const { toast } = useToast();
   const isOnline = useStore(state => state.isOnline);
   const getPendingSyncs = useStore(state => state.getPendingSyncs);
+  const pendingCount = getPendingSyncs();
+  
+  // Get all data collections with their types for sync operations
   const inventory = useStore(state => state.inventory);
   const lots = useStore(state => state.lots);
   const pastures = useStore(state => state.pastures);
   const weighings = useStore(state => state.weighings);
   const consumptions = useStore(state => state.consumptions);
+  const soilAnalyses = useStore(state => state.soilAnalyses);
+  const maintenanceRecords = useStore(state => state.maintenanceRecords);
   
   // Sync all pending items
   const syncPending = async () => {
@@ -93,12 +104,14 @@ export const useSyncService = () => {
       description: `Synchronizing ${pendingCount} pending items...`,
     });
     
-    // Get all pending items
+    // Get all pending items from each collection
     const pendingInventory = inventory.filter(i => i.syncStatus === 'pending');
     const pendingLots = lots.filter(i => i.syncStatus === 'pending');
     const pendingPastures = pastures.filter(i => i.syncStatus === 'pending');
     const pendingWeighings = weighings.filter(i => i.syncStatus === 'pending');
     const pendingConsumptions = consumptions.filter(i => i.syncStatus === 'pending');
+    const pendingSoilAnalyses = soilAnalyses.filter(i => i.syncStatus === 'pending');
+    const pendingMaintenanceRecords = maintenanceRecords.filter(i => i.syncStatus === 'pending');
     
     // Create sync promises for all pending items
     const syncPromises = [
@@ -107,11 +120,16 @@ export const useSyncService = () => {
       ...pendingPastures.map(item => syncData('pastures', item.id)),
       ...pendingWeighings.map(item => syncData('weighings', item.id)),
       ...pendingConsumptions.map(item => syncData('consumptions', item.id)),
+      ...pendingSoilAnalyses.map(item => syncData('soilAnalyses', item.id)),
+      ...pendingMaintenanceRecords.map(item => syncData('maintenanceRecords', item.id)),
     ];
     
     try {
       // Wait for all syncs to complete
       await Promise.all(syncPromises);
+      
+      // Force a refresh of the pending count
+      const newPendingCount = getPendingSyncs();
       
       toast({
         title: 'Sync Complete',
@@ -162,7 +180,7 @@ export const useSyncService = () => {
   return {
     syncPending,
     syncItem,
-    pendingCount: getPendingSyncs(),
+    pendingCount,
     isOnline,
   };
 };

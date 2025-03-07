@@ -1,5 +1,5 @@
 
-import { WifiOff, Cloud, CloudOff } from 'lucide-react';
+import { WifiOff, Cloud } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
