@@ -1,4 +1,3 @@
-
 import { useFieldArray, Control, UseFormRegister, UseFormSetValue } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -9,10 +8,25 @@ import { Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
+// Definição do tipo de cada propriedade
+interface Property {
+  id: string;
+  name: string;
+  value: string;
+  unit: string;
+  propertyType: 'min' | 'max' | 'exact';
+}
+
+// Definição dos valores do formulário
+interface InventoryFormValues {
+  properties: Property[];
+}
+
+// Definição das props do componente utilizando os tipos definidos
 interface InventoryPropertiesProps {
-  control: Control<any>;
-  register: UseFormRegister<any>;
-  setValue: UseFormSetValue<any>;
+  control: Control<InventoryFormValues>;
+  register: UseFormRegister<InventoryFormValues>;
+  setValue: UseFormSetValue<InventoryFormValues>;
   readOnly?: boolean;
   onSaveTemplate?: () => void;
 }
@@ -24,7 +38,7 @@ export function InventoryProperties({
   readOnly = false,
   onSaveTemplate 
 }: InventoryPropertiesProps) {
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray<InventoryFormValues>({
     control,
     name: "properties"
   });
@@ -71,8 +85,11 @@ export function InventoryProperties({
                 <span className="font-medium">{field.name}</span>: {field.value} {field.unit}
               </div>
               <Badge variant="outline" className="text-xs">
-                {field.propertyType === 'min' ? 'Mín' : 
-                 field.propertyType === 'max' ? 'Máx' : 'Exato'}
+                {field.propertyType === 'min'
+                  ? 'Mín'
+                  : field.propertyType === 'max'
+                  ? 'Máx'
+                  : 'Exato'}
               </Badge>
             </div>
           ))}
@@ -104,7 +121,9 @@ export function InventoryProperties({
             <div className="col-span-2">
               <Select 
                 defaultValue={field.propertyType}
-                onValueChange={(value) => setValue(`properties.${index}.propertyType` as const, value as 'min' | 'max' | 'exact')} 
+                onValueChange={(value) =>
+                  setValue(`properties.${index}.propertyType` as const, value as 'min' | 'max' | 'exact')
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
