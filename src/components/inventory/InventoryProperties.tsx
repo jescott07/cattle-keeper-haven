@@ -1,4 +1,3 @@
-
 import { useFieldArray, Control, UseFormRegister, UseFormSetValue } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -7,18 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-// Interface for the properties form data
-interface InventoryFormValues {
-  properties: {
-    id: string;
-    name: string;
-    value: string;
-    unit: string;
-    propertyType: 'min' | 'max' | 'exact';
-  }[];
-  [key: string]: any; // Added to make the type compatible
-}
+import { InventoryFormValues } from '@/lib/types';
 
 interface InventoryPropertiesProps {
   control: Control<InventoryFormValues>;

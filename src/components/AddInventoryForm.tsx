@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -8,7 +7,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InventoryItem, InventoryType, InventoryItemProperty, InventoryItemTemplate } from '@/lib/types';
+import { InventoryItem, InventoryType, InventoryItemProperty, InventoryItemTemplate, InventoryFormValues } from '@/lib/types';
 import { InventoryBasicFields } from './inventory/InventoryBasicFields';
 import { InventoryProperties } from './inventory/InventoryProperties';
 import { InventoryTemplateSelector } from './inventory/InventoryTemplateSelector';
@@ -17,26 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 interface AddInventoryFormProps {
   item?: InventoryItem;
   onSuccess: () => void;
-}
-
-// Define the form data type that includes all fields needed for both inventory items and templates
-interface InventoryFormValues {
-  name: string;
-  type: InventoryType;
-  quantity: number;
-  unit: string;
-  purchaseDate?: string;
-  expiryDate?: string;
-  costPerUnit: number;
-  notes?: string;
-  templateId?: string;
-  properties: {
-    id: string;
-    name: string;
-    value: string;
-    unit: string;
-    propertyType: 'min' | 'max' | 'exact';
-  }[];
 }
 
 export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {

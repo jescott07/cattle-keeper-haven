@@ -42,6 +42,19 @@ export interface InventoryItem extends SyncableModel {
   properties: InventoryItemProperty[];
 }
 
+export interface InventoryFormValues {
+  name: string;
+  type: InventoryType;
+  quantity: number;
+  unit: string;
+  purchaseDate?: string;
+  expiryDate?: string;
+  costPerUnit: number;
+  notes?: string;
+  templateId?: string;
+  properties: InventoryItemProperty[];
+}
+
 // Lot Management Types
 export type LotStatus = 'active' | 'sold' | 'treatment';
 export type AnimalSource = 'auction' | 'another-farmer' | 'born-on-farm' | 'other';
