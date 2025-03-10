@@ -58,6 +58,7 @@ export interface InventoryFormValues {
 // Lot Management Types
 export type LotStatus = 'active' | 'sold' | 'treatment';
 export type AnimalSource = 'auction' | 'another-farmer' | 'born-on-farm' | 'other';
+export type BreedType = 'nelore' | 'anelorada' | 'cruzamento-industrial';
 
 export interface Lot extends SyncableModel {
   name: string;
