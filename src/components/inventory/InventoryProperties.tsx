@@ -7,23 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
-// Definição do tipo de cada propriedade
-interface Property {
-  id: string;
-  name: string;
-  value: string;
-  unit: string;
-  propertyType: 'min' | 'max' | 'exact';
-}
-
-// Definição dos valores do formulário
+// Interface for the properties form data
 interface InventoryFormValues {
-  properties: Property[];
+  properties: {
+    id: string;
+    name: string;
+    value: string;
+    unit: string;
+    propertyType: 'min' | 'max' | 'exact';
+  }[];
 }
 
-// Definição das props do componente utilizando os tipos definidos
 interface InventoryPropertiesProps {
   control: Control<InventoryFormValues>;
   register: UseFormRegister<InventoryFormValues>;

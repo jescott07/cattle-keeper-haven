@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InventoryItem, InventoryType, InventoryItemProperty } from '@/lib/types';
+import { InventoryItem, InventoryType, InventoryItemProperty, InventoryItemTemplate } from '@/lib/types';
 import { InventoryBasicFields } from './inventory/InventoryBasicFields';
 import { InventoryProperties } from './inventory/InventoryProperties';
 import { InventoryTemplateSelector } from './inventory/InventoryTemplateSelector';
@@ -19,7 +19,8 @@ interface AddInventoryFormProps {
   onSuccess: () => void;
 }
 
-type FormData = {
+// Define the form data type that includes all fields needed for both inventory items and templates
+interface InventoryFormValues {
   name: string;
   type: InventoryType;
   quantity: number;
@@ -36,20 +37,22 @@ type FormData = {
     unit: string;
     propertyType: 'min' | 'max' | 'exact';
   }[];
-};
+}
 
 export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('manual');
-  const [selectedTemplate, setSelectedTemplate] = useState<InventoryItem | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<InventoryItemTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState(false);
   
   const addInventoryItem = useStore(state => state.addInventoryItem);
   const updateInventoryItem = useStore(state => state.updateInventoryItem);
   const addInventoryTemplate = useStore(state => state.addInventoryTemplate);
+  const updateInventoryTemplate = useStore(state => state.updateInventoryTemplate);
   const inventoryTemplates = useStore(state => state.inventoryTemplates);
   
-  const { register, handleSubmit, setValue, control, watch, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, control, watch, reset, formState: { errors } } = useForm<InventoryFormValues>({
     defaultValues: {
       name: item?.name || '',
       type: item?.type || 'feed',
@@ -74,10 +77,37 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
   const watchedName = watch('name');
   const watchedType = watch('type');
   
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: InventoryFormValues) => {
     setIsSubmitting(true);
     
     try {
+      // If we're editing a template, update it
+      if (editingTemplate && selectedTemplate) {
+        const properties: InventoryItemProperty[] = data.properties.map(prop => ({
+          id: prop.id || uuidv4(),
+          name: prop.name,
+          value: prop.value,
+          unit: prop.unit,
+          propertyType: prop.propertyType
+        }));
+        
+        updateInventoryTemplate(selectedTemplate.id, {
+          name: data.name,
+          type: data.type,
+          properties
+        });
+        
+        toast({
+          title: "Success",
+          description: "Template updated successfully",
+        });
+        
+        setEditingTemplate(false);
+        setSelectedTemplate(null);
+        onSuccess();
+        return;
+      }
+      
       const properties: InventoryItemProperty[] = data.properties.map(prop => ({
         id: prop.id || uuidv4(),
         name: prop.name,
@@ -151,7 +181,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     });
   };
   
-  const handleSelectTemplate = (template: InventoryItem) => {
+  const handleSelectTemplate = (template: InventoryItemTemplate) => {
     console.log("Selected template:", template);
     setSelectedTemplate(template);
     setValue('name', template.name);
@@ -170,6 +200,26 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     setValue('properties', templateProperties);
   };
   
+  const handleEditTemplate = (template: InventoryItemTemplate) => {
+    setEditingTemplate(true);
+    setSelectedTemplate(template);
+    reset({
+      name: template.name,
+      type: template.type,
+      quantity: 0,
+      unit: 'kg',
+      costPerUnit: 0,
+      properties: template.properties.map(prop => ({
+        id: prop.id,
+        name: prop.name,
+        value: prop.value,
+        unit: prop.unit,
+        propertyType: prop.propertyType
+      }))
+    });
+    setActiveTab('manual');
+  };
+  
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -184,15 +234,16 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
             control={control} 
             errors={errors} 
             setValue={setValue} 
+            isTemplate={editingTemplate}
           />
           
-          <Separator />
+          {!editingTemplate && <Separator />}
           
           <InventoryProperties 
             control={control} 
             register={register} 
             setValue={setValue} 
-            onSaveTemplate={handleSaveAsTemplate} 
+            onSaveTemplate={!editingTemplate ? handleSaveAsTemplate : undefined}
           />
         </TabsContent>
         
@@ -200,6 +251,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
           <InventoryTemplateSelector
             selectedTemplate={selectedTemplate}
             onSelectTemplate={handleSelectTemplate}
+            onEditTemplate={handleEditTemplate}
           />
           
           {selectedTemplate && (
@@ -227,7 +279,11 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
       
       <DialogFooter className="mt-6">
         <Button type="submit" disabled={isSubmitting}>
-          {item ? 'Update Item' : 'Add Item'}
+          {editingTemplate 
+            ? 'Update Template' 
+            : item 
+              ? 'Update Item' 
+              : 'Add Item'}
         </Button>
       </DialogFooter>
     </form>
