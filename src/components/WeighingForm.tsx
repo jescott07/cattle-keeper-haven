@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Weight, Calendar, FileText, Check } from 'lucide-react';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
-import { Lot } from '@/lib/types';
+import { Lot, BreedType } from '@/lib/types';
 
 interface WeighingFormData {
   lotId: string;
@@ -19,6 +18,7 @@ interface WeighingFormData {
   numberOfAnimals: number;
   totalWeight: number;
   destinationLotId: string;
+  breed: BreedType;
   notes: string;
 }
 
@@ -37,6 +37,7 @@ export const WeighingForm = () => {
       date: format(new Date(), 'yyyy-MM-dd'),
       numberOfAnimals: 0,
       totalWeight: 0,
+      breed: selectedLot?.breed || 'nelore',
       notes: ''
     }
   });
@@ -55,6 +56,7 @@ export const WeighingForm = () => {
     const lot = lots.find(lot => lot.id === value);
     if (lot) {
       setValue('numberOfAnimals', lot.numberOfAnimals);
+      setValue('breed', lot.breed || 'nelore');
     }
   };
   
@@ -87,7 +89,8 @@ export const WeighingForm = () => {
       
       // Update lot with new average weight
       updateLot(data.lotId, {
-        averageWeight: data.totalWeight / data.numberOfAnimals
+        averageWeight: data.totalWeight / data.numberOfAnimals,
+        breed: data.breed
       });
       
       // If destination lot is selected and different from source lot,
@@ -229,6 +232,20 @@ export const WeighingForm = () => {
                 </p>
               )}
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="breed">Raça</Label>
+            <Select onValueChange={(value) => setValue('breed', value as BreedType)}>
+              <SelectTrigger id="breed">
+                <SelectValue placeholder="Selecione a raça" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nelore">Nelore</SelectItem>
+                <SelectItem value="anelorada">Anelorada</SelectItem>
+                <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">

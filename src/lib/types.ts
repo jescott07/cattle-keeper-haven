@@ -69,7 +69,7 @@ export interface Lot extends SyncableModel {
   currentPastureId: string;
   plannedTransfers: PasturePlanning[];
   averageWeight?: number;
-  breed?: string;
+  breed?: BreedType;
   notes?: string;
 }
 
