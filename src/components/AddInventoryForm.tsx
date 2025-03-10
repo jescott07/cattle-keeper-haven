@@ -12,6 +12,7 @@ import { InventoryItem, InventoryType, InventoryItemProperty } from '@/lib/types
 import { InventoryBasicFields } from './inventory/InventoryBasicFields';
 import { InventoryProperties } from './inventory/InventoryProperties';
 import { InventoryTemplateSelector } from './inventory/InventoryTemplateSelector';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddInventoryFormProps {
   item?: InventoryItem;
@@ -38,6 +39,7 @@ type FormData = {
 };
 
 export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('manual');
   const [selectedTemplate, setSelectedTemplate] = useState<InventoryItem | null>(null);
@@ -45,8 +47,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
   const addInventoryItem = useStore(state => state.addInventoryItem);
   const updateInventoryItem = useStore(state => state.updateInventoryItem);
   const addInventoryTemplate = useStore(state => state.addInventoryTemplate);
-  const inventory = useStore(state => state.inventory);
-  const templates = useStore(state => state.inventoryTemplates);
+  const inventoryTemplates = useStore(state => state.inventoryTemplates);
   
   const { register, handleSubmit, setValue, control, watch, reset, formState: { errors } } = useForm<FormData>({
     defaultValues: {
@@ -109,13 +110,25 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
       onSuccess();
     } catch (error) {
       console.error('Error saving inventory item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save inventory item",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
   
   const handleSaveAsTemplate = () => {
-    if (!watchedName) return;
+    if (!watchedName) {
+      toast({
+        title: "Error",
+        description: "Please provide a name for the template",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const properties = watch('properties');
     const propertyValues = properties.map(field => ({
@@ -131,28 +144,30 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
       type: watchedType,
       properties: propertyValues
     });
+    
+    toast({
+      title: "Success",
+      description: "Template saved successfully",
+    });
   };
   
   const handleSelectTemplate = (template: InventoryItem) => {
+    console.log("Selected template:", template);
     setSelectedTemplate(template);
     setValue('name', template.name);
     setValue('type', template.type);
     setValue('templateId', template.id);
     
     // Reset the properties array and add the template properties
-    setValue('properties', []);
-    template.properties.forEach(prop => {
-      // Add each property to the properties array
-      setValue('properties', [...watch('properties'), {
-        id: uuidv4(),
-        name: prop.name,
-        value: prop.value,
-        unit: prop.unit,
-        propertyType: prop.propertyType
-      }]);
-    });
+    const templateProperties = template.properties?.map(prop => ({
+      id: uuidv4(),
+      name: prop.name,
+      value: prop.value,
+      unit: prop.unit,
+      propertyType: prop.propertyType
+    })) || [];
     
-    setActiveTab('template');
+    setValue('properties', templateProperties);
   };
   
   return (
@@ -184,7 +199,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         <TabsContent value="template" className="space-y-4 py-4">
           <InventoryTemplateSelector
             selectedTemplate={selectedTemplate}
-            templates={inventory}
             onSelectTemplate={handleSelectTemplate}
           />
           

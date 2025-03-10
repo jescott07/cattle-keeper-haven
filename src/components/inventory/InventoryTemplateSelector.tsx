@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { UseFormSetValue } from 'react-hook-form';
 import { Search, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,19 +8,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { InventoryItem } from '@/lib/types';
+import { useStore } from '@/lib/store';
 
 interface InventoryTemplateSelectorProps {
   selectedTemplate: InventoryItem | null;
-  templates: InventoryItem[];
   onSelectTemplate: (template: InventoryItem) => void;
 }
 
 export function InventoryTemplateSelector({ 
   selectedTemplate, 
-  templates, 
   onSelectTemplate 
 }: InventoryTemplateSelectorProps) {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const templates = useStore(state => state.inventoryTemplates);
 
   return (
     <div className="space-y-2">
@@ -52,7 +51,10 @@ export function InventoryTemplateSelector({
                 <Card 
                   key={template.id} 
                   className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => onSelectTemplate(template)}
+                  onClick={() => {
+                    onSelectTemplate(template);
+                    setShowTemplateDialog(false);
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-2">
@@ -60,7 +62,7 @@ export function InventoryTemplateSelector({
                       <Badge>{template.type}</Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {template.properties.length} properties
+                      {template.properties?.length || 0} properties
                     </div>
                   </CardContent>
                 </Card>

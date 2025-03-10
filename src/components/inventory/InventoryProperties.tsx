@@ -1,3 +1,4 @@
+
 import { useFieldArray, Control, UseFormRegister, UseFormSetValue } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ export function InventoryProperties({
           {fields.map((field) => (
             <div key={field.id} className="flex justify-between p-2 bg-accent/30 rounded-md">
               <div>
-                <span className="font-medium">{field.name}</span>: {field.value} {field.unit}
+                <span className="font-medium">{field.name || ''}</span>: {field.value || ''} {field.unit || ''}
               </div>
               <Badge variant="outline" className="text-xs">
                 {field.propertyType === 'min'
@@ -120,7 +121,7 @@ export function InventoryProperties({
             
             <div className="col-span-2">
               <Select 
-                defaultValue={field.propertyType}
+                defaultValue={field.propertyType || 'min'}
                 onValueChange={(value) =>
                   setValue(`properties.${index}.propertyType` as const, value as 'min' | 'max' | 'exact')
                 }
