@@ -1,11 +1,12 @@
 
 import { useState } from 'react';
-import { Package, Calendar, AlertCircle, Edit, Trash } from 'lucide-react';
+import { Package, Calendar, AlertCircle, Edit, Trash, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Link } from 'react-router-dom';
 import { InventoryItem as InventoryItemType, InventoryType } from '@/lib/types';
 
 interface InventoryItemProps {
@@ -15,7 +16,7 @@ interface InventoryItemProps {
 }
 
 // Inventory type color mapping
-const typeColorMap: Record<InventoryType, { bg: string; text: string; icon: JSX.Element }> = {
+export const typeColorMap: Record<InventoryType, { bg: string; text: string; icon: JSX.Element }> = {
   'feed': { 
     bg: 'bg-emerald-500/10', 
     text: 'text-emerald-500', 
@@ -125,9 +126,17 @@ export const InventoryItem = ({ item, onEdit, onDelete }: InventoryItemProps) =>
             {item.notes}
           </div>
         )}
+        
+        {item.properties && item.properties.length > 0 && (
+          <div className="mt-2">
+            <Badge variant="secondary" className="text-xs">
+              {item.properties.length} properties
+            </Badge>
+          </div>
+        )}
       </CardContent>
       
-      <CardFooter className={`p-4 pt-2 grid grid-cols-2 gap-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+      <CardFooter className={`p-4 pt-2 grid grid-cols-3 gap-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
         <Button 
           variant="outline" 
           size="sm" 
@@ -146,6 +155,18 @@ export const InventoryItem = ({ item, onEdit, onDelete }: InventoryItemProps) =>
         >
           <Trash className="h-4 w-4" />
           {showDeleteConfirm ? "Confirm" : "Delete"}
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          asChild
+        >
+          <Link to={`/inventory/${item.id}`}>
+            <FileText className="h-4 w-4" />
+            Details
+          </Link>
         </Button>
       </CardFooter>
     </Card>

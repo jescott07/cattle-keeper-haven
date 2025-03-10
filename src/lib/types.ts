@@ -12,6 +12,23 @@ export interface SyncableModel {
 // Inventory Item Types
 export type InventoryType = 'feed' | 'mineral' | 'medication' | 'equipment' | 'other';
 
+export interface InventoryItemProperty {
+  id: string;
+  name: string;
+  value: string;
+  unit: string;
+  propertyType: 'min' | 'max' | 'exact';
+}
+
+export interface InventoryItemTemplate {
+  id: string;
+  name: string;
+  type: InventoryType;
+  properties: InventoryItemProperty[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface InventoryItem extends SyncableModel {
   name: string;
   type: InventoryType;
@@ -21,6 +38,8 @@ export interface InventoryItem extends SyncableModel {
   expiryDate?: Date;
   costPerUnit: number;
   notes?: string;
+  templateId?: string;
+  properties: InventoryItemProperty[];
 }
 
 // Lot Management Types

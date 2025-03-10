@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   SyncableModel,
   InventoryItem,
+  InventoryItemTemplate,
   Lot,
   Pasture,
   WeighingRecord,
@@ -16,6 +17,7 @@ import {
 interface StoreState {
   // Data collections
   inventory: InventoryItem[];
+  inventoryTemplates: InventoryItemTemplate[];
   lots: Lot[];
   pastures: Pasture[];
   weighings: WeighingRecord[];
@@ -31,6 +33,11 @@ interface StoreState {
   addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateInventoryItem: (id: string, updates: Partial<InventoryItem>) => void;
   removeInventoryItem: (id: string) => void;
+  
+  // Actions for inventory templates
+  addInventoryTemplate: (template: Omit<InventoryItemTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateInventoryTemplate: (id: string, updates: Partial<InventoryItemTemplate>) => void;
+  removeInventoryTemplate: (id: string) => void;
   
   // Actions for lots
   addLot: (lot: Omit<Lot, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus' | 'plannedTransfers'>) => void;
@@ -75,6 +82,7 @@ export const useStore = create<StoreState>()(
     (set, get) => ({
       // Initial data
       inventory: [],
+      inventoryTemplates: [],
       lots: [],
       pastures: [],
       weighings: [],
@@ -92,7 +100,8 @@ export const useStore = create<StoreState>()(
           id: uuidv4(),
           createdAt: now,
           updatedAt: now,
-          syncStatus: 'pending'
+          syncStatus: 'pending',
+          properties: item.properties || []
         };
         
         set(state => ({
@@ -118,6 +127,41 @@ export const useStore = create<StoreState>()(
       removeInventoryItem: (id) => {
         set(state => ({
           inventory: state.inventory.filter(item => item.id !== id)
+        }));
+      },
+      
+      // Inventory template actions
+      addInventoryTemplate: (template) => {
+        const now = new Date();
+        const newTemplate: InventoryItemTemplate = {
+          ...template,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+        };
+        
+        set(state => ({
+          inventoryTemplates: [...state.inventoryTemplates, newTemplate]
+        }));
+      },
+      
+      updateInventoryTemplate: (id, updates) => {
+        set(state => ({
+          inventoryTemplates: state.inventoryTemplates.map(template => 
+            template.id === id 
+              ? { 
+                  ...template, 
+                  ...updates, 
+                  updatedAt: new Date()
+                } 
+              : template
+          )
+        }));
+      },
+      
+      removeInventoryTemplate: (id) => {
+        set(state => ({
+          inventoryTemplates: state.inventoryTemplates.filter(template => template.id !== id)
         }));
       },
       
@@ -454,6 +498,7 @@ export const useStore = create<StoreState>()(
       // Only persist these properties
       partialize: (state) => ({
         inventory: state.inventory,
+        inventoryTemplates: state.inventoryTemplates,
         lots: state.lots,
         pastures: state.pastures,
         weighings: state.weighings,
