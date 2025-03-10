@@ -17,6 +17,7 @@ interface InventoryFormValues {
     unit: string;
     propertyType: 'min' | 'max' | 'exact';
   }[];
+  [key: string]: any; // Added to make the type compatible
 }
 
 interface InventoryPropertiesProps {
