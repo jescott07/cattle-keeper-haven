@@ -1,61 +1,71 @@
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WeighingRecord } from '@/lib/types';
 import { useStore } from '@/lib/store';
 import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp } from 'lucide-react';
+import { Scale } from 'lucide-react';
 
-interface AnimalEvolutionProps {
+interface TotalWeightProjectionProps {
   lotId: string;
 }
 
-export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
+export function TotalWeightProjection({ lotId }: TotalWeightProjectionProps) {
   const weighings = useStore(state => state.weighings);
+  const lots = useStore(state => state.lots);
+  
+  const lot = useMemo(() => 
+    lots.find(l => l.id === lotId),
+  [lots, lotId]);
+  
   const lotWeighings = useMemo(() => 
     weighings.filter(w => w.lotId === lotId),
   [weighings, lotId]);
   
   const chartData = useMemo(() => {
-    if (lotWeighings.length === 0) return [];
+    if (!lot || lotWeighings.length === 0) return [];
     
     // Sort weighings by date
     const sortedWeighings = [...lotWeighings].sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    // Create chart data - use the actual number of animals in each weighing record
-    return sortedWeighings.map(weighing => ({
-      date: format(weighing.date, 'MMM d, yyyy'),
-      animals: weighing.numberOfAnimals,
-      weight: Math.round(weighing.averageWeight)
-    }));
-  }, [lotWeighings]);
+    // Create chart data with total weight projection
+    return sortedWeighings.map(weighing => {
+      const totalWeight = weighing.averageWeight * lot.numberOfAnimals;
+      
+      return {
+        date: format(weighing.date, 'MMM d, yyyy'),
+        totalWeight: Math.round(totalWeight),
+        averageWeight: Math.round(weighing.averageWeight)
+      };
+    });
+  }, [lotWeighings, lot]);
   
-  const initialAnimalCount = useMemo(() => {
+  const latestTotalWeight = useMemo(() => {
     if (chartData.length > 0) {
-      return chartData[0].animals;
+      return chartData[chartData.length - 1].totalWeight;
     }
     return 0;
   }, [chartData]);
   
-  const latestAnimalCount = useMemo(() => {
+  const initialTotalWeight = useMemo(() => {
     if (chartData.length > 0) {
-      return chartData[chartData.length - 1].animals;
+      return chartData[0].totalWeight;
     }
     return 0;
   }, [chartData]);
   
-  const animalsChange = latestAnimalCount - initialAnimalCount;
-  const percentChange = initialAnimalCount > 0 
-    ? Math.round((animalsChange / initialAnimalCount) * 100) 
+  const weightChange = latestTotalWeight - initialTotalWeight;
+  const percentChange = initialTotalWeight > 0 
+    ? Math.round((weightChange / initialTotalWeight) * 100) 
     : 0;
   
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Animal Count Evolution
+          <Scale className="h-5 w-5" />
+          Total Weight Projection
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -63,16 +73,16 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
           <>
             <div className="flex justify-between items-center mb-4">
               <div>
-                <div className="text-2xl font-bold">{latestAnimalCount}</div>
-                <div className="text-sm text-muted-foreground">Current animals</div>
+                <div className="text-2xl font-bold">{latestTotalWeight.toLocaleString()} kg</div>
+                <div className="text-sm text-muted-foreground">Current total weight</div>
               </div>
               
               <div className={`text-sm flex items-center gap-1 ${
-                animalsChange > 0 ? 'text-green-600' : 
-                animalsChange < 0 ? 'text-red-600' : 'text-muted-foreground'
+                weightChange > 0 ? 'text-green-600' : 
+                weightChange < 0 ? 'text-red-600' : 'text-muted-foreground'
               }`}>
-                <TrendingUp className={`h-4 w-4 ${animalsChange < 0 ? 'rotate-180' : ''}`} />
-                <span>{animalsChange > 0 ? '+' : ''}{animalsChange}</span>
+                <Scale className="h-4 w-4" />
+                <span>{weightChange > 0 ? '+' : ''}{weightChange.toLocaleString()} kg</span>
                 <span>({percentChange > 0 ? '+' : ''}{percentChange}%)</span>
               </div>
             </div>
@@ -87,19 +97,17 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
                   <XAxis 
                     dataKey="date" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => {
-                      return format(new Date(value), 'MMM d');
-                    }}
+                    tickFormatter={(value) => format(new Date(value), 'MMM d')}
                   />
-                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+                  <YAxis />
                   <Tooltip 
-                    formatter={(value, name) => [value, name === 'animals' ? 'Animals' : 'Avg. Weight (kg)']}
+                    formatter={(value) => [`${value.toLocaleString()} kg`, 'Total Weight']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="animals" 
-                    stroke="#2563eb" 
+                    dataKey="totalWeight" 
+                    stroke="#8884d8" 
                     strokeWidth={2}
                     dot={{ r: 4 }}
                     activeDot={{ r: 6 }}

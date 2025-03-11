@@ -13,6 +13,7 @@ import { DailyGainChart } from '@/components/lot-detail/DailyGainChart';
 import { PastureHistory } from '@/components/lot-detail/PastureHistory';
 import { NutritionHistory } from '@/components/lot-detail/NutritionHistory';
 import { TransferHistory } from '@/components/lot-detail/TransferHistory';
+import { TotalWeightProjection } from '@/components/lot-detail/TotalWeightProjection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddLotForm } from '@/components/AddLotForm';
 import { useToast } from '@/hooks/use-toast';
@@ -115,12 +116,17 @@ export default function LotDetail() {
             <TabsContent value="overview" className="mt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <AnimalEvolution lotId={lot.id} />
+                <TotalWeightProjection lotId={lot.id} />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <WeightDistribution weighings={weighings} />
+                <DailyGainChart weighings={weighings} />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TransferHistory lotId={lot.id} /> 
-                <DailyGainChart weighings={weighings} />
+                <PastureHistory lotId={lot.id} />
               </div>
             </TabsContent>
             

@@ -1,5 +1,5 @@
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -13,40 +13,63 @@ interface WeightDistributionProps {
 }
 
 export function WeightDistribution({ weighings, showFullChart = false }: WeightDistributionProps) {
-  const [selectedDate, setSelectedDate] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string>('');
   
   const sortedWeighings = useMemo(() => {
     return [...weighings].sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [weighings]);
   
-  const weightRanges = useMemo(() => {
-    if (weighings.length === 0) return [];
+  // Create a list of unique dates for the dropdown
+  const uniqueDates = useMemo(() => {
+    const dateMap = new Map<string, WeighingRecord>();
     
-    const allWeights = weighings.flatMap(w => {
-      // Since we don't have individual records, we'll create mock data based on average weight
-      const avgWeight = w.averageWeight;
-      const mockWeights = [];
-      
-      // Create a normal distribution around the average weight
-      for (let i = 0; i < w.numberOfAnimals; i++) {
-        // Add some random variation (±15%)
-        const variation = (Math.random() - 0.5) * 0.3;
-        mockWeights.push(avgWeight * (1 + variation));
+    // Use Map to ensure only unique dates are included
+    sortedWeighings.forEach(weighing => {
+      const dateStr = format(weighing.date, 'yyyy-MM-dd');
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, weighing);
       }
-      
-      return mockWeights.map(weight => ({
-        weight: Math.round(weight),
-        date: format(w.date, 'yyyy-MM-dd')
-      }));
     });
+    
+    return Array.from(dateMap.values());
+  }, [sortedWeighings]);
+  
+  // Set default selection to the most recent record
+  useEffect(() => {
+    if (uniqueDates.length > 0 && !selectedDate) {
+      setSelectedDate(format(uniqueDates[0].date, 'yyyy-MM-dd'));
+    }
+  }, [uniqueDates, selectedDate]);
+  
+  const weightRanges = useMemo(() => {
+    if (weighings.length === 0 || !selectedDate) return [];
+    
+    // Filter weighings by the selected date or use all if 'all' is selected
+    const filteredWeights = weighings
+      .filter(w => selectedDate === 'all' || format(w.date, 'yyyy-MM-dd') === selectedDate)
+      .flatMap(w => {
+        // Create mock data based on average weight
+        const avgWeight = w.averageWeight;
+        const mockWeights = [];
+        
+        // Create a normal distribution around the average weight
+        for (let i = 0; i < w.numberOfAnimals; i++) {
+          // Add some random variation (±15%)
+          const variation = (Math.random() - 0.5) * 0.3;
+          mockWeights.push(avgWeight * (1 + variation));
+        }
+        
+        return mockWeights.map(weight => ({
+          weight: Math.round(weight),
+          date: format(w.date, 'yyyy-MM-dd')
+        }));
+      });
     
     // Group weights by range
     const ranges: Record<string, number> = {};
     const step = 30; // 30kg ranges
     
-    allWeights.forEach(item => {
-      if (selectedDate !== 'all' && item.date !== selectedDate) return;
-      
+    filteredWeights.forEach(item => {
       const rangeStart = Math.floor(item.weight / step) * step;
       const rangeKey = `${rangeStart}-${rangeStart + step}`;
       
@@ -70,7 +93,7 @@ export function WeightDistribution({ weighings, showFullChart = false }: WeightD
           Weight Distribution
         </CardTitle>
         
-        {sortedWeighings.length > 0 && (
+        {uniqueDates.length > 0 && (
           <Select 
             value={selectedDate} 
             onValueChange={setSelectedDate}
@@ -80,7 +103,7 @@ export function WeightDistribution({ weighings, showFullChart = false }: WeightD
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All records</SelectItem>
-              {sortedWeighings.map((weighing) => (
+              {uniqueDates.map((weighing) => (
                 <SelectItem 
                   key={weighing.id} 
                   value={format(weighing.date, 'yyyy-MM-dd')}

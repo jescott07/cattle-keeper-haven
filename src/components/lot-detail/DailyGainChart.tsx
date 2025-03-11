@@ -1,10 +1,10 @@
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { WeighingRecord } from '@/lib/types';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, subDays } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
 
 interface DailyGainChartProps {
@@ -45,10 +45,9 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
     // Filter by time range if needed
     if (timeRange !== 'all') {
       const daysToFilter = parseInt(timeRange);
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysToFilter);
+      const cutoffDate = subDays(new Date(), daysToFilter);
       
-      return gainData.filter(item => item.date > cutoffDate);
+      return gainData.filter(item => item.date >= cutoffDate);
     }
     
     return gainData;
@@ -104,14 +103,19 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
                   <XAxis 
                     dataKey="displayDate" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => format(new Date(value), 'MMM d')}
+                    tickFormatter={(value) => {
+                      // Handle both string and Date inputs
+                      return typeof value === 'string' 
+                        ? format(new Date(value), 'MMM d')
+                        : format(value, 'MMM d');
+                    }}
                   />
                   <YAxis 
-                    domain={[0, 'dataMax + 0.2']}
+                    domain={[0, 'auto']}
                     tickFormatter={(value) => `${value.toFixed(1)}`}
                   />
                   <Tooltip 
-                    formatter={(value) => [`${value} kg/day`, 'Daily Gain']}
+                    formatter={(value) => [`${Number(value).toFixed(2)} kg/day`, 'Daily Gain']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Line 
