@@ -84,7 +84,7 @@ export const WeighingForm = () => {
         numberOfAnimals: data.numberOfAnimals,
         totalWeight: data.totalWeight,
         averageWeight: data.totalWeight / data.numberOfAnimals,
-        destinationLotId: data.destinationLotId || undefined,
+        destinationLotId: data.destinationLotId && data.destinationLotId !== 'no-transfer' ? data.destinationLotId : undefined,
         notes: data.notes
       });
       
@@ -96,7 +96,7 @@ export const WeighingForm = () => {
       
       // If destination lot is selected and different from source lot,
       // handle the transfer logic here
-      if (data.destinationLotId && data.destinationLotId !== data.lotId) {
+      if (data.destinationLotId && data.destinationLotId !== 'no-transfer' && data.destinationLotId !== data.lotId) {
         // Only transfer if not all animals are being transferred
         if (data.numberOfAnimals < selectedLot.numberOfAnimals) {
           // Update source lot

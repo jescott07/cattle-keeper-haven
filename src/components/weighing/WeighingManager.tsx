@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
@@ -111,6 +112,8 @@ export function WeighingManager() {
       });
       
       setSessionFinished(true);
+      // Automaticamente direciona para a aba "results" após finalizar
+      setActiveTab('results');
     } catch (error) {
       console.error('Error saving weighing session:', error);
       toast({

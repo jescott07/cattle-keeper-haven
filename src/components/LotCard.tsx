@@ -94,7 +94,7 @@ export const LotCard = ({ lot, pastureName, onEdit, onViewDetail }: LotCardProps
           
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span>{pastureName}</span>
+            <span>{pastureName || 'No pasture'}</span>
           </div>
         </div>
         

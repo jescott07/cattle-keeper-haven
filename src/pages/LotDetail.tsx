@@ -85,7 +85,7 @@ export default function LotDetail() {
               
               <LotHeader 
                 lot={lot} 
-                pastureName={getPastureName(lot.currentPastureId)} 
+                pastureName={getPastureName(lot.currentPastureId || '')} 
               />
             </div>
             
