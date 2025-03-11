@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Weight, Calendar, FileText, Check } from 'lucide-react';
@@ -88,34 +87,28 @@ export const WeighingForm = () => {
         notes: data.notes
       });
       
-      // Update lot with new average weight
-      updateLot(data.lotId, {
-        averageWeight: data.totalWeight / data.numberOfAnimals,
-        breed: data.breed
-      });
+      // Only update lot's average weight if all animals were weighed
+      if (data.numberOfAnimals === selectedLot.numberOfAnimals) {
+        updateLot(data.lotId, {
+          averageWeight: data.totalWeight / data.numberOfAnimals,
+          breed: data.breed
+        });
+      }
       
       // If destination lot is selected and different from source lot,
       // handle the transfer logic here
       if (data.destinationLotId && data.destinationLotId !== 'no-transfer' && data.destinationLotId !== data.lotId) {
-        // Only transfer if not all animals are being transferred
-        if (data.numberOfAnimals < selectedLot.numberOfAnimals) {
-          // Update source lot
-          updateLot(data.lotId, {
-            numberOfAnimals: selectedLot.numberOfAnimals - data.numberOfAnimals
-          });
-          
-          // Update destination lot
-          const destinationLot = lots.find(lot => lot.id === data.destinationLotId);
-          if (destinationLot) {
-            updateLot(data.destinationLotId, {
-              numberOfAnimals: destinationLot.numberOfAnimals + data.numberOfAnimals
-            });
-          }
-        } else {
-          // If all animals are being transferred, update with a direct replacement
-          const destinationLot = lots.find(lot => lot.id === data.destinationLotId);
-          updateLot(data.lotId, {
-            currentPastureId: destinationLot?.currentPastureId || selectedLot.currentPastureId
+        // Update source lot
+        updateLot(data.lotId, {
+          numberOfAnimals: selectedLot.numberOfAnimals - data.numberOfAnimals
+        });
+        
+        // Update destination lot
+        const destinationLot = lots.find(lot => lot.id === data.destinationLotId);
+        if (destinationLot) {
+          updateLot(data.destinationLotId, {
+            numberOfAnimals: destinationLot.numberOfAnimals + data.numberOfAnimals,
+            currentPastureId: destinationLot.currentPastureId || selectedLot.currentPastureId
           });
         }
       }

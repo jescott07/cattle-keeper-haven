@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { WeighingRecord } from '@/lib/types';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Scale } from 'lucide-react';
 
 interface WeightDistributionProps {
@@ -13,7 +13,7 @@ interface WeightDistributionProps {
 }
 
 export function WeightDistribution({ weighings, showFullChart = false }: WeightDistributionProps) {
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>('all');
   
   const sortedWeighings = useMemo(() => {
     return [...weighings].sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -45,7 +45,7 @@ export function WeightDistribution({ weighings, showFullChart = false }: WeightD
     const step = 30; // 30kg ranges
     
     allWeights.forEach(item => {
-      if (selectedDate && item.date !== selectedDate) return;
+      if (selectedDate !== 'all' && item.date !== selectedDate) return;
       
       const rangeStart = Math.floor(item.weight / step) * step;
       const rangeKey = `${rangeStart}-${rangeStart + step}`;
@@ -79,7 +79,7 @@ export function WeightDistribution({ weighings, showFullChart = false }: WeightD
               <SelectValue placeholder="Select date" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All records</SelectItem>
+              <SelectItem value="all">All records</SelectItem>
               {sortedWeighings.map((weighing) => (
                 <SelectItem 
                   key={weighing.id} 
