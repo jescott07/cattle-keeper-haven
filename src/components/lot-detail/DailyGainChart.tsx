@@ -1,10 +1,9 @@
-
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { WeighingRecord } from '@/lib/types';
-import { format, differenceInDays, subDays } from 'date-fns';
+import { format, differenceInDays, subDays, startOfDay } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
@@ -26,14 +25,18 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
     if (!currentLot) return [];
     
     // Sort weighings by date
-    const sortedWeighings = [...weighings].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const sortedWeighings = [...weighings].sort((a, b) => {
+      // Normalize dates to start of day to prevent timezone issues
+      return startOfDay(a.date).getTime() - startOfDay(b.date).getTime();
+    });
     
     // Group weighings by date to avoid duplicates
     const dateMap = new Map();
     
     // Process each weighing record
     sortedWeighings.forEach(weighing => {
-      const dateKey = format(weighing.date, 'yyyy-MM-dd');
+      // Use startOfDay to normalize the date and avoid timezone issues
+      const dateKey = format(startOfDay(weighing.date), 'yyyy-MM-dd');
       
       // Only keep the latest record for each date
       if (!dateMap.has(dateKey) || dateMap.get(dateKey).date < weighing.date) {
@@ -43,7 +46,7 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
     
     // Convert map to array and sort by date
     const uniqueWeighings = Array.from(dateMap.values())
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+      .sort((a, b) => startOfDay(a.date).getTime() - startOfDay(b.date).getTime());
     
     // Calculate daily gain between consecutive weighings
     const gainData = [];
@@ -52,10 +55,16 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
       const prev = uniqueWeighings[i - 1];
       const current = uniqueWeighings[i];
       
-      const daysBetween = differenceInDays(current.date, prev.date);
+      // Normalize dates to start of day to ensure accurate day count
+      const prevDate = startOfDay(prev.date);
+      const currentDate = startOfDay(current.date);
+      
+      const daysBetween = differenceInDays(currentDate, prevDate);
       if (daysBetween <= 0) continue; // Skip if dates are the same or out of order
       
       // Calculate total weights
+      // We're using currentLot.numberOfAnimals because we want to normalize the calculation
+      // to reflect the current state of the lot, even for historical data
       const prevTotalWeight = prev.averageWeight * currentLot.numberOfAnimals;
       const currentTotalWeight = current.averageWeight * currentLot.numberOfAnimals;
       
@@ -64,11 +73,11 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
       const dailyGain = totalWeightDiff / daysBetween;
       
       // Calculate the date range string for display
-      const fromDate = format(prev.date, 'MMM d');
-      const toDate = format(current.date, 'MMM d');
+      const fromDate = format(prevDate, 'MMM d');
+      const toDate = format(currentDate, 'MMM d');
       
       gainData.push({
-        date: current.date,
+        date: currentDate,
         displayDate: `${fromDate} → ${toDate}`,
         dailyGain: parseFloat(dailyGain.toFixed(2)),
         period: `${daysBetween} days`
