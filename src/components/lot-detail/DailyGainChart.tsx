@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
+
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -18,6 +19,11 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
   
   const dailyGainData = useMemo(() => {
     if (weighings.length < 2) return [];
+    
+    // Find the lot to get the current total number of animals
+    const lotId = weighings[0]?.lotId;
+    const currentLot = lots.find(lot => lot.id === lotId);
+    if (!currentLot) return [];
     
     // Sort weighings by date
     const sortedWeighings = [...weighings].sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -39,7 +45,7 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
     const uniqueWeighings = Array.from(dateMap.values())
       .sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    // Calculate daily gain between consecutive weighings using total lot weight
+    // Calculate daily gain between consecutive weighings
     const gainData = [];
     
     for (let i = 1; i < uniqueWeighings.length; i++) {
@@ -49,15 +55,11 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
       const daysBetween = differenceInDays(current.date, prev.date);
       if (daysBetween <= 0) continue; // Skip if dates are the same or out of order
       
-      // Get the lot at the time of these weighings to get animal counts
-      const currentLot = lots.find(lot => lot.id === current.lotId);
-      if (!currentLot) continue; // Skip if lot not found
+      // Calculate total weights
+      const prevTotalWeight = prev.averageWeight * currentLot.numberOfAnimals;
+      const currentTotalWeight = current.averageWeight * currentLot.numberOfAnimals;
       
-      // Calculate total weights at both points
-      const prevTotalWeight = prev.averageWeight * prev.numberOfAnimals;
-      const currentTotalWeight = current.averageWeight * current.numberOfAnimals;
-      
-      // Total weight difference and daily gain
+      // Calculate total weight difference and daily gain
       const totalWeightDiff = currentTotalWeight - prevTotalWeight;
       const dailyGain = totalWeightDiff / daysBetween;
       
@@ -68,7 +70,7 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
       gainData.push({
         date: current.date,
         displayDate: `${fromDate} → ${toDate}`,
-        dailyGain: parseFloat(dailyGain.toFixed(3)),
+        dailyGain: parseFloat(dailyGain.toFixed(2)),
         period: `${daysBetween} days`
       });
     }
