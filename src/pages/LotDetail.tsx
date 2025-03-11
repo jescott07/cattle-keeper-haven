@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '@/lib/store';
@@ -30,7 +29,6 @@ export default function LotDetail() {
   
   useEffect(() => {
     if (!lot) {
-      // Handle lot not found
       toast({
         title: "Lot not found",
         description: "The requested lot could not be found",
@@ -124,6 +122,10 @@ export default function LotDetail() {
                 <DailyGainChart weighings={weighings} />
               </div>
               
+              <div className="grid grid-cols-1 gap-6">
+                <DailyGainPerAnimalChart weighings={weighings} />
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TransferHistory lotId={lot.id} /> 
                 <PastureHistory lotId={lot.id} />
@@ -138,8 +140,9 @@ export default function LotDetail() {
               <TransferHistory lotId={lot.id} showFullHistory />
             </TabsContent>
             
-            <TabsContent value="daily-gain" className="mt-6">
+            <TabsContent value="daily-gain" className="mt-6 space-y-6">
               <DailyGainChart weighings={weighings} showFullChart />
+              <DailyGainPerAnimalChart weighings={weighings} showFullChart />
             </TabsContent>
             
             <TabsContent value="pastures" className="mt-6">
