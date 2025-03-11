@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WeighingRecord } from '@/lib/types';
@@ -29,8 +28,25 @@ export function TotalWeightProjection({ lotId }: TotalWeightProjectionProps) {
     // Sort weighings by date
     const sortedWeighings = [...lotWeighings].sort((a, b) => a.date.getTime() - b.date.getTime());
     
+    // Group weighings by date to avoid duplicates
+    const dateMap = new Map();
+    
+    // Process each weighing record
+    sortedWeighings.forEach(weighing => {
+      const dateKey = format(weighing.date, 'yyyy-MM-dd');
+      
+      // Only keep the latest record for each date
+      if (!dateMap.has(dateKey) || dateMap.get(dateKey).date < weighing.date) {
+        dateMap.set(dateKey, weighing);
+      }
+    });
+    
+    // Convert map to array and sort by date
+    const uniqueWeighings = Array.from(dateMap.values())
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    
     // Create chart data with total weight projection
-    return sortedWeighings.map(weighing => {
+    return uniqueWeighings.map(weighing => {
       const totalWeight = weighing.averageWeight * lot.numberOfAnimals;
       
       return {

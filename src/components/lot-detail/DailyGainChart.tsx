@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { WeighingRecord } from '@/lib/types';
 import { format, differenceInDays, subDays } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
+import { useStore } from '@/lib/store';
 
 interface DailyGainChartProps {
   weighings: WeighingRecord[];
@@ -14,6 +14,7 @@ interface DailyGainChartProps {
 
 export function DailyGainChart({ weighings, showFullChart = false }: DailyGainChartProps) {
   const [timeRange, setTimeRange] = useState<'all' | '30' | '90' | '180'>('all');
+  const lots = useStore(state => state.lots);
   
   const dailyGainData = useMemo(() => {
     if (weighings.length < 2) return [];
@@ -21,22 +22,52 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
     // Sort weighings by date
     const sortedWeighings = [...weighings].sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    // Calculate daily gain between consecutive weighings
+    // Group weighings by date to avoid duplicates
+    const dateMap = new Map();
+    
+    // Process each weighing record
+    sortedWeighings.forEach(weighing => {
+      const dateKey = format(weighing.date, 'yyyy-MM-dd');
+      
+      // Only keep the latest record for each date
+      if (!dateMap.has(dateKey) || dateMap.get(dateKey).date < weighing.date) {
+        dateMap.set(dateKey, weighing);
+      }
+    });
+    
+    // Convert map to array and sort by date
+    const uniqueWeighings = Array.from(dateMap.values())
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    // Calculate daily gain between consecutive weighings using total lot weight
     const gainData = [];
     
-    for (let i = 1; i < sortedWeighings.length; i++) {
-      const prev = sortedWeighings[i - 1];
-      const current = sortedWeighings[i];
+    for (let i = 1; i < uniqueWeighings.length; i++) {
+      const prev = uniqueWeighings[i - 1];
+      const current = uniqueWeighings[i];
       
       const daysBetween = differenceInDays(current.date, prev.date);
       if (daysBetween <= 0) continue; // Skip if dates are the same or out of order
       
-      const weightDiff = current.averageWeight - prev.averageWeight;
-      const dailyGain = weightDiff / daysBetween;
+      // Get the lot at the time of these weighings to get animal counts
+      const currentLot = lots.find(lot => lot.id === current.lotId);
+      if (!currentLot) continue; // Skip if lot not found
+      
+      // Calculate total weights at both points
+      const prevTotalWeight = prev.averageWeight * prev.numberOfAnimals;
+      const currentTotalWeight = current.averageWeight * current.numberOfAnimals;
+      
+      // Total weight difference and daily gain
+      const totalWeightDiff = currentTotalWeight - prevTotalWeight;
+      const dailyGain = totalWeightDiff / daysBetween;
+      
+      // Calculate the date range string for display
+      const fromDate = format(prev.date, 'MMM d');
+      const toDate = format(current.date, 'MMM d');
       
       gainData.push({
         date: current.date,
-        displayDate: format(current.date, 'MMM d, yyyy'),
+        displayDate: `${fromDate} → ${toDate}`,
         dailyGain: parseFloat(dailyGain.toFixed(3)),
         period: `${daysBetween} days`
       });
@@ -51,7 +82,7 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
     }
     
     return gainData;
-  }, [weighings, timeRange]);
+  }, [weighings, timeRange, lots]);
   
   const averageDailyGain = useMemo(() => {
     if (dailyGainData.length === 0) return 0;
@@ -103,12 +134,6 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
                   <XAxis 
                     dataKey="displayDate" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => {
-                      // Handle both string and Date inputs
-                      return typeof value === 'string' 
-                        ? format(new Date(value), 'MMM d')
-                        : format(value, 'MMM d');
-                    }}
                   />
                   <YAxis 
                     domain={[0, 'auto']}
@@ -116,7 +141,7 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
                   />
                   <Tooltip 
                     formatter={(value) => [`${Number(value).toFixed(2)} kg/day`, 'Daily Gain']}
-                    labelFormatter={(label) => `Date: ${label}`}
+                    labelFormatter={(label) => `Period: ${label}`}
                   />
                   <Line 
                     type="monotone" 
