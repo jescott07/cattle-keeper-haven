@@ -20,7 +20,7 @@ export function DailyGainChart({ weighings, showFullChart = false }: DailyGainCh
   const dailyGainData = useMemo(() => {
     if (weighings.length < 2) return [];
     
-    // Find the lot to get the current total number of animals
+    // Find the lot to get the current number of animals
     const lotId = weighings[0]?.lotId;
     const currentLot = lots.find(lot => lot.id === lotId);
     if (!currentLot) return [];
