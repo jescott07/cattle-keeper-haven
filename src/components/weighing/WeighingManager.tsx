@@ -64,12 +64,17 @@ export function WeighingManager() {
     setIsSubmitting(true);
     
     try {
-      const lotUpdates = new Map<string, number>();
+      // Organize records by destination lot for processing
+      const recordsByDestLot = new Map<string, AnimalRecord[]>();
       
       animalRecords.forEach(record => {
-        const count = lotUpdates.get(record.destinationLotId) || 0;
-        lotUpdates.set(record.destinationLotId, count + 1);
-        
+        const records = recordsByDestLot.get(record.destinationLotId) || [];
+        records.push(record);
+        recordsByDestLot.set(record.destinationLotId, records);
+      });
+      
+      // Process all individual animal records
+      animalRecords.forEach(record => {
         addWeighingRecord({
           date: new Date(date),
           lotId: record.originLotId,
@@ -83,27 +88,66 @@ export function WeighingManager() {
         });
       });
       
+      // Calculate average weights for each lot and update
+      const lotUpdates = new Map<string, {
+        records: AnimalRecord[],
+        transferCount: number
+      }>();
+      
+      // Initialize with origin lot
       if (selectedLot) {
-        const remainingInOrigin = animalRecords.filter(
-          r => r.destinationLotId === r.originLotId
-        ).length;
+        lotUpdates.set(selectedLotId, {
+          records: animalRecords.filter(r => r.destinationLotId === selectedLotId),
+          transferCount: 0
+        });
+      }
+      
+      // Add transferred animals to destination lots
+      recordsByDestLot.forEach((records, lotId) => {
+        if (lotId === selectedLotId) return; // Skip origin lot
         
-        if (remainingInOrigin > 0) {
-          updateLot(selectedLotId, {
-            numberOfAnimals: remainingInOrigin,
-          });
+        lotUpdates.set(lotId, {
+          records,
+          transferCount: records.length
+        });
+      });
+      
+      // For each lot, calculate average weight and update count if transferred
+      lotUpdates.forEach((data, lotId) => {
+        const { records, transferCount } = data;
+        
+        // Skip if no records to process
+        if (records.length === 0) return;
+        
+        const lot = lots.find(l => l.id === lotId);
+        if (!lot) return;
+        
+        // Calculate average weight from this session's records
+        const totalWeight = records.reduce((sum, r) => sum + r.weight, 0);
+        const avgWeight = totalWeight / records.length;
+        
+        // Update lot with new average weight (but don't change animal count unless transferred)
+        const updates: Partial<typeof lot> = {
+          averageWeight: avgWeight
+        };
+        
+        // If this is a destination lot different from origin, update animal count
+        if (lotId !== selectedLotId && transferCount > 0) {
+          updates.numberOfAnimals = lot.numberOfAnimals + transferCount;
         }
         
-        lotUpdates.forEach((count, lotId) => {
-          if (lotId !== selectedLotId) {
-            const destLot = lots.find(lot => lot.id === lotId);
-            if (destLot) {
-              updateLot(lotId, {
-                numberOfAnimals: destLot.numberOfAnimals + count,
-              });
-            }
-          }
-        });
+        updateLot(lotId, updates);
+      });
+      
+      // Handle transfers from origin lot - only reduce count for animals actually transferred
+      if (selectedLot) {
+        const transferredOut = animalRecords.filter(r => r.destinationLotId !== selectedLotId).length;
+        
+        if (transferredOut > 0) {
+          updateLot(selectedLotId, {
+            numberOfAnimals: selectedLot.numberOfAnimals - transferredOut
+          });
+        }
       }
       
       toast({
@@ -112,7 +156,7 @@ export function WeighingManager() {
       });
       
       setSessionFinished(true);
-      // Automaticamente direciona para a aba "results" após finalizar
+      // Automatically redirect to the "results" tab
       setActiveTab('results');
     } catch (error) {
       console.error('Error saving weighing session:', error);

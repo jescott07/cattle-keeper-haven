@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Weight, Calendar, FileText, Check } from 'lucide-react';
@@ -50,6 +51,11 @@ export const WeighingForm = () => {
   // Calculate average weight
   const averageWeight = numberOfAnimals > 0 ? totalWeight / numberOfAnimals : 0;
   
+  // Calculate projected weight for all animals in the lot
+  const projectedTotalWeight = selectedLot && averageWeight > 0 
+    ? averageWeight * selectedLot.numberOfAnimals 
+    : 0;
+  
   // When lot is selected, set default number of animals
   const handleLotChange = (value: string) => {
     setValue('lotId', value);
@@ -87,23 +93,22 @@ export const WeighingForm = () => {
         notes: data.notes
       });
       
-      // Only update lot's average weight if all animals were weighed
-      if (data.numberOfAnimals === selectedLot.numberOfAnimals) {
-        updateLot(data.lotId, {
-          averageWeight: data.totalWeight / data.numberOfAnimals,
-          breed: data.breed
-        });
-      }
+      // Always update the lot's average weight based on the weighed animals
+      // This represents the current best estimate of the lot's average weight
+      updateLot(data.lotId, {
+        averageWeight: data.totalWeight / data.numberOfAnimals,
+        breed: data.breed
+      });
       
       // If destination lot is selected and different from source lot,
       // handle the transfer logic here
       if (data.destinationLotId && data.destinationLotId !== 'no-transfer' && data.destinationLotId !== data.lotId) {
-        // Update source lot
+        // Update source lot - reduce the number of animals
         updateLot(data.lotId, {
           numberOfAnimals: selectedLot.numberOfAnimals - data.numberOfAnimals
         });
         
-        // Update destination lot
+        // Update destination lot - increase the number of animals
         const destinationLot = lots.find(lot => lot.id === data.destinationLotId);
         if (destinationLot) {
           updateLot(data.destinationLotId, {
@@ -181,7 +186,7 @@ export const WeighingForm = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="numberOfAnimals">Number of Animals</Label>
+              <Label htmlFor="numberOfAnimals">Number of Animals (Weighed)</Label>
               <Input
                 id="numberOfAnimals"
                 type="number"
@@ -199,6 +204,12 @@ export const WeighingForm = () => {
               />
               {errors.numberOfAnimals && (
                 <p className="text-sm text-destructive">{errors.numberOfAnimals.message}</p>
+              )}
+              
+              {selectedLot && numberOfAnimals > 0 && numberOfAnimals < selectedLot.numberOfAnimals && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Partial weighing: {numberOfAnimals} of {selectedLot.numberOfAnimals} animals
+                </p>
               )}
             </div>
             
@@ -221,9 +232,16 @@ export const WeighingForm = () => {
               )}
               
               {numberOfAnimals > 0 && totalWeight > 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Average: {averageWeight.toFixed(1)} kg per animal
-                </p>
+                <div className="text-sm mt-1">
+                  <p className="text-muted-foreground">
+                    Average: {averageWeight.toFixed(1)} kg per animal
+                  </p>
+                  {selectedLot && numberOfAnimals < selectedLot.numberOfAnimals && (
+                    <p className="text-muted-foreground">
+                      Projected total: {projectedTotalWeight.toFixed(1)} kg for all {selectedLot.numberOfAnimals} animals
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
