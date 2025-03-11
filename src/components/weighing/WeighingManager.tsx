@@ -12,6 +12,7 @@ import { AnimalWeighingRecord, AnimalRecord } from './AnimalWeighingRecord';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
 import { Calendar, Weight, Check, FileText, Save } from 'lucide-react';
 import { format } from 'date-fns';
+import { BreedType } from '@/lib/types';
 
 export function WeighingManager() {
   const { toast } = useToast();
@@ -28,11 +29,9 @@ export function WeighingManager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sessionFinished, setSessionFinished] = useState(false);
 
-  // Create a mapping of lot IDs to lot names for easier lookup
   const lotMap = new Map<string, string>();
   lots.forEach(lot => lotMap.set(lot.id, lot.name));
 
-  // Get selected lot
   const selectedLot = lots.find(lot => lot.id === selectedLotId);
 
   const handleAddLot = (lotName: string) => {
@@ -64,15 +63,12 @@ export function WeighingManager() {
     setIsSubmitting(true);
     
     try {
-      // Group records by lot for bulk updates
       const lotUpdates = new Map<string, number>();
       
       animalRecords.forEach(record => {
-        // Count animals in each destination lot
         const count = lotUpdates.get(record.destinationLotId) || 0;
         lotUpdates.set(record.destinationLotId, count + 1);
         
-        // Add individual weighing record to store
         addWeighingRecord({
           date: new Date(date),
           lotId: record.originLotId,
@@ -86,22 +82,17 @@ export function WeighingManager() {
         });
       });
       
-      // Update lot counts based on transfers
       if (selectedLot) {
-        // Calculate the number of animals remaining in the original lot
         const remainingInOrigin = animalRecords.filter(
           r => r.destinationLotId === r.originLotId
         ).length;
         
-        // If we're transferring all animals out, keep the original count
-        // Otherwise adjust to the number staying
         if (remainingInOrigin > 0) {
           updateLot(selectedLotId, {
             numberOfAnimals: remainingInOrigin,
           });
         }
         
-        // Update destination lots
         lotUpdates.forEach((count, lotId) => {
           if (lotId !== selectedLotId) {
             const destLot = lots.find(lot => lot.id === lotId);
@@ -141,7 +132,6 @@ export function WeighingManager() {
     setSessionFinished(false);
   };
 
-  // Start a new session when setup is complete
   const handleStartSession = () => {
     if (!selectedLotId) {
       toast({
@@ -155,7 +145,6 @@ export function WeighingManager() {
     setActiveTab('weighing');
   };
 
-  // For the results tab to be enabled
   const canViewResults = animalRecords.length > 0;
 
   return (
