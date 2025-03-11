@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '@/lib/store';
@@ -9,6 +10,7 @@ import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
 import { DailyGainChart } from '@/components/lot-detail/DailyGainChart';
+import { DailyGainPerAnimalChart } from '@/components/lot-detail/DailyGainPerAnimalChart';
 import { PastureHistory } from '@/components/lot-detail/PastureHistory';
 import { NutritionHistory } from '@/components/lot-detail/NutritionHistory';
 import { TransferHistory } from '@/components/lot-detail/TransferHistory';
