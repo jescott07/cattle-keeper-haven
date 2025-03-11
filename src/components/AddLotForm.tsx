@@ -10,42 +10,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DialogFooter } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Lot, AnimalSource, LotStatus, BreedType } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { X, Plus } from 'lucide-react';
 
 interface AddLotFormProps {
   lot?: Lot;
   onSuccess: () => void;
 }
 
+interface BreedCount {
+  breed: BreedType;
+  count: number;
+}
+
 type FormData = {
   name: string;
-  numberOfAnimals: number;
+  totalAnimals: number;
   source: AnimalSource;
   status: LotStatus;
   purchaseDate: string;
   currentPastureId: string;
-  breed?: BreedType;
   notes?: string;
 };
 
 export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [breedCounts, setBreedCounts] = useState<BreedCount[]>([]);
+  const [currentBreed, setCurrentBreed] = useState<BreedType>('nelore');
+  const [currentCount, setCurrentCount] = useState<number>(0);
   
   const addLot = useStore(state => state.addLot);
   const updateLot = useStore(state => state.updateLot);
   const pastures = useStore(state => state.pastures);
   
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     defaultValues: {
       name: lot?.name || '',
-      numberOfAnimals: lot?.numberOfAnimals || 0,
+      totalAnimals: lot?.numberOfAnimals || 0,
       source: lot?.source || 'auction',
       status: lot?.status || 'active',
       purchaseDate: lot?.purchaseDate ? format(new Date(lot.purchaseDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       currentPastureId: lot?.currentPastureId || '',
-      breed: lot?.breed || undefined,
       notes: lot?.notes || ''
     }
   });
+
+  const calculateTotalAnimals = () => {
+    return breedCounts.reduce((sum, item) => sum + item.count, 0);
+  };
   
   // Set values for source and status with useEffect
   useEffect(() => {
@@ -53,39 +65,123 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
       setValue('source', lot.source);
       setValue('status', lot.status);
       setValue('currentPastureId', lot.currentPastureId);
-      if (lot.breed) {
-        setValue('breed', lot.breed);
+      
+      // Parse breed data from notes if available
+      if (lot.notes) {
+        const breedRegex = /(\d+)\s+(nelore|anelorada|cruzamento-industrial)/gi;
+        const breeds: BreedCount[] = [];
+        let match;
+        
+        while ((match = breedRegex.exec(lot.notes)) !== null) {
+          breeds.push({
+            count: parseInt(match[1]),
+            breed: match[2].toLowerCase() as BreedType
+          });
+        }
+        
+        if (breeds.length > 0) {
+          setBreedCounts(breeds);
+        } else if (lot.breed) {
+          // If no breeds in notes but a single breed is set
+          setBreedCounts([{ breed: lot.breed, count: lot.numberOfAnimals }]);
+        }
+      } else if (lot.breed) {
+        // If no notes but breed is set
+        setBreedCounts([{ breed: lot.breed, count: lot.numberOfAnimals }]);
       }
     }
   }, [lot, setValue]);
+  
+  const handleAddBreed = () => {
+    if (currentCount <= 0) return;
+    
+    // Check if breed already exists
+    const existingIndex = breedCounts.findIndex(b => b.breed === currentBreed);
+    
+    if (existingIndex >= 0) {
+      // Update existing breed count
+      const updatedBreeds = [...breedCounts];
+      updatedBreeds[existingIndex] = {
+        ...updatedBreeds[existingIndex],
+        count: updatedBreeds[existingIndex].count + currentCount
+      };
+      setBreedCounts(updatedBreeds);
+    } else {
+      // Add new breed
+      setBreedCounts([...breedCounts, { breed: currentBreed, count: currentCount }]);
+    }
+    
+    // Update total animals
+    setValue('totalAnimals', calculateTotalAnimals() + currentCount);
+    
+    // Reset input
+    setCurrentCount(0);
+  };
+  
+  const handleRemoveBreed = (index: number) => {
+    const removedCount = breedCounts[index].count;
+    setBreedCounts(breedCounts.filter((_, i) => i !== index));
+    setValue('totalAnimals', calculateTotalAnimals() - removedCount);
+  };
+  
+  const formatBreedName = (breed: BreedType): string => {
+    switch (breed) {
+      case 'nelore':
+        return 'Nelore';
+      case 'anelorada':
+        return 'Anelorada';
+      case 'cruzamento-industrial':
+        return 'Cruzamento Industrial';
+      default:
+        return breed;
+    }
+  };
   
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     
     try {
+      // Generate notes with breed information
+      const breedNotes = breedCounts.length > 0 
+        ? breedCounts.map(b => `${b.count} ${formatBreedName(b.breed)}`).join(', ')
+        : '';
+        
+      const combinedNotes = breedNotes 
+        ? (data.notes ? `${breedNotes}. ${data.notes}` : breedNotes)
+        : data.notes;
+      
+      // Determine main breed (the one with most animals)
+      let mainBreed: BreedType | undefined = undefined;
+      if (breedCounts.length > 0) {
+        mainBreed = breedCounts.reduce(
+          (max, item) => item.count > max.count ? item : max, 
+          breedCounts[0]
+        ).breed;
+      }
+      
       if (lot) {
         // Update existing lot
         updateLot(lot.id, {
           name: data.name,
-          numberOfAnimals: Number(data.numberOfAnimals),
+          numberOfAnimals: data.totalAnimals,
           source: data.source,
           status: data.status,
           purchaseDate: new Date(data.purchaseDate),
           currentPastureId: data.currentPastureId,
-          breed: data.breed,
-          notes: data.notes
+          breed: mainBreed,
+          notes: combinedNotes
         });
       } else {
         // Add new lot
         addLot({
           name: data.name,
-          numberOfAnimals: Number(data.numberOfAnimals),
+          numberOfAnimals: data.totalAnimals,
           source: data.source,
           status: data.status,
           purchaseDate: new Date(data.purchaseDate),
           currentPastureId: data.currentPastureId,
-          breed: data.breed,
-          notes: data.notes
+          breed: mainBreed,
+          notes: combinedNotes
         });
       }
       
@@ -110,40 +206,85 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
           {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
         
+        <div className="space-y-2">
+          <Label>Breed Composition</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <Select 
+                value={currentBreed} 
+                onValueChange={(value) => setCurrentBreed(value as BreedType)}
+              >
+                <SelectTrigger id="breed">
+                  <SelectValue placeholder="Select breed" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nelore">Nelore</SelectItem>
+                  <SelectItem value="anelorada">Anelorada</SelectItem>
+                  <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Input
+                type="number"
+                min="1"
+                placeholder="Count"
+                value={currentCount || ''}
+                onChange={(e) => setCurrentCount(parseInt(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            className="mt-2 gap-1"
+            onClick={handleAddBreed}
+            disabled={currentCount <= 0}
+          >
+            <Plus className="h-4 w-4" />
+            Add Breed
+          </Button>
+          
+          {breedCounts.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {breedCounts.map((item, index) => (
+                <Badge key={index} variant="secondary" className="gap-1 pr-1">
+                  {item.count} {formatBreedName(item.breed)}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 ml-1 p-0"
+                    onClick={() => handleRemoveBreed(index)}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Remove</span>
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="numberOfAnimals">Number of Animals</Label>
+            <Label htmlFor="totalAnimals">Total Animals</Label>
             <Input
-              id="numberOfAnimals"
+              id="totalAnimals"
               type="number"
               min="1"
-              {...register('numberOfAnimals', { 
+              readOnly={breedCounts.length > 0}
+              className={breedCounts.length > 0 ? "bg-muted" : ""}
+              {...register('totalAnimals', { 
                 required: 'Number of animals is required',
                 min: { value: 1, message: 'Must have at least 1 animal' }
               })}
             />
-            {errors.numberOfAnimals && <p className="text-sm text-destructive">{errors.numberOfAnimals.message}</p>}
+            {errors.totalAnimals && <p className="text-sm text-destructive">{errors.totalAnimals.message}</p>}
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="breed">Breed</Label>
-            <Select 
-              onValueChange={(value) => setValue('breed', value as BreedType)} 
-              defaultValue={lot?.breed}
-            >
-              <SelectTrigger id="breed">
-                <SelectValue placeholder="Select breed" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="nelore">Nelore</SelectItem>
-                <SelectItem value="anelorada">Anelorada</SelectItem>
-                <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="source">Source</Label>
             <Select 
@@ -161,7 +302,9 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
               </SelectContent>
             </Select>
           </div>
-          
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
             <Select 
@@ -178,9 +321,7 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
               </SelectContent>
             </Select>
           </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
           <div className="space-y-2">
             <Label htmlFor="purchaseDate">Purchase/Entry Date</Label>
             <Input
@@ -190,30 +331,30 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
             />
             {errors.purchaseDate && <p className="text-sm text-destructive">{errors.purchaseDate.message}</p>}
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="currentPastureId">Current Pasture</Label>
-            <Select 
-              onValueChange={(value) => setValue('currentPastureId', value)} 
-              defaultValue={lot?.currentPastureId || ''}
-            >
-              <SelectTrigger id="currentPastureId">
-                <SelectValue placeholder="Select pasture" />
-              </SelectTrigger>
-              <SelectContent>
-                {pastures.map(pasture => (
-                  <SelectItem key={pasture.id} value={pasture.id}>
-                    {pasture.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.currentPastureId && <p className="text-sm text-destructive">{errors.currentPastureId.message}</p>}
-          </div>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="notes">Notes (Optional)</Label>
+          <Label htmlFor="currentPastureId">Current Pasture</Label>
+          <Select 
+            onValueChange={(value) => setValue('currentPastureId', value)} 
+            defaultValue={lot?.currentPastureId || ''}
+          >
+            <SelectTrigger id="currentPastureId">
+              <SelectValue placeholder="Select pasture" />
+            </SelectTrigger>
+            <SelectContent>
+              {pastures.map(pasture => (
+                <SelectItem key={pasture.id} value={pasture.id}>
+                  {pasture.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.currentPastureId && <p className="text-sm text-destructive">{errors.currentPastureId.message}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="notes">Additional Notes (Optional)</Label>
           <Textarea
             id="notes"
             placeholder="Enter any additional notes"

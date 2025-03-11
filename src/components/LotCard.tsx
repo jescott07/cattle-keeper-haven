@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Beef, Calendar, PackagePlus, MapPin, AlertCircle, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,8 +37,13 @@ const statusColorMap: Record<LotStatus, { bg: string; text: string; icon: JSX.El
 
 export const LotCard = ({ lot, pastureName, onEdit, onViewDetail }: LotCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
   
   const { bg, text, icon } = statusColorMap[lot.status];
+  
+  const handleViewDetails = () => {
+    navigate(`/lots/${lot.id}`);
+  };
   
   return (
     <Card 
@@ -110,7 +116,7 @@ export const LotCard = ({ lot, pastureName, onEdit, onViewDetail }: LotCardProps
         <Button variant="outline" size="sm" onClick={() => onEdit(lot)}>
           Edit
         </Button>
-        <Button size="sm" onClick={() => onViewDetail(lot)}>
+        <Button size="sm" onClick={handleViewDetails}>
           <ExternalLink className="h-4 w-4 mr-2" />
           Details
         </Button>

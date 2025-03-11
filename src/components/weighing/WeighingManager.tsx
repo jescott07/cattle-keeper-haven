@@ -25,7 +25,6 @@ export function WeighingManager() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [transferCriteria, setTransferCriteria] = useState<TransferCriterion[]>([]);
   const [animalRecords, setAnimalRecords] = useState<AnimalRecord[]>([]);
-  const [breeds, setBreeds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sessionFinished, setSessionFinished] = useState(false);
 
@@ -51,12 +50,6 @@ export function WeighingManager() {
       title: 'Lot Created',
       description: `Lot "${lotName}" has been created`,
     });
-  };
-
-  const handleAddBreed = (breed: string) => {
-    if (!breeds.includes(breed)) {
-      setBreeds([...breeds, breed]);
-    }
   };
 
   const handleRecordAnimal = (record: AnimalRecord) => {
@@ -248,8 +241,7 @@ export function WeighingManager() {
                     originLotId={selectedLotId}
                     sourceLotName={selectedLot?.name || ''}
                     transferCriteria={transferCriteria}
-                    breeds={breeds}
-                    onAddBreed={handleAddBreed}
+                    defaultBreed={selectedLot?.breed as BreedType || 'nelore'}
                   />
                 </div>
                 
