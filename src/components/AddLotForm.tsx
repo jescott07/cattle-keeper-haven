@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
-import { Lot, AnimalSource, LotStatus } from '@/lib/types';
+import { Lot, AnimalSource, LotStatus, BreedType } from '@/lib/types';
 
 interface AddLotFormProps {
   lot?: Lot;
@@ -23,7 +23,7 @@ type FormData = {
   status: LotStatus;
   purchaseDate: string;
   currentPastureId: string;
-  breed?: string;
+  breed?: BreedType;
   notes?: string;
 };
 
@@ -42,7 +42,7 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
       status: lot?.status || 'active',
       purchaseDate: lot?.purchaseDate ? format(new Date(lot.purchaseDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       currentPastureId: lot?.currentPastureId || '',
-      breed: lot?.breed || '',
+      breed: lot?.breed || undefined,
       notes: lot?.notes || ''
     }
   });
@@ -53,6 +53,9 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
       setValue('source', lot.source);
       setValue('status', lot.status);
       setValue('currentPastureId', lot.currentPastureId);
+      if (lot.breed) {
+        setValue('breed', lot.breed);
+      }
     }
   }, [lot, setValue]);
   
@@ -123,12 +126,20 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="breed">Breed (Optional)</Label>
-            <Input
-              id="breed"
-              placeholder="Enter breed"
-              {...register('breed')}
-            />
+            <Label htmlFor="breed">Breed</Label>
+            <Select 
+              onValueChange={(value) => setValue('breed', value as BreedType)} 
+              defaultValue={lot?.breed}
+            >
+              <SelectTrigger id="breed">
+                <SelectValue placeholder="Select breed" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nelore">Nelore</SelectItem>
+                <SelectItem value="anelorada">Anelorada</SelectItem>
+                <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         

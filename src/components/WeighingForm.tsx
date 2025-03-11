@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Weight, Calendar, FileText, Check } from 'lucide-react';
@@ -37,7 +38,7 @@ export const WeighingForm = () => {
       date: format(new Date(), 'yyyy-MM-dd'),
       numberOfAnimals: 0,
       totalWeight: 0,
-      breed: selectedLot?.breed || 'nelore',
+      breed: 'nelore',
       notes: ''
     }
   });
@@ -236,7 +237,10 @@ export const WeighingForm = () => {
           
           <div className="space-y-2">
             <Label htmlFor="breed">Raça</Label>
-            <Select onValueChange={(value) => setValue('breed', value as BreedType)}>
+            <Select 
+              defaultValue={selectedLot?.breed || 'nelore'}
+              onValueChange={(value) => setValue('breed', value as BreedType)}
+            >
               <SelectTrigger id="breed">
                 <SelectValue placeholder="Selecione a raça" />
               </SelectTrigger>

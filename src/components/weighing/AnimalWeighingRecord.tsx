@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { TransferCriterion } from './TransferCriteria';
 import { Check, ArrowRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BreedType } from '@/lib/types';
 
 export interface AnimalRecord {
   id: string;
   weight: number;
   weightAt30: number;
-  breed: string;
+  breed: BreedType;
   observations: string;
   originLotId: string;
   destinationLotId: string;
@@ -21,8 +23,7 @@ interface AnimalWeighingRecordProps {
   originLotId: string;
   sourceLotName: string;
   transferCriteria: TransferCriterion[];
-  breeds: string[];
-  onAddBreed: (breed: string) => void;
+  defaultBreed?: BreedType;
 }
 
 export function AnimalWeighingRecord({
@@ -30,14 +31,11 @@ export function AnimalWeighingRecord({
   originLotId,
   sourceLotName,
   transferCriteria,
-  breeds,
-  onAddBreed
+  defaultBreed = 'nelore'
 }: AnimalWeighingRecordProps) {
   const [weight, setWeight] = useState<number | null>(null);
-  const [breed, setBreed] = useState('');
+  const [breed, setBreed] = useState<BreedType>(defaultBreed);
   const [observations, setObservations] = useState('');
-  const [newBreed, setNewBreed] = useState('');
-  const [showAddBreed, setShowAddBreed] = useState(false);
 
   const calculateDestinationLot = (weight: number): string => {
     if (!weight || transferCriteria.length === 0) return originLotId;
@@ -59,13 +57,8 @@ export function AnimalWeighingRecord({
     setWeight(isNaN(numValue) ? null : numValue);
   };
 
-  const handleAddBreed = () => {
-    if (newBreed.trim()) {
-      onAddBreed(newBreed.trim());
-      setBreed(newBreed.trim());
-      setNewBreed('');
-      setShowAddBreed(false);
-    }
+  const handleBreedChange = (value: string) => {
+    setBreed(value as BreedType);
   };
 
   const handleSaveRecord = () => {
@@ -116,44 +109,19 @@ export function AnimalWeighingRecord({
         
         <div>
           <Label htmlFor="breed">Breed</Label>
-          {showAddBreed ? (
-            <div className="flex gap-2">
-              <Input
-                value={newBreed}
-                onChange={(e) => setNewBreed(e.target.value)}
-                placeholder="New breed name"
-              />
-              <Button 
-                type="button" 
-                onClick={handleAddBreed}
-                disabled={!newBreed.trim()}
-              >
-                Add
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <select
-                value={breed}
-                onChange={(e) => setBreed(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Select breed</option>
-                {breeds.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={() => setShowAddBreed(true)}
-              >
-                New
-              </Button>
-            </div>
-          )}
+          <Select 
+            value={breed} 
+            onValueChange={handleBreedChange}
+          >
+            <SelectTrigger id="breed">
+              <SelectValue placeholder="Select breed" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nelore">Nelore</SelectItem>
+              <SelectItem value="anelorada">Anelorada</SelectItem>
+              <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
@@ -192,7 +160,7 @@ export function AnimalWeighingRecord({
         type="button" 
         className="w-full gap-2"
         onClick={handleSaveRecord}
-        disabled={weight === null || !breed}
+        disabled={weight === null}
       >
         <Check className="h-4 w-4" />
         Record Animal
