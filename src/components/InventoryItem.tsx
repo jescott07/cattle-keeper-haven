@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Package, Calendar, AlertCircle, Edit, Trash, FileText } from 'lucide-react';
+import { Package, Calendar, AlertCircle, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,28 +46,16 @@ export const typeColorMap: Record<InventoryType, { bg: string; text: string; ico
 
 export const InventoryItem = ({ item, onEdit, onDelete }: InventoryItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const { bg, text, icon } = typeColorMap[item.type];
   
   const isNearExpiry = item.expiryDate && new Date(item.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   
-  const handleDelete = () => {
-    if (showDeleteConfirm) {
-      onDelete(item.id);
-    } else {
-      setShowDeleteConfirm(true);
-    }
-  };
-  
   return (
     <Card 
       className="overflow-hidden card-hover-effect"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setShowDeleteConfirm(false);
-      }}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <CardHeader className="p-4 pb-3">
         <div className="flex justify-between items-start">
@@ -136,31 +124,10 @@ export const InventoryItem = ({ item, onEdit, onDelete }: InventoryItemProps) =>
         )}
       </CardContent>
       
-      <CardFooter className={`p-4 pt-2 grid grid-cols-3 gap-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          onClick={() => onEdit(item)}
-        >
-          <Edit className="h-4 w-4" />
-          Edit
-        </Button>
-        
-        <Button 
-          variant={showDeleteConfirm ? "destructive" : "outline"} 
-          size="sm" 
-          className="gap-2"
-          onClick={handleDelete}
-        >
-          <Trash className="h-4 w-4" />
-          {showDeleteConfirm ? "Confirm" : "Delete"}
-        </Button>
-        
+      <CardFooter className={`p-4 pt-2 flex justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
         <Button
-          variant="outline"
           size="sm"
-          className="gap-2"
+          className="w-full gap-2"
           asChild
         >
           <Link to={`/inventory/${item.id}`}>

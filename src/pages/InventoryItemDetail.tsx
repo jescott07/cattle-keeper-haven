@@ -1,6 +1,6 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Calendar, Edit } from 'lucide-react';
+import { ArrowLeft, Package, Calendar, Edit, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,30 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { typeColorMap } from '@/components/InventoryItem';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddInventoryForm } from '@/components/AddInventoryForm';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const InventoryItemDetail = () => {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const inventory = useStore(state => state.inventory);
+  const removeInventoryItem = useStore(state => state.removeInventoryItem);
   const item = inventory.find(item => item.id === itemId);
   
   if (!item) {
@@ -51,6 +63,17 @@ const InventoryItemDetail = () => {
     });
   };
   
+  const handleDelete = () => {
+    if (itemId) {
+      removeInventoryItem(itemId);
+      toast({
+        title: "Item Deleted",
+        description: "The inventory item has been permanently deleted",
+      });
+      navigate('/inventory');
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -62,27 +85,13 @@ const InventoryItemDetail = () => {
             Back to Inventory
           </Button>
           
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Edit className="h-4 w-4" />
-                Edit Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Edit Item</DialogTitle>
-                <DialogDescription>
-                  Update the details for this inventory item.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <AddInventoryForm 
-                item={item} 
-                onSuccess={handleFormSuccess} 
-              />
-            </DialogContent>
-          </Dialog>
+          <Button 
+            className="gap-2"
+            onClick={() => setIsEditDialogOpen(true)}
+          >
+            <Edit className="h-4 w-4" />
+            Edit Item
+          </Button>
         </div>
         
         <div className="mb-6">
@@ -158,11 +167,51 @@ const InventoryItemDetail = () => {
         
         <Separator className="my-6" />
         
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground mb-10">
           <div>Created: {format(new Date(item.createdAt), 'MMM d, yyyy')}</div>
           <div>Last Updated: {format(new Date(item.updatedAt), 'MMM d, yyyy')}</div>
         </div>
+        
+        <div className="flex justify-center mt-8 pt-6 border-t">
+          <Button 
+            variant="destructive" 
+            className="gap-2" 
+            onClick={() => setIsDeleteDialogOpen(true)}
+          >
+            <Trash className="h-4 w-4" />
+            Delete Item
+          </Button>
+        </div>
       </main>
+      
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Item</DialogTitle>
+          </DialogHeader>
+          <AddInventoryForm 
+            item={item} 
+            onSuccess={handleFormSuccess} 
+          />
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the inventory item.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

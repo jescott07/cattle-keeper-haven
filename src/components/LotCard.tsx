@@ -112,11 +112,8 @@ export const LotCard = ({ lot, pastureName, onEdit, onViewDetail }: LotCardProps
         )}
       </CardContent>
       
-      <CardFooter className={`p-4 pt-2 grid grid-cols-2 gap-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-        <Button variant="outline" size="sm" onClick={() => onEdit(lot)}>
-          Edit
-        </Button>
-        <Button size="sm" onClick={handleViewDetails}>
+      <CardFooter className={`p-4 pt-2 flex justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+        <Button size="sm" onClick={handleViewDetails} className="w-full">
           <ExternalLink className="h-4 w-4 mr-2" />
           Details
         </Button>

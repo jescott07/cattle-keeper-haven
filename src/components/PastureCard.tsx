@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Add this import
-import { MapPin, Droplet, Ruler, Edit, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Droplet, Ruler, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ const fenceColorMap: Record<FenceCondition, { bg: string; text: string }> = {
 };
 
 export const PastureCard = ({ pasture, onEdit }: PastureCardProps) => {
-  const navigate = useNavigate(); // Add this hook
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   
   const { bg, text } = fenceColorMap[pasture.fenceCondition];
@@ -31,7 +31,6 @@ export const PastureCard = ({ pasture, onEdit }: PastureCardProps) => {
     ? pasture.evaluations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] 
     : null;
   
-  // Function to navigate to the pasture detail page
   const handleViewDetail = () => {
     navigate(`/pastures/${pasture.id}`);
   };
@@ -90,20 +89,10 @@ export const PastureCard = ({ pasture, onEdit }: PastureCardProps) => {
         )}
       </CardContent>
       
-      <CardFooter className={`p-4 pt-2 grid grid-cols-2 gap-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          onClick={() => onEdit(pasture)}
-        >
-          <Edit className="h-4 w-4" />
-          Edit
-        </Button>
-        
+      <CardFooter className={`p-4 pt-2 flex justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
         <Button 
           size="sm" 
-          className="gap-2"
+          className="w-full gap-2"
           onClick={handleViewDetail}
         >
           <ExternalLink className="h-4 w-4" />
