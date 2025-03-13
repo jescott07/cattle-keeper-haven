@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, BarChart2, FileText, TestTube, Wrench, Edit, Trash } from 'lucide-react';
+import { BarChart2, TestTube, Wrench, FileText, ArrowLeftRight, ChevronLeft, Edit, Trash } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useStore } from '@/lib/store';
 import { Pasture } from '@/lib/types';
@@ -24,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PastureTransfer } from '@/components/pasture-management/PastureTransfer';
 
 const PastureDetail = () => {
   const { pastureId } = useParams();
@@ -113,7 +113,7 @@ const PastureDetail = () => {
           
           {/* Tabs for different sections */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-4 mb-6">
+            <TabsList className="grid grid-cols-5 mb-6">
               <TabsTrigger value="dashboard" className="gap-2">
                 <BarChart2 className="h-4 w-4" />
                 <span className="hidden md:inline">Dashboard</span>
@@ -129,6 +129,10 @@ const PastureDetail = () => {
               <TabsTrigger value="maintenance" className="gap-2">
                 <Wrench className="h-4 w-4" />
                 <span className="hidden md:inline">Maintenance</span>
+              </TabsTrigger>
+              <TabsTrigger value="transfers" className="gap-2">
+                <ArrowLeftRight className="h-4 w-4" />
+                <span className="hidden md:inline">Transfers</span>
               </TabsTrigger>
             </TabsList>
             
@@ -146,6 +150,10 @@ const PastureDetail = () => {
             
             <TabsContent value="maintenance" className="mt-2">
               <PastureMaintenanceTracker pastureId={pasture.id} />
+            </TabsContent>
+            
+            <TabsContent value="transfers" className="mt-2">
+              <PastureTransfer />
             </TabsContent>
           </Tabs>
           
