@@ -75,15 +75,16 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     if (chartData.length > 0) {
       return chartData[0].animalCount;
     }
-    return 0;
-  }, [chartData]);
+    // Return current animal count if no history instead of 0
+    return lot?.numberOfAnimals || 0;
+  }, [chartData, lot]);
   
   const latestAnimalCount = useMemo(() => {
     if (chartData.length > 0) {
       return chartData[chartData.length - 1].animalCount;
     }
-    return 0;
-  }, [chartData]);
+    return lot?.numberOfAnimals || 0;
+  }, [chartData, lot]);
   
   const animalsChange = latestAnimalCount - initialAnimalCount;
   const percentChange = initialAnimalCount > 0 
@@ -99,7 +100,7 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {chartData.length > 0 ? (
+        {chartData.length > 0 || lot ? (
           <>
             <div className="flex justify-between items-center mb-4">
               <div>

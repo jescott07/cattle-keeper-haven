@@ -44,9 +44,9 @@ export function WeightDistribution({ weighings, showFullChart = false }: WeightD
   const weightRanges = useMemo(() => {
     if (weighings.length === 0 || !selectedDate) return [];
     
-    // Filter weighings by the selected date or use all if 'all' is selected
+    // Filter weighings by the selected date
     const filteredWeights = weighings
-      .filter(w => selectedDate === 'all' || format(w.date, 'yyyy-MM-dd') === selectedDate)
+      .filter(w => format(w.date, 'yyyy-MM-dd') === selectedDate)
       .flatMap(w => {
         // Create mock data based on average weight
         const avgWeight = w.averageWeight;
@@ -102,7 +102,6 @@ export function WeightDistribution({ weighings, showFullChart = false }: WeightD
               <SelectValue placeholder="Select date" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All records</SelectItem>
               {uniqueDates.map((weighing) => (
                 <SelectItem 
                   key={weighing.id} 

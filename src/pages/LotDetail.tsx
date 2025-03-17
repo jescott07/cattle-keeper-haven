@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Move, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -132,12 +132,6 @@ export default function LotDetail() {
             </TabsList>
             
             <TabsContent value="overview" className="mt-6">
-              {/* Primary Metrics Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <AnimalEvolution lotId={lot.id} />
-                <TotalWeightProjection lotId={lot.id} />
-              </div>
-              
               {/* Weight Analysis Section */}
               <div className="bg-card rounded-lg p-6 border mb-8">
                 <div className="flex justify-between items-center mb-4">
@@ -152,16 +146,29 @@ export default function LotDetail() {
                     Go to Weighing
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Weight Distribution</h3>
-                    <WeightDistribution weighings={weighings} showFullChart />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Daily Gain</h3>
-                    <DailyGainChart weighings={weighings} showFullChart />
-                  </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <AnimalEvolution lotId={lot.id} />
+                  <TotalWeightProjection lotId={lot.id} />
+                  <WeightDistribution weighings={weighings} showFullChart />
+                  <DailyGainChart weighings={weighings} showFullChart />
                 </div>
+              </div>
+              
+              {/* Pasture History Section */}
+              <div className="bg-card rounded-lg p-6 border mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Pasture History</h2>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => setIsPastureTransferDialogOpen(true)}
+                  >
+                    <TreePine className="h-4 w-4" />
+                    Pasture Management
+                  </Button>
+                </div>
+                <PastureHistory lotId={lot.id} />
               </div>
               
               {/* Transfer Management Section */}
@@ -179,23 +186,6 @@ export default function LotDetail() {
                   </Button>
                 </div>
                 <TransferHistory lotId={lot.id} showFullHistory />
-              </div>
-              
-              {/* Pasture Management Section */}
-              <div className="bg-card rounded-lg p-6 border mb-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Pasture History</h2>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={() => setIsPastureTransferDialogOpen(true)}
-                  >
-                    <TreePine className="h-4 w-4" />
-                    Pasture Management
-                  </Button>
-                </div>
-                <PastureHistory lotId={lot.id} />
               </div>
               
               {/* Nutrition Section */}
