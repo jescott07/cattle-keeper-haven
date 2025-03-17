@@ -31,19 +31,15 @@ export function TransferManagement({ initialLotId, onTransferComplete }: Transfe
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm({
     defaultValues: {
-      fromLotId: initialLotId || '',
       toLotId: '',
       numberOfAnimals: 1,
-      averageWeight: sourceLot?.averageWeight || 0,
       scheduledDate: format(new Date(), 'yyyy-MM-dd'),
       notes: ''
     }
   });
   
-  const selectedFromLotId = watch('fromLotId');
   const selectedToLotId = watch('toLotId');
   const numberOfAnimals = watch('numberOfAnimals');
-  const selectedFromLot = selectedFromLotId ? lots.find(lot => lot.id === selectedFromLotId) : null;
   
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -51,23 +47,23 @@ export function TransferManagement({ initialLotId, onTransferComplete }: Transfe
     try {
       const transferDate = new Date(data.scheduledDate);
       
-      if (!isScheduled) {
+      if (!isScheduled && initialLotId) {
         // Execute transfer immediately
-        // 1. Create weighing record with transfer information
+        // 1. Create weighing record with transfer information (without average weight)
         addWeighingRecord({
           date: transferDate,
-          lotId: data.fromLotId,
+          lotId: initialLotId,
           numberOfAnimals: Number(data.numberOfAnimals),
-          totalWeight: Number(data.numberOfAnimals) * Number(data.averageWeight),
-          averageWeight: Number(data.averageWeight),
+          totalWeight: 0, // We don't have weight information
+          averageWeight: 0, // We don't have weight information
           destinationLotId: data.toLotId,
           notes: data.notes
         });
         
         // 2. Update source lot - reduce animal count
-        const fromLot = lots.find(lot => lot.id === data.fromLotId);
+        const fromLot = lots.find(lot => lot.id === initialLotId);
         if (fromLot) {
-          updateLot(data.fromLotId, {
+          updateLot(initialLotId, {
             numberOfAnimals: Math.max(0, fromLot.numberOfAnimals - Number(data.numberOfAnimals))
           });
         }
@@ -108,26 +104,12 @@ export function TransferManagement({ initialLotId, onTransferComplete }: Transfe
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="fromLotId">Source Lot</Label>
-        <Select 
-          value={selectedFromLotId} 
-          onValueChange={(value) => setValue('fromLotId', value)}
-          disabled={initialLotId !== undefined}
-        >
-          <SelectTrigger id="fromLotId">
-            <SelectValue placeholder="Select source lot" />
-          </SelectTrigger>
-          <SelectContent>
-            {lots.filter(lot => lot.status === 'active').map((lot) => (
-              <SelectItem key={lot.id} value={lot.id}>
-                {lot.name} ({lot.numberOfAnimals} animals)
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.fromLotId && (
-          <p className="text-sm text-destructive">{errors.fromLotId.message}</p>
-        )}
+        <div className="bg-muted/50 p-3 rounded-md">
+          <p className="font-medium">Source: {sourceLot?.name || 'Unknown Lot'}</p>
+          <p className="text-sm text-muted-foreground">
+            {sourceLot?.numberOfAnimals || 0} animals available
+          </p>
+        </div>
       </div>
       
       <div className="flex justify-center py-2">
@@ -156,49 +138,28 @@ export function TransferManagement({ initialLotId, onTransferComplete }: Transfe
         )}
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="numberOfAnimals">Number of Animals</Label>
-          <Input
-            id="numberOfAnimals"
-            type="number"
-            min="1"
-            max={selectedFromLot?.numberOfAnimals || 1}
-            {...register('numberOfAnimals', { 
-              required: 'Required',
-              min: {
-                value: 1,
-                message: 'At least 1 animal'
-              },
-              max: {
-                value: selectedFromLot?.numberOfAnimals || 1,
-                message: 'Cannot exceed available animals'
-              }
-            })}
-          />
-          {errors.numberOfAnimals && (
-            <p className="text-sm text-destructive">{errors.numberOfAnimals.message}</p>
-          )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="averageWeight">Average Weight (kg)</Label>
-          <Input
-            id="averageWeight"
-            type="number"
-            min="1"
-            {...register('averageWeight', { 
-              required: 'Required',
-              min: {
-                value: 1,
-                message: 'Min weight 1 kg'
-              }
-            })}
-          />
-          {errors.averageWeight && (
-            <p className="text-sm text-destructive">{errors.averageWeight.message}</p>
-          )}
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="numberOfAnimals">Number of Animals</Label>
+        <Input
+          id="numberOfAnimals"
+          type="number"
+          min="1"
+          max={sourceLot?.numberOfAnimals || 1}
+          {...register('numberOfAnimals', { 
+            required: 'Required',
+            min: {
+              value: 1,
+              message: 'At least 1 animal'
+            },
+            max: {
+              value: sourceLot?.numberOfAnimals || 1,
+              message: 'Cannot exceed available animals'
+            }
+          })}
+        />
+        {errors.numberOfAnimals && (
+          <p className="text-sm text-destructive">{errors.numberOfAnimals.message}</p>
+        )}
       </div>
       
       <div className="pt-4 pb-2">
@@ -242,23 +203,23 @@ export function TransferManagement({ initialLotId, onTransferComplete }: Transfe
         className="w-full"
         disabled={
           isSubmitting || 
-          !selectedFromLotId || 
+          !initialLotId || 
           !selectedToLotId ||
-          selectedFromLotId === selectedToLotId ||
+          initialLotId === selectedToLotId ||
           numberOfAnimals < 1 ||
-          (selectedFromLot && numberOfAnimals > selectedFromLot.numberOfAnimals)
+          (sourceLot && numberOfAnimals > sourceLot.numberOfAnimals)
         }
       >
         {isScheduled ? 'Schedule Transfer' : 'Complete Transfer Now'}
       </Button>
       
-      {selectedFromLotId === selectedToLotId && selectedToLotId && (
+      {initialLotId === selectedToLotId && selectedToLotId && (
         <p className="text-sm text-destructive text-center">
           Source and destination lots cannot be the same
         </p>
       )}
       
-      {selectedFromLot && numberOfAnimals > selectedFromLot.numberOfAnimals && (
+      {sourceLot && numberOfAnimals > sourceLot.numberOfAnimals && (
         <p className="text-sm text-destructive text-center">
           Cannot transfer more animals than available in source lot
         </p>
