@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -11,19 +11,33 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { PasturePlanning } from '@/lib/types';
+import { Switch } from '@/components/ui/switch';
 
-export function PastureTransfer() {
+interface PastureTransferProps {
+  initialLotId?: string;
+  onTransferComplete?: () => void;
+}
+
+export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTransferProps) {
   const { toast } = useToast();
-  const [selectedLotId, setSelectedLotId] = useState('');
+  const [selectedLotId, setSelectedLotId] = useState(initialLotId || '');
   const [selectedPastureId, setSelectedPastureId] = useState('');
   const [scheduledDate, setScheduledDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState('');
+  const [isScheduledTransfer, setIsScheduledTransfer] = useState(false);
 
   const lots = useStore(state => state.lots);
   const pastures = useStore(state => state.pastures);
   const updateLot = useStore(state => state.updateLot);
 
   const activeLots = lots.filter(lot => lot.status === 'active');
+
+  // Effect to set the selected lot when initialLotId changes
+  useEffect(() => {
+    if (initialLotId) {
+      setSelectedLotId(initialLotId);
+    }
+  }, [initialLotId]);
 
   const handleTransfer = () => {
     if (!selectedLotId || !selectedPastureId) {
@@ -38,7 +52,7 @@ export function PastureTransfer() {
     const lot = lots.find(l => l.id === selectedLotId);
     if (!lot) return;
 
-    if (lot.currentPastureId === selectedPastureId) {
+    if (lot.currentPastureId === selectedPastureId && !isScheduledTransfer) {
       toast({
         title: "Invalid Transfer",
         description: "The lot is already in this pasture.",
@@ -47,43 +61,57 @@ export function PastureTransfer() {
       return;
     }
 
-    // Update the lot's current pasture
+    const plannedTransfer: PasturePlanning = {
+      lotId: selectedLotId,
+      fromPastureId: lot.currentPastureId,
+      toPastureId: selectedPastureId,
+      scheduledDate: new Date(scheduledDate),
+      completed: !isScheduledTransfer,
+      completedDate: isScheduledTransfer ? undefined : new Date(),
+      notes: notes
+    };
+
+    // Update lot with the transfer
     updateLot(selectedLotId, {
-      currentPastureId: selectedPastureId,
+      // Only update current pasture if it's an immediate transfer
+      ...(isScheduledTransfer ? {} : { currentPastureId: selectedPastureId }),
       plannedTransfers: [
         ...(lot.plannedTransfers || []),
-        {
-          lotId: selectedLotId,
-          fromPastureId: lot.currentPastureId,
-          toPastureId: selectedPastureId,
-          scheduledDate: new Date(scheduledDate),
-          completed: true,
-          completedDate: new Date(),
-          notes: notes
-        }
+        plannedTransfer
       ]
     });
 
     toast({
-      title: "Transfer Complete",
-      description: "The lot has been moved to the new pasture successfully."
+      title: isScheduledTransfer ? "Transfer Scheduled" : "Transfer Complete",
+      description: isScheduledTransfer 
+        ? `The transfer has been scheduled for ${format(new Date(scheduledDate), 'MMMM d, yyyy')}.`
+        : "The lot has been moved to the new pasture successfully."
     });
 
     // Reset form
-    setSelectedLotId('');
+    if (!initialLotId) {
+      setSelectedLotId('');
+    }
     setSelectedPastureId('');
     setNotes('');
+    setIsScheduledTransfer(false);
+    
+    // Call the callback if provided
+    if (onTransferComplete) {
+      onTransferComplete();
+    }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Transfer Lots Between Pastures</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card className="border-0 shadow-none">
+      <CardContent className="space-y-4 pt-0">
         <div className="space-y-2">
           <Label htmlFor="lot">Select Lot</Label>
-          <Select value={selectedLotId} onValueChange={setSelectedLotId}>
+          <Select 
+            value={selectedLotId} 
+            onValueChange={setSelectedLotId}
+            disabled={!!initialLotId}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Choose a lot" />
             </SelectTrigger>
@@ -116,8 +144,19 @@ export function PastureTransfer() {
           </Select>
         </div>
 
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="schedule-transfer"
+            checked={isScheduledTransfer}
+            onCheckedChange={setIsScheduledTransfer}
+          />
+          <Label htmlFor="schedule-transfer">Schedule for future date</Label>
+        </div>
+
         <div className="space-y-2">
-          <Label htmlFor="date">Transfer Date</Label>
+          <Label htmlFor="date">
+            {isScheduledTransfer ? "Scheduled Date" : "Transfer Date"}
+          </Label>
           <div className="relative">
             <Input
               id="date"
@@ -144,7 +183,7 @@ export function PastureTransfer() {
           onClick={handleTransfer}
           disabled={!selectedLotId || !selectedPastureId}
         >
-          Complete Transfer
+          {isScheduledTransfer ? "Schedule Transfer" : "Complete Transfer"}
         </Button>
       </CardContent>
     </Card>

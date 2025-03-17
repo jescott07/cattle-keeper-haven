@@ -5,12 +5,11 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft, Edit, Truck, Trash } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
 import { DailyGainChart } from '@/components/lot-detail/DailyGainChart';
-import { DailyGainPerAnimalChart } from '@/components/lot-detail/DailyGainPerAnimalChart';
 import { PastureHistory } from '@/components/lot-detail/PastureHistory';
 import { NutritionHistory } from '@/components/lot-detail/NutritionHistory';
 import { TransferHistory } from '@/components/lot-detail/TransferHistory';
@@ -18,6 +17,7 @@ import { TotalWeightProjection } from '@/components/lot-detail/TotalWeightProjec
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddLotForm } from '@/components/AddLotForm';
 import { useToast } from '@/hooks/use-toast';
+import { PastureTransfer } from '@/components/pasture-management/PastureTransfer';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ export default function LotDetail() {
   const navigate = useNavigate();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
@@ -114,13 +115,24 @@ export default function LotDetail() {
               />
             </div>
             
-            <Button 
-              onClick={() => setIsEditDialogOpen(true)}
-              className="gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              Edit Lot
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setIsTransferDialogOpen(true)}
+                className="gap-2"
+                variant="secondary"
+              >
+                <Truck className="h-4 w-4" />
+                Transfer
+              </Button>
+              
+              <Button 
+                onClick={() => setIsEditDialogOpen(true)}
+                className="gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Edit Lot
+              </Button>
+            </div>
           </div>
           
           <Tabs 
@@ -128,7 +140,7 @@ export default function LotDetail() {
             onValueChange={setActiveTab}
             className="mt-6"
           >
-            <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="weights">Weights</TabsTrigger>
               <TabsTrigger value="transfers">Transfers</TabsTrigger>
@@ -149,7 +161,7 @@ export default function LotDetail() {
               </div>
               
               <div className="grid grid-cols-1 gap-6">
-                <DailyGainPerAnimalChart weighings={weighings} />
+                <DailyGainChart weighings={weighings} showFullChart />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -168,7 +180,6 @@ export default function LotDetail() {
             
             <TabsContent value="daily-gain" className="mt-6 space-y-6">
               <DailyGainChart weighings={weighings} showFullChart />
-              <DailyGainPerAnimalChart weighings={weighings} showFullChart />
             </TabsContent>
             
             <TabsContent value="pastures" className="mt-6">
@@ -199,6 +210,18 @@ export default function LotDetail() {
             <DialogTitle>Edit Lot</DialogTitle>
           </DialogHeader>
           <AddLotForm lot={lot} onSuccess={handleEditSuccess} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" />
+              Transfer Lot to New Pasture
+            </DialogTitle>
+          </DialogHeader>
+          <PastureTransfer initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
         </DialogContent>
       </Dialog>
       
