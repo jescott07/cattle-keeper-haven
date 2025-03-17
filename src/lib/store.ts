@@ -11,7 +11,8 @@ import {
   ConsumptionRecord,
   FarmSummary,
   SoilAnalysis,
-  MaintenanceRecord
+  MaintenanceRecord,
+  PasturePlanning
 } from './types';
 
 interface StoreState {
@@ -49,6 +50,9 @@ interface StoreState {
   updatePasture: (id: string, updates: Partial<Pasture>) => void;
   removePasture: (id: string) => void;
   addPastureEvaluation: (pastureId: string, evaluation: Omit<Pasture['evaluations'][0], 'id'>) => void;
+  
+  // Pasture transfer action
+  schedulePastureTransfer: (planning: Omit<PasturePlanning, 'id'>) => void;
   
   // Actions for weighings
   addWeighingRecord: (record: Omit<WeighingRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
@@ -256,6 +260,51 @@ export const useStore = create<StoreState>()(
         }));
       },
       
+      // Pasture transfer action
+      schedulePastureTransfer: (planning) => {
+        const { lotId, fromPastureId, toPastureId, scheduledDate, completed, notes } = planning;
+        
+        set(state => {
+          const lotToUpdate = state.lots.find(lot => lot.id === lotId);
+          
+          if (!lotToUpdate) return state;
+          
+          const transfer: PasturePlanning = {
+            ...planning,
+            completedDate: completed ? scheduledDate : undefined,
+          };
+          
+          if (completed) {
+            return {
+              lots: state.lots.map(lot => 
+                lot.id === lotId 
+                  ? { 
+                      ...lot, 
+                      currentPastureId: toPastureId,
+                      plannedTransfers: [...lot.plannedTransfers, transfer],
+                      updatedAt: new Date(), 
+                      syncStatus: 'pending' 
+                    } 
+                  : lot
+              )
+            };
+          } else {
+            return {
+              lots: state.lots.map(lot => 
+                lot.id === lotId 
+                  ? { 
+                      ...lot, 
+                      plannedTransfers: [...lot.plannedTransfers, transfer],
+                      updatedAt: new Date(), 
+                      syncStatus: 'pending' 
+                    } 
+                  : lot
+              )
+            };
+          }
+        });
+      },
+      
       // Weighing actions
       addWeighingRecord: (record) => {
         const now = new Date();
@@ -390,7 +439,6 @@ export const useStore = create<StoreState>()(
       
       updateSyncStatus: (modelType, id, status) => {
         set(state => {
-          // Determine which collection to update based on modelType
           switch (modelType) {
             case 'inventory':
               return {
@@ -495,7 +543,6 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'cattle-keeper-storage',
-      // Only persist these properties
       partialize: (state) => ({
         inventory: state.inventory,
         inventoryTemplates: state.inventoryTemplates,
