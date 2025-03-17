@@ -139,35 +139,46 @@ export default function LotDetail() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="mt-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TabsContent value="overview" className="mt-6">
+              {/* Primary Metrics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <AnimalEvolution lotId={lot.id} />
                 <TotalWeightProjection lotId={lot.id} />
               </div>
               
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold mt-6">Weights</h2>
-                <WeightDistribution weighings={weighings} showFullChart />
-              </div>
-              
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold mt-6">Daily Gain</h2>
-                <DailyGainChart weighings={weighings} showFullChart />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold mt-6">Transfers</h2>
-                  <TransferHistory lotId={lot.id} showFullHistory />
-                </div>
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold mt-6">Pastures</h2>
-                  <PastureHistory lotId={lot.id} />
+              {/* Weight Analysis Section */}
+              <div className="bg-card rounded-lg p-6 border mb-8">
+                <h2 className="text-xl font-semibold mb-4">Weight Analysis</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Weight Distribution</h3>
+                    <WeightDistribution weighings={weighings} showFullChart />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Daily Gain</h3>
+                    <DailyGainChart weighings={weighings} showFullChart />
+                  </div>
                 </div>
               </div>
               
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold mt-6">Nutrition</h2>
+              {/* Pasture Management Section */}
+              <div className="bg-card rounded-lg p-6 border mb-8">
+                <h2 className="text-xl font-semibold mb-4">Pasture & Transfer Management</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Transfer History</h3>
+                    <TransferHistory lotId={lot.id} showFullHistory />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">Pasture History</h3>
+                    <PastureHistory lotId={lot.id} />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Nutrition Section */}
+              <div className="bg-card rounded-lg p-6 border">
+                <h2 className="text-xl font-semibold mb-4">Nutrition</h2>
                 <NutritionHistory lotId={lot.id} />
               </div>
             </TabsContent>

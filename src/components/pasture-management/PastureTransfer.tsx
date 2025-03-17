@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Move } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -144,19 +144,22 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
           </Select>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="schedule-transfer"
-            checked={isScheduledTransfer}
-            onCheckedChange={setIsScheduledTransfer}
-          />
-          <Label htmlFor="schedule-transfer">Schedule for future date</Label>
-        </div>
-
         <div className="space-y-2">
-          <Label htmlFor="date">
-            {isScheduledTransfer ? "Scheduled Date" : "Transfer Date"}
-          </Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label htmlFor="date">
+              {isScheduledTransfer ? "Scheduled Date" : "Transfer Date"}
+            </Label>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="schedule-transfer"
+                checked={isScheduledTransfer}
+                onCheckedChange={setIsScheduledTransfer}
+              />
+              <Label htmlFor="schedule-transfer" className="cursor-pointer text-sm">
+                Schedule for future
+              </Label>
+            </div>
+          </div>
           <div className="relative">
             <Input
               id="date"
