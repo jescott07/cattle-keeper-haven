@@ -1,8 +1,10 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TreePine } from 'lucide-react';
+import { TreePine, ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 interface PastureHistoryProps {
   lotId: string;
@@ -12,11 +14,25 @@ export function PastureHistory({ lotId }: PastureHistoryProps) {
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
   const pastures = useStore(state => state.pastures);
   
-  const currentPastureName = useMemo(() => {
-    if (!lot) return 'Unknown';
-    const pasture = pastures.find(p => p.id === lot.currentPastureId);
+  const pastureHistory = useMemo(() => {
+    if (!lot || !lot.plannedTransfers) return [];
+    
+    // Only include completed transfers
+    const completedTransfers = lot.plannedTransfers.filter(transfer => transfer.completed);
+    
+    // Sort by completion date, most recent first
+    return completedTransfers.sort((a, b) => {
+      const dateA = a.completedDate?.getTime() || a.scheduledDate.getTime();
+      const dateB = b.completedDate?.getTime() || b.scheduledDate.getTime();
+      return dateB - dateA;
+    });
+  }, [lot]);
+  
+  const getPastureName = (pastureId?: string) => {
+    if (!pastureId) return 'Unknown';
+    const pasture = pastures.find(p => p.id === pastureId);
     return pasture ? pasture.name : 'Unknown';
-  }, [lot, pastures]);
+  };
   
   return (
     <Card>
@@ -27,12 +43,48 @@ export function PastureHistory({ lotId }: PastureHistoryProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid place-content-center h-[300px] text-center">
-          <div className="text-muted-foreground">
-            <p>Current Pasture: <span className="font-medium text-foreground">{currentPastureName}</span></p>
-            <p className="mt-4">Pasture management will be available in future updates</p>
+        {pastureHistory.length > 0 ? (
+          <div className="space-y-3">
+            {pastureHistory.map((transfer, index) => {
+              const completedDate = transfer.completedDate || transfer.scheduledDate;
+              
+              return (
+                <div key={index} className="border rounded-md p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Completed</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {format(completedDate, 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="font-medium">
+                          {getPastureName(transfer.fromPastureId)}
+                        </span>
+                        <ArrowRight className="h-4 w-4" />
+                        <span className="font-medium">
+                          {getPastureName(transfer.toPastureId)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {transfer.notes && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {transfer.notes}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No pasture history available for this lot</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

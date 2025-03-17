@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WeighingRecord } from '@/lib/types';
@@ -23,51 +24,63 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
   [weighings, lotId]);
   
   const chartData = useMemo(() => {
-    if (lotWeighings.length === 0) return [];
+    if (!lot || !lot.plannedTransfers) return [];
     
-    // Sort weighings by date
-    const sortedWeighings = [...lotWeighings].sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Start with the current number of animals
+    const currentAnimalCount = lot.numberOfAnimals;
     
-    // Group weighings by date to avoid duplicates
-    const dateMap = new Map();
+    // Get all completed transfers (in or out)
+    const completedTransfers = [...(lot.plannedTransfers || [])].filter(t => t.completed);
     
-    // Process each weighing record
-    sortedWeighings.forEach(weighing => {
-      const dateKey = format(weighing.date, 'yyyy-MM-dd');
+    // Sort by completion date, most recent first
+    const sortedTransfers = completedTransfers.sort((a, b) => {
+      const dateA = a.completedDate?.getTime() || a.scheduledDate.getTime();
+      const dateB = b.completedDate?.getTime() || b.scheduledDate.getTime();
+      return dateB - dateA;
+    });
+    
+    // Create a timeline of animal count changes
+    let animalCount = currentAnimalCount;
+    const timeline = [{
+      date: new Date(),
+      animalCount: animalCount,
+      formattedDate: format(new Date(), 'MMM d, yyyy')
+    }];
+    
+    // Go back in time and recalculate animal count at each transfer point
+    for (const transfer of sortedTransfers) {
+      const date = transfer.completedDate || transfer.scheduledDate;
       
-      // Only keep the latest record for each date
-      if (!dateMap.has(dateKey) || dateMap.get(dateKey).date < weighing.date) {
-        dateMap.set(dateKey, weighing);
+      // Determine if this was incoming or outgoing
+      if (transfer.toPastureId === lot.currentPastureId) {
+        // This was an incoming transfer, so before this, we had fewer animals
+        animalCount -= lot.numberOfAnimals; // This is simplified and would need real transfer counts
+      } else if (transfer.fromPastureId === lot.currentPastureId) {
+        // This was an outgoing transfer, so before this, we had more animals
+        animalCount += lot.numberOfAnimals; // This is simplified and would need real transfer counts
       }
-    });
-    
-    // Convert map to array and sort by date
-    const uniqueWeighings = Array.from(dateMap.values())
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
-    
-    // Create chart data with the actual number of animals in the lot at each weighing date
-    return uniqueWeighings.map(weighing => {
-      // Find the lot state at the time of this weighing
-      const lotAtTime = lots.find(l => l.id === lotId);
       
-      return {
-        date: format(weighing.date, 'MMM d, yyyy'),
-        animals: weighing.numberOfAnimals,
-        weight: Math.round(weighing.averageWeight)
-      };
-    });
-  }, [lotWeighings, lots, lotId]);
+      timeline.push({
+        date,
+        animalCount,
+        formattedDate: format(date, 'MMM d, yyyy')
+      });
+    }
+    
+    // Sort by date, oldest first
+    return timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [lot]);
   
   const initialAnimalCount = useMemo(() => {
     if (chartData.length > 0) {
-      return chartData[0].animals;
+      return chartData[0].animalCount;
     }
     return 0;
   }, [chartData]);
   
   const latestAnimalCount = useMemo(() => {
     if (chartData.length > 0) {
-      return chartData[chartData.length - 1].animals;
+      return chartData[chartData.length - 1].animalCount;
     }
     return 0;
   }, [chartData]);
@@ -112,20 +125,17 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
-                    dataKey="date" 
+                    dataKey="formattedDate" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => {
-                      return format(new Date(value), 'MMM d');
-                    }}
                   />
                   <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
                   <Tooltip 
-                    formatter={(value, name) => [value, name === 'animals' ? 'Animals' : 'Avg. Weight (kg)']}
+                    formatter={(value, name) => [value, name === 'animalCount' ? 'Animals' : '']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="animals" 
+                    dataKey="animalCount" 
                     stroke="#2563eb" 
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -137,7 +147,7 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
           </>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No weighing data available</p>
+            <p>No animal count evolution data available</p>
           </div>
         )}
       </CardContent>

@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WeighingRecord } from '@/lib/types';
@@ -25,10 +26,10 @@ export function TotalWeightProjection({ lotId }: TotalWeightProjectionProps) {
   const chartData = useMemo(() => {
     if (!lot || lotWeighings.length === 0) return [];
     
-    // Sort weighings by date
+    // Sort weighings by date, oldest first
     const sortedWeighings = [...lotWeighings].sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    // Group weighings by date to avoid duplicates
+    // Group weighings by date
     const dateMap = new Map();
     
     // Process each weighing record
@@ -45,14 +46,45 @@ export function TotalWeightProjection({ lotId }: TotalWeightProjectionProps) {
     const uniqueWeighings = Array.from(dateMap.values())
       .sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    // Create chart data with total weight projection
+    // For total weight calculation, we need to account for animal count changes over time
+    const animalCounts = new Map();
+    
+    // Start with the current number of animals at the current date
+    animalCounts.set(format(new Date(), 'yyyy-MM-dd'), lot.numberOfAnimals);
+    
+    // Add animal counts at the time of each transfer
+    if (lot.plannedTransfers) {
+      const completedTransfers = lot.plannedTransfers.filter(t => t.completed);
+      
+      completedTransfers.forEach(transfer => {
+        const date = transfer.completedDate || transfer.scheduledDate;
+        const dateKey = format(date, 'yyyy-MM-dd');
+        
+        // This is a simplified approach - in a real app, you'd track the exact number of animals transferred
+        // Here we're assuming the transfer involves all animals in the lot
+        animalCounts.set(dateKey, lot.numberOfAnimals);
+      });
+    }
+    
+    // Create chart data with total weight projection based on animal counts
     return uniqueWeighings.map(weighing => {
-      const totalWeight = weighing.averageWeight * lot.numberOfAnimals;
+      const dateKey = format(weighing.date, 'yyyy-MM-dd');
+      
+      // Find the closest animal count date that's not after this weighing date
+      const relevantDates = Array.from(animalCounts.keys())
+        .filter(d => new Date(d) <= weighing.date)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      
+      const closestDateKey = relevantDates[0] || format(new Date(), 'yyyy-MM-dd');
+      const animalCount = animalCounts.get(closestDateKey) || lot.numberOfAnimals;
+      
+      const totalWeight = weighing.averageWeight * animalCount;
       
       return {
         date: format(weighing.date, 'MMM d, yyyy'),
         totalWeight: Math.round(totalWeight),
-        averageWeight: Math.round(weighing.averageWeight)
+        averageWeight: Math.round(weighing.averageWeight),
+        animalCount
       };
     });
   }, [lotWeighings, lot]);
@@ -113,7 +145,6 @@ export function TotalWeightProjection({ lotId }: TotalWeightProjectionProps) {
                   <XAxis 
                     dataKey="date" 
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => format(new Date(value), 'MMM d')}
                   />
                   <YAxis />
                   <Tooltip 

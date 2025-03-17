@@ -150,14 +150,14 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
               {isScheduledTransfer ? "Scheduled Date" : "Transfer Date"}
             </Label>
             <div className="flex items-center gap-2">
+              <Label htmlFor="schedule-transfer" className="cursor-pointer text-sm mr-2">
+                Schedule for future
+              </Label>
               <Switch
                 id="schedule-transfer"
                 checked={isScheduledTransfer}
                 onCheckedChange={setIsScheduledTransfer}
               />
-              <Label htmlFor="schedule-transfer" className="cursor-pointer text-sm">
-                Schedule for future
-              </Label>
             </div>
           </div>
           <div className="relative">
