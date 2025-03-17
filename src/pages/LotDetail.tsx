@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, Skull } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AddLotForm } from '@/components/AddLotForm';
 import { useToast } from '@/hooks/use-toast';
 import { PastureTransfer } from '@/components/pasture-management/PastureTransfer';
+import { TransferManagement } from '@/components/lot-detail/TransferManagement';
+import { MortalityTracker } from '@/components/lot-detail/MortalityTracker';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +39,7 @@ export default function LotDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPastureTransferDialogOpen, setIsPastureTransferDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  const [isMortalityDialogOpen, setIsMortalityDialogOpen] = useState(false);
   
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
   const weighings = useStore(state => state.weighings.filter(w => w.lotId === lotId));
@@ -154,38 +157,58 @@ export default function LotDetail() {
                 </div>
               </div>
               
-              {/* Pasture History Section */}
-              <div className="bg-card rounded-lg p-6 border mb-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Pasture History</h2>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={() => setIsPastureTransferDialogOpen(true)}
-                  >
-                    <TreePine className="h-4 w-4" />
-                    Pasture Management
-                  </Button>
+              {/* Pasture History and Transfer History Section - Side by Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Pasture History Section */}
+                <div className="bg-card rounded-lg p-6 border h-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">Pasture History</h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => setIsPastureTransferDialogOpen(true)}
+                    >
+                      <TreePine className="h-4 w-4" />
+                      Pasture Management
+                    </Button>
+                  </div>
+                  <PastureHistory lotId={lot.id} />
                 </div>
-                <PastureHistory lotId={lot.id} />
+                
+                {/* Transfer History Section */}
+                <div className="bg-card rounded-lg p-6 border h-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">Transfer History</h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => setIsTransferDialogOpen(true)}
+                    >
+                      <ArrowLeftRight className="h-4 w-4" />
+                      Transfer Management
+                    </Button>
+                  </div>
+                  <TransferHistory lotId={lot.id} showFullHistory />
+                </div>
               </div>
               
-              {/* Transfer Management Section */}
+              {/* Mortality Tracker Section */}
               <div className="bg-card rounded-lg p-6 border mb-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Transfer History</h2>
+                  <h2 className="text-xl font-semibold">Mortality Tracker</h2>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="gap-2"
-                    onClick={() => setIsTransferDialogOpen(true)}
+                    onClick={() => setIsMortalityDialogOpen(true)}
                   >
-                    <ArrowLeftRight className="h-4 w-4" />
-                    Transfer Management
+                    <Skull className="h-4 w-4" />
+                    Record Mortality
                   </Button>
                 </div>
-                <TransferHistory lotId={lot.id} showFullHistory />
+                <MortalityTracker lotId={lot.id} />
               </div>
               
               {/* Nutrition Section */}
@@ -238,10 +261,19 @@ export default function LotDetail() {
               Transfer Management
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4 text-center text-muted-foreground">
-            <p>Transfer functionality would go here</p>
-            <p className="text-sm mt-2">You can implement animal transfers between lots</p>
-          </div>
+          <TransferManagement initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isMortalityDialogOpen} onOpenChange={setIsMortalityDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Skull className="h-5 w-5" />
+              Record Mortality
+            </DialogTitle>
+          </DialogHeader>
+          <MortalityTracker lotId={lot.id} onMortalityAdded={() => setIsMortalityDialogOpen(false)} />
         </DialogContent>
       </Dialog>
       

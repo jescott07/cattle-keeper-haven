@@ -116,14 +116,14 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
         <span className="font-medium">Pasture Information</span>
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-2 hidden">
         <Label htmlFor="fromPastureId">Current Pasture</Label>
         <Select 
           value={watch('fromPastureId')} 
           onValueChange={(value) => setValue('fromPastureId', value)}
         >
           <SelectTrigger id="fromPastureId">
-            <SelectValue placeholder="Select source pasture" />
+            <SelectValue placeholder="Current pasture" />
           </SelectTrigger>
           <SelectContent>
             {pastures.map((pasture) => (
@@ -136,10 +136,6 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
         {errors.fromPastureId && (
           <p className="text-sm text-destructive">{errors.fromPastureId.message}</p>
         )}
-      </div>
-      
-      <div className="flex justify-center py-2">
-        <ChevronRight className="h-6 w-6 text-muted-foreground" />
       </div>
       
       <div className="space-y-2">
