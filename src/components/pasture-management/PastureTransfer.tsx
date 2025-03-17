@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from 'lucide-react';
+import { Calendar, Move } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -82,9 +82,9 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
     });
 
     toast({
-      title: isScheduledTransfer ? "Transfer Scheduled" : "Transfer Complete",
+      title: isScheduledTransfer ? "Management Scheduled" : "Management Complete",
       description: isScheduledTransfer 
-        ? `The transfer has been scheduled for ${format(new Date(scheduledDate), 'MMMM d, yyyy')}.`
+        ? `The pasture change has been scheduled for ${format(new Date(scheduledDate), 'MMMM d, yyyy')}.`
         : "The lot has been moved to the new pasture successfully."
     });
 
@@ -172,7 +172,7 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
           <Label htmlFor="notes">Notes (Optional)</Label>
           <Textarea
             id="notes"
-            placeholder="Add any relevant notes about this transfer"
+            placeholder="Add any relevant notes about this pasture change"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -183,7 +183,7 @@ export function PastureTransfer({ initialLotId, onTransferComplete }: PastureTra
           onClick={handleTransfer}
           disabled={!selectedLotId || !selectedPastureId}
         >
-          {isScheduledTransfer ? "Schedule Transfer" : "Complete Transfer"}
+          {isScheduledTransfer ? "Schedule Management" : "Complete Management"}
         </Button>
       </CardContent>
     </Card>

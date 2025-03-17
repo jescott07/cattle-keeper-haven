@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ArrowRightLeft, Edit, Truck, Trash } from 'lucide-react';
+import { ArrowLeft, Move, Edit, Trash } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -36,7 +36,6 @@ export default function LotDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
   
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
   const weighings = useStore(state => state.weighings.filter(w => w.lotId === lotId));
@@ -121,8 +120,8 @@ export default function LotDetail() {
                 className="gap-2"
                 variant="secondary"
               >
-                <Truck className="h-4 w-4" />
-                Transfer
+                <Move className="h-4 w-4" />
+                Management
               </Button>
               
               <Button 
@@ -135,18 +134,9 @@ export default function LotDetail() {
             </div>
           </div>
           
-          <Tabs 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="mt-6"
-          >
-            <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full">
+          <Tabs defaultValue="overview" className="mt-6">
+            <TabsList className="grid grid-cols-1 w-full">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="weights">Weights</TabsTrigger>
-              <TabsTrigger value="transfers">Transfers</TabsTrigger>
-              <TabsTrigger value="daily-gain">Daily Gain</TabsTrigger>
-              <TabsTrigger value="pastures">Pastures</TabsTrigger>
-              <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="mt-6 space-y-6">
@@ -155,39 +145,31 @@ export default function LotDetail() {
                 <TotalWeightProjection lotId={lot.id} />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <WeightDistribution weighings={weighings} />
-                <DailyGainChart weighings={weighings} />
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold mt-6">Weights</h2>
+                <WeightDistribution weighings={weighings} showFullChart />
               </div>
               
-              <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold mt-6">Daily Gain</h2>
                 <DailyGainChart weighings={weighings} showFullChart />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TransferHistory lotId={lot.id} /> 
-                <PastureHistory lotId={lot.id} />
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold mt-6">Transfers</h2>
+                  <TransferHistory lotId={lot.id} showFullHistory />
+                </div>
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold mt-6">Pastures</h2>
+                  <PastureHistory lotId={lot.id} />
+                </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="weights" className="mt-6">
-              <WeightDistribution weighings={weighings} showFullChart />
-            </TabsContent>
-            
-            <TabsContent value="transfers" className="mt-6">
-              <TransferHistory lotId={lot.id} showFullHistory />
-            </TabsContent>
-            
-            <TabsContent value="daily-gain" className="mt-6 space-y-6">
-              <DailyGainChart weighings={weighings} showFullChart />
-            </TabsContent>
-            
-            <TabsContent value="pastures" className="mt-6">
-              <PastureHistory lotId={lot.id} />
-            </TabsContent>
-            
-            <TabsContent value="nutrition" className="mt-6">
-              <NutritionHistory lotId={lot.id} />
+              
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold mt-6">Nutrition</h2>
+                <NutritionHistory lotId={lot.id} />
+              </div>
             </TabsContent>
           </Tabs>
           
@@ -217,8 +199,8 @@ export default function LotDetail() {
         <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowRightLeft className="h-5 w-5" />
-              Transfer Lot to New Pasture
+              <Move className="h-5 w-5" />
+              Pasture Management
             </DialogTitle>
           </DialogHeader>
           <PastureTransfer initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
