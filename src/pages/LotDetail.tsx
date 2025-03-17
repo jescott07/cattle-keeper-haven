@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Move, Edit, Trash } from 'lucide-react';
+import { ArrowLeft, Move, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -35,6 +35,7 @@ export default function LotDetail() {
   const navigate = useNavigate();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPastureTransferDialogOpen, setIsPastureTransferDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
@@ -116,15 +117,6 @@ export default function LotDetail() {
             
             <div className="flex gap-2">
               <Button 
-                onClick={() => setIsTransferDialogOpen(true)}
-                className="gap-2"
-                variant="secondary"
-              >
-                <Move className="h-4 w-4" />
-                Management
-              </Button>
-              
-              <Button 
                 onClick={() => setIsEditDialogOpen(true)}
                 className="gap-2"
               >
@@ -148,7 +140,18 @@ export default function LotDetail() {
               
               {/* Weight Analysis Section */}
               <div className="bg-card rounded-lg p-6 border mb-8">
-                <h2 className="text-xl font-semibold mb-4">Weight Analysis</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Weight Analysis</h2>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => navigate('/weighing')}
+                  >
+                    <Scale className="h-4 w-4" />
+                    Go to Weighing
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="text-lg font-medium mb-3">Weight Distribution</h3>
@@ -161,19 +164,38 @@ export default function LotDetail() {
                 </div>
               </div>
               
+              {/* Transfer Management Section */}
+              <div className="bg-card rounded-lg p-6 border mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Transfer History</h2>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => setIsTransferDialogOpen(true)}
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                    Transfer Management
+                  </Button>
+                </div>
+                <TransferHistory lotId={lot.id} showFullHistory />
+              </div>
+              
               {/* Pasture Management Section */}
               <div className="bg-card rounded-lg p-6 border mb-8">
-                <h2 className="text-xl font-semibold mb-4">Pasture & Transfer Management</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Transfer History</h3>
-                    <TransferHistory lotId={lot.id} showFullHistory />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Pasture History</h3>
-                    <PastureHistory lotId={lot.id} />
-                  </div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Pasture History</h2>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => setIsPastureTransferDialogOpen(true)}
+                  >
+                    <TreePine className="h-4 w-4" />
+                    Pasture Management
+                  </Button>
                 </div>
+                <PastureHistory lotId={lot.id} />
               </div>
               
               {/* Nutrition Section */}
@@ -206,15 +228,30 @@ export default function LotDetail() {
         </DialogContent>
       </Dialog>
       
+      <Dialog open={isPastureTransferDialogOpen} onOpenChange={setIsPastureTransferDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TreePine className="h-5 w-5" />
+              Pasture Management
+            </DialogTitle>
+          </DialogHeader>
+          <PastureTransfer initialLotId={lot.id} onTransferComplete={() => setIsPastureTransferDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+      
       <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Move className="h-5 w-5" />
-              Pasture Management
+              <ArrowLeftRight className="h-5 w-5" />
+              Transfer Management
             </DialogTitle>
           </DialogHeader>
-          <PastureTransfer initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
+          <div className="py-4 text-center text-muted-foreground">
+            <p>Transfer functionality would go here</p>
+            <p className="text-sm mt-2">You can implement animal transfers between lots</p>
+          </div>
         </DialogContent>
       </Dialog>
       
