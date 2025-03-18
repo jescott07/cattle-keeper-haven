@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
@@ -191,21 +190,7 @@ export default function LotDetail() {
               </div>
               
               <div className="mb-8">
-                <div className="bg-card rounded-lg p-6 border">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Mortality Tracking</h2>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => setIsMortalityDialogOpen(true)}
-                    >
-                      <Skull className="h-4 w-4" />
-                      Add Mortality
-                    </Button>
-                  </div>
-                  <MortalityTracker lotId={lot.id} />
-                </div>
+                <MortalityTracker lotId={lot.id} onMortalityAdded={() => {}} />
               </div>
               
               <div className="bg-card rounded-lg p-6 border">
