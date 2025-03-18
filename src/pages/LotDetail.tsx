@@ -4,7 +4,7 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, Skull } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
