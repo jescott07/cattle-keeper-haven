@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -209,7 +210,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
@@ -218,6 +219,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
                         date < new Date("1900-01-01")
                       }
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -248,15 +250,16 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
                       disabled={(date) =>
-                        date < new Date()
+                        date < new Date("1900-01-01")
                       }
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -274,7 +277,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
               <FormItem>
                 <FormLabel>Seed Cost</FormLabel>
                 <FormControl>
-                  <Input type="number" min="0" step="0.01" placeholder="Optional" {...field} />
+                  <Input type="number" min="0" step="0.01" placeholder="Optional" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -288,7 +291,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
               <FormItem>
                 <FormLabel>Seeds per Hectare</FormLabel>
                 <FormControl>
-                  <Input type="number" min="0" placeholder="Optional" {...field} />
+                  <Input type="number" min="0" placeholder="Optional" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -303,7 +306,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
             <FormItem>
               <FormLabel>Expected Yield per Hectare</FormLabel>
               <FormControl>
-                <Input type="number" min="0" step="0.1" placeholder="Optional" {...field} />
+                <Input type="number" min="0" step="0.1" placeholder="Optional" {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -317,7 +320,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Pasture Location (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a pasture (optional)" />

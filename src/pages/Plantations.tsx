@@ -12,13 +12,21 @@ export default function Plantations() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const plantations = useStore((state) => state.plantations);
 
+  const handleOpenDialog = () => {
+    setIsAddDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsAddDialogOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto p-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Plantations</h1>
-          <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+          <Button onClick={handleOpenDialog} className="gap-2">
             <Plus className="h-4 w-4" />
             Add Plantation
           </Button>
@@ -36,7 +44,7 @@ export default function Plantations() {
             <p className="text-muted-foreground mb-6">
               Add your first plantation to start tracking your crops and their productivity.
             </p>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+            <Button onClick={handleOpenDialog} className="gap-2">
               <Plus className="h-4 w-4" />
               Add First Plantation
             </Button>
@@ -48,7 +56,7 @@ export default function Plantations() {
             <DialogHeader>
               <DialogTitle>Add New Plantation</DialogTitle>
             </DialogHeader>
-            <AddPlantationForm onPlantationAdded={() => setIsAddDialogOpen(false)} />
+            <AddPlantationForm onPlantationAdded={handleCloseDialog} />
           </DialogContent>
         </Dialog>
       </main>
