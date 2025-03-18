@@ -195,20 +195,21 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
         <div className="space-y-2">
           <Label>Breed Composition</Label>
           <div className="flex flex-nowrap items-center gap-2">
-            <Select 
-              value={currentBreed} 
-              onValueChange={(value) => setCurrentBreed(value as BreedType)}
-              className="flex-1"
-            >
-              <SelectTrigger id="breed">
-                <SelectValue placeholder="Select breed" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="nelore">Nelore</SelectItem>
-                <SelectItem value="anelorada">Anelorada</SelectItem>
-                <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex-1">
+              <Select 
+                value={currentBreed} 
+                onValueChange={(value) => setCurrentBreed(value as BreedType)}
+              >
+                <SelectTrigger id="breed">
+                  <SelectValue placeholder="Select breed" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nelore">Nelore</SelectItem>
+                  <SelectItem value="anelorada">Anelorada</SelectItem>
+                  <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             <Input
               type="number"

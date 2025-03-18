@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, Skull } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -135,7 +134,6 @@ export default function LotDetail() {
             </TabsList>
             
             <TabsContent value="overview" className="mt-6">
-              {/* Weight Analysis Section */}
               <div className="bg-card rounded-lg p-6 border mb-8">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Weight Analysis</h2>
@@ -157,9 +155,7 @@ export default function LotDetail() {
                 </div>
               </div>
               
-              {/* Pasture History and Transfer History Section - Side by Side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Pasture History Section */}
                 <div className="bg-card rounded-lg p-6 border h-full">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Pasture History</h2>
@@ -176,7 +172,6 @@ export default function LotDetail() {
                   <PastureHistory lotId={lot.id} />
                 </div>
                 
-                {/* Transfer History Section */}
                 <div className="bg-card rounded-lg p-6 border h-full">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Transfer History</h2>
@@ -194,24 +189,10 @@ export default function LotDetail() {
                 </div>
               </div>
               
-              {/* Mortality Tracker Section */}
-              <div className="bg-card rounded-lg p-6 border mb-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Mortality Tracker</h2>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={() => setIsMortalityDialogOpen(true)}
-                  >
-                    <Skull className="h-4 w-4" />
-                    Record Mortality
-                  </Button>
-                </div>
+              <div className="mb-8">
                 <MortalityTracker lotId={lot.id} />
               </div>
               
-              {/* Nutrition Section */}
               <div className="bg-card rounded-lg p-6 border">
                 <h2 className="text-xl font-semibold mb-4">Nutrition</h2>
                 <NutritionHistory lotId={lot.id} />
