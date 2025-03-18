@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -59,14 +58,12 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
     return breedCounts.reduce((sum, item) => sum + item.count, 0);
   };
   
-  // Set values for source and status with useEffect
   useEffect(() => {
     if (lot) {
       setValue('source', lot.source);
       setValue('status', lot.status);
       setValue('currentPastureId', lot.currentPastureId);
       
-      // Parse breed data from notes if available
       if (lot.notes) {
         const breedRegex = /(\d+)\s+(nelore|anelorada|cruzamento-industrial)/gi;
         const breeds: BreedCount[] = [];
@@ -82,11 +79,9 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
         if (breeds.length > 0) {
           setBreedCounts(breeds);
         } else if (lot.breed) {
-          // If no breeds in notes but a single breed is set
           setBreedCounts([{ breed: lot.breed, count: lot.numberOfAnimals }]);
         }
       } else if (lot.breed) {
-        // If no notes but breed is set
         setBreedCounts([{ breed: lot.breed, count: lot.numberOfAnimals }]);
       }
     }
@@ -95,11 +90,9 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
   const handleAddBreed = () => {
     if (currentCount <= 0) return;
     
-    // Check if breed already exists
     const existingIndex = breedCounts.findIndex(b => b.breed === currentBreed);
     
     if (existingIndex >= 0) {
-      // Update existing breed count
       const updatedBreeds = [...breedCounts];
       updatedBreeds[existingIndex] = {
         ...updatedBreeds[existingIndex],
@@ -107,14 +100,11 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
       };
       setBreedCounts(updatedBreeds);
     } else {
-      // Add new breed
       setBreedCounts([...breedCounts, { breed: currentBreed, count: currentCount }]);
     }
     
-    // Update total animals
     setValue('totalAnimals', calculateTotalAnimals() + currentCount);
     
-    // Reset input
     setCurrentCount(0);
   };
   
@@ -141,7 +131,6 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
     setIsSubmitting(true);
     
     try {
-      // Generate notes with breed information
       const breedNotes = breedCounts.length > 0 
         ? breedCounts.map(b => `${b.count} ${formatBreedName(b.breed)}`).join(', ')
         : '';
@@ -150,7 +139,6 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
         ? (data.notes ? `${breedNotes}. ${data.notes}` : breedNotes)
         : data.notes;
       
-      // Determine main breed (the one with most animals)
       let mainBreed: BreedType | undefined = undefined;
       if (breedCounts.length > 0) {
         mainBreed = breedCounts.reduce(
@@ -160,7 +148,6 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
       }
       
       if (lot) {
-        // Update existing lot
         updateLot(lot.id, {
           name: data.name,
           numberOfAnimals: data.totalAnimals,
@@ -172,7 +159,6 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
           notes: combinedNotes
         });
       } else {
-        // Add new lot
         addLot({
           name: data.name,
           numberOfAnimals: data.totalAnimals,
@@ -208,44 +194,42 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
         
         <div className="space-y-2">
           <Label>Breed Composition</Label>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2">
-              <Select 
-                value={currentBreed} 
-                onValueChange={(value) => setCurrentBreed(value as BreedType)}
-              >
-                <SelectTrigger id="breed">
-                  <SelectValue placeholder="Select breed" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nelore">Nelore</SelectItem>
-                  <SelectItem value="anelorada">Anelorada</SelectItem>
-                  <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Input
-                type="number"
-                min="1"
-                placeholder="Count"
-                value={currentCount || ''}
-                onChange={(e) => setCurrentCount(parseInt(e.target.value) || 0)}
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <Select 
+              value={currentBreed} 
+              onValueChange={(value) => setCurrentBreed(value as BreedType)}
+            >
+              <SelectTrigger id="breed" className="flex-1">
+                <SelectValue placeholder="Select breed" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nelore">Nelore</SelectItem>
+                <SelectItem value="anelorada">Anelorada</SelectItem>
+                <SelectItem value="cruzamento-industrial">Cruzamento Industrial</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Input
+              type="number"
+              min="1"
+              placeholder="Count"
+              value={currentCount || ''}
+              onChange={(e) => setCurrentCount(parseInt(e.target.value) || 0)}
+              className="w-24"
+            />
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddBreed}
+              disabled={currentCount <= 0}
+              className="whitespace-nowrap"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Breed
+            </Button>
           </div>
-          
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            className="mt-2 gap-1"
-            onClick={handleAddBreed}
-            disabled={currentCount <= 0}
-          >
-            <Plus className="h-4 w-4" />
-            Add Breed
-          </Button>
           
           {breedCounts.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
