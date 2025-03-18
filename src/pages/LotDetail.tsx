@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, Skull } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -19,7 +18,6 @@ import { AddLotForm } from '@/components/AddLotForm';
 import { useToast } from '@/hooks/use-toast';
 import { PastureTransfer } from '@/components/pasture-management/PastureTransfer';
 import { TransferManagement } from '@/components/lot-detail/TransferManagement';
-import { MortalityTracker } from '@/components/lot-detail/MortalityTracker';
 import { DeathHistory } from '@/components/lot-detail/DeathHistory';
 import { 
   AlertDialog,
@@ -193,34 +191,6 @@ export default function LotDetail() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <DeathHistory lotId={lot.id} />
-                
-                <div className="bg-card rounded-lg p-6 border h-full">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold flex items-center gap-2">
-                      <Skull className="h-5 w-5" />
-                      Mortality Tracking
-                    </h2>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-2"
-                      onClick={() => setIsMortalityDialogOpen(true)}
-                    >
-                      <Skull className="h-4 w-4" />
-                      Add Mortality
-                    </Button>
-                  </div>
-                  
-                  {/* Mortality metrics and charts would go here */}
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Track animal mortality and view statistics</p>
-                    <p className="text-sm mt-1">Click "Add Mortality" to record animal deaths</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-card rounded-lg p-6 border">
-                <h2 className="text-xl font-semibold mb-4">Nutrition</h2>
                 <NutritionHistory lotId={lot.id} />
               </div>
             </TabsContent>
@@ -269,18 +239,6 @@ export default function LotDetail() {
             </DialogTitle>
           </DialogHeader>
           <TransferManagement initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isMortalityDialogOpen} onOpenChange={setIsMortalityDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Skull className="h-5 w-5" />
-              Record Mortality
-            </DialogTitle>
-          </DialogHeader>
-          <MortalityTracker lotId={lot.id} onMortalityAdded={() => setIsMortalityDialogOpen(false)} />
         </DialogContent>
       </Dialog>
       
