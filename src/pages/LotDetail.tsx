@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
@@ -19,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PastureTransfer } from '@/components/pasture-management/PastureTransfer';
 import { TransferManagement } from '@/components/lot-detail/TransferManagement';
 import { MortalityTracker } from '@/components/lot-detail/MortalityTracker';
+import { DeathHistory } from '@/components/lot-detail/DeathHistory';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -189,8 +191,32 @@ export default function LotDetail() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 gap-6 mb-8">
-                <MortalityTracker lotId={lot.id} onMortalityAdded={() => setIsMortalityDialogOpen(true)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <DeathHistory lotId={lot.id} />
+                
+                <div className="bg-card rounded-lg p-6 border h-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                      <Skull className="h-5 w-5" />
+                      Mortality Tracking
+                    </h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => setIsMortalityDialogOpen(true)}
+                    >
+                      <Skull className="h-4 w-4" />
+                      Add Mortality
+                    </Button>
+                  </div>
+                  
+                  {/* Mortality metrics and charts would go here */}
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Track animal mortality and view statistics</p>
+                    <p className="text-sm mt-1">Click "Add Mortality" to record animal deaths</p>
+                  </div>
+                </div>
               </div>
               
               <div className="bg-card rounded-lg p-6 border">
