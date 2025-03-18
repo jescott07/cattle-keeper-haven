@@ -9,7 +9,8 @@ import {
   Weight, 
   Menu, 
   X,
-  Database
+  Database,
+  Sprout
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useSyncService } from '@/lib/syncService';
@@ -26,6 +27,7 @@ const Navbar = () => {
     { path: '/lots', label: 'Lots', icon: <Beef className="h-5 w-5" /> },
     { path: '/inventory', label: 'Inventory', icon: <PackagePlus className="h-5 w-5" /> },
     { path: '/pastures', label: 'Pastures', icon: <MapPin className="h-5 w-5" /> },
+    { path: '/plantations', label: 'Plantations', icon: <Sprout className="h-5 w-5" /> },
     { path: '/weighing', label: 'Weighing', icon: <Weight className="h-5 w-5" /> }
   ];
 

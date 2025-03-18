@@ -13,7 +13,12 @@ import {
   SoilAnalysis,
   MaintenanceRecord,
   PasturePlanning,
-  MortalityRecord
+  MortalityRecord,
+  Plantation,
+  PestControl,
+  PlantationExpense,
+  PlantationMaintenance,
+  ProductivityRecord
 } from './types';
 
 interface StoreState {
@@ -27,6 +32,13 @@ interface StoreState {
   soilAnalyses: SoilAnalysis[];
   maintenanceRecords: MaintenanceRecord[];
   mortalityRecords: MortalityRecord[];
+  
+  // Plantation Management collections
+  plantations: Plantation[];
+  pestControls: PestControl[];
+  plantationExpenses: PlantationExpense[];
+  plantationMaintenances: PlantationMaintenance[];
+  productivityRecords: ProductivityRecord[];
   
   // Connection status
   isOnline: boolean;
@@ -76,6 +88,31 @@ interface StoreState {
   // Actions for mortality records
   addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   
+  // Actions for plantations
+  addPlantation: (plantation: Omit<Plantation, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePlantation: (id: string, updates: Partial<Plantation>) => void;
+  removePlantation: (id: string) => void;
+  
+  // Actions for pest controls
+  addPestControl: (control: Omit<PestControl, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePestControl: (id: string, updates: Partial<PestControl>) => void;
+  removePestControl: (id: string) => void;
+  
+  // Actions for plantation expenses
+  addPlantationExpense: (expense: Omit<PlantationExpense, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePlantationExpense: (id: string, updates: Partial<PlantationExpense>) => void;
+  removePlantationExpense: (id: string) => void;
+  
+  // Actions for plantation maintenances
+  addPlantationMaintenance: (maintenance: Omit<PlantationMaintenance, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePlantationMaintenance: (id: string, updates: Partial<PlantationMaintenance>) => void;
+  removePlantationMaintenance: (id: string) => void;
+  
+  // Actions for productivity records
+  addProductivityRecord: (record: Omit<ProductivityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateProductivityRecord: (id: string, updates: Partial<ProductivityRecord>) => void;
+  removeProductivityRecord: (id: string) => void;
+  
   // Sync actions
   setOnlineStatus: (isOnline: boolean) => void;
   setSyncTime: (time: Date) => void;
@@ -99,6 +136,11 @@ export const useStore = create<StoreState>()(
       soilAnalyses: [],
       maintenanceRecords: [],
       mortalityRecords: [],
+      plantations: [],
+      pestControls: [],
+      plantationExpenses: [],
+      plantationMaintenances: [],
+      productivityRecords: [],
       isOnline: navigator.onLine,
       lastSyncTime: null,
       
@@ -469,6 +511,191 @@ export const useStore = create<StoreState>()(
         }
       },
       
+      // Plantation actions
+      addPlantation: (plantation) => {
+        const now = new Date();
+        const newPlantation: Plantation = {
+          ...plantation,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          plantations: [...state.plantations, newPlantation]
+        }));
+      },
+      
+      updatePlantation: (id, updates) => {
+        set(state => ({
+          plantations: state.plantations.map(plantation => 
+            plantation.id === id 
+              ? { 
+                  ...plantation, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : plantation
+          )
+        }));
+      },
+      
+      removePlantation: (id) => {
+        set(state => ({
+          plantations: state.plantations.filter(plantation => plantation.id !== id)
+        }));
+      },
+      
+      // Pest control actions
+      addPestControl: (control) => {
+        const now = new Date();
+        const newControl: PestControl = {
+          ...control,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          pestControls: [...state.pestControls, newControl]
+        }));
+      },
+      
+      updatePestControl: (id, updates) => {
+        set(state => ({
+          pestControls: state.pestControls.map(control => 
+            control.id === id 
+              ? { 
+                  ...control, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : control
+          )
+        }));
+      },
+      
+      removePestControl: (id) => {
+        set(state => ({
+          pestControls: state.pestControls.filter(control => control.id !== id)
+        }));
+      },
+      
+      // Plantation expense actions
+      addPlantationExpense: (expense) => {
+        const now = new Date();
+        const newExpense: PlantationExpense = {
+          ...expense,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          plantationExpenses: [...state.plantationExpenses, newExpense]
+        }));
+      },
+      
+      updatePlantationExpense: (id, updates) => {
+        set(state => ({
+          plantationExpenses: state.plantationExpenses.map(expense => 
+            expense.id === id 
+              ? { 
+                  ...expense, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : expense
+          )
+        }));
+      },
+      
+      removePlantationExpense: (id) => {
+        set(state => ({
+          plantationExpenses: state.plantationExpenses.filter(expense => expense.id !== id)
+        }));
+      },
+      
+      // Plantation maintenance actions
+      addPlantationMaintenance: (maintenance) => {
+        const now = new Date();
+        const newMaintenance: PlantationMaintenance = {
+          ...maintenance,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          plantationMaintenances: [...state.plantationMaintenances, newMaintenance]
+        }));
+      },
+      
+      updatePlantationMaintenance: (id, updates) => {
+        set(state => ({
+          plantationMaintenances: state.plantationMaintenances.map(maintenance => 
+            maintenance.id === id 
+              ? { 
+                  ...maintenance, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : maintenance
+          )
+        }));
+      },
+      
+      removePlantationMaintenance: (id) => {
+        set(state => ({
+          plantationMaintenances: state.plantationMaintenances.filter(maintenance => maintenance.id !== id)
+        }));
+      },
+      
+      // Productivity record actions
+      addProductivityRecord: (record) => {
+        const now = new Date();
+        const newRecord: ProductivityRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          productivityRecords: [...state.productivityRecords, newRecord]
+        }));
+      },
+      
+      updateProductivityRecord: (id, updates) => {
+        set(state => ({
+          productivityRecords: state.productivityRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeProductivityRecord: (id) => {
+        set(state => ({
+          productivityRecords: state.productivityRecords.filter(record => record.id !== id)
+        }));
+      },
+      
       // Sync actions
       setOnlineStatus: (isOnline) => {
         set({ isOnline });
@@ -529,6 +756,36 @@ export const useStore = create<StoreState>()(
                   record.id === id ? { ...record, syncStatus: status } : record
                 )
               };
+            case 'plantations':
+              return {
+                plantations: state.plantations.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'pestControls':
+              return {
+                pestControls: state.pestControls.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'plantationExpenses':
+              return {
+                plantationExpenses: state.plantationExpenses.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'plantationMaintenances':
+              return {
+                plantationMaintenances: state.plantationMaintenances.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'productivityRecords':
+              return {
+                productivityRecords: state.productivityRecords.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
             default:
               return {};
           }
@@ -583,10 +840,17 @@ export const useStore = create<StoreState>()(
         const pendingSoilAnalyses = state.soilAnalyses.filter(i => i.syncStatus === 'pending').length;
         const pendingMaintenanceRecords = state.maintenanceRecords.filter(i => i.syncStatus === 'pending').length;
         const pendingMortalityRecords = state.mortalityRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantations = state.plantations.filter(i => i.syncStatus === 'pending').length;
+        const pendingPestControls = state.pestControls.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantationExpenses = state.plantationExpenses.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantationMaintenances = state.plantationMaintenances.filter(i => i.syncStatus === 'pending').length;
+        const pendingProductivityRecords = state.productivityRecords.filter(i => i.syncStatus === 'pending').length;
         
         return pendingInventory + pendingLots + pendingPastures + 
                pendingWeighings + pendingConsumptions + 
-               pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords;
+               pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords +
+               pendingPlantations + pendingPestControls + pendingPlantationExpenses +
+               pendingPlantationMaintenances + pendingProductivityRecords;
       }
     }),
     {
@@ -601,6 +865,11 @@ export const useStore = create<StoreState>()(
         soilAnalyses: state.soilAnalyses,
         maintenanceRecords: state.maintenanceRecords,
         mortalityRecords: state.mortalityRecords,
+        plantations: state.plantations,
+        pestControls: state.pestControls,
+        plantationExpenses: state.plantationExpenses,
+        plantationMaintenances: state.plantationMaintenances,
+        productivityRecords: state.productivityRecords,
         lastSyncTime: state.lastSyncTime
       })
     }

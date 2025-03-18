@@ -173,6 +173,70 @@ export interface SoilAnalysis {
   syncStatus: SyncStatus;
 }
 
+// PLANTATION MANAGEMENT TYPES
+export type PlantationType = 'corn' | 'soybean' | 'grass' | 'wheat' | 'silage' | 'other';
+export type PlantationStatus = 'planned' | 'planted' | 'growing' | 'harvested' | 'failed';
+export type PestType = 'insect' | 'fungus' | 'weed' | 'rodent' | 'other';
+export type ExpenseCategory = 'seeds' | 'fertilizer' | 'pesticide' | 'labor' | 'equipment' | 'irrigation' | 'other';
+
+export interface Plantation extends SyncableModel {
+  name: string;
+  type: PlantationType;
+  areaInHectares: number;
+  status: PlantationStatus;
+  plantingDate?: Date;
+  estimatedHarvestDate?: Date;
+  actualHarvestDate?: Date;
+  seedCost?: number;
+  seedsPerHectare?: number;
+  notes?: string;
+  pastureId?: string; // If plantation is on a pasture
+  expectedYieldPerHectare?: number;
+  actualYieldPerHectare?: number;
+}
+
+export interface PestControl extends SyncableModel {
+  plantationId: string;
+  date: Date;
+  pestType: PestType;
+  treatment: string;
+  productUsed?: string;
+  quantityUsed?: number;
+  unitOfMeasure?: string;
+  cost?: number;
+  effectiveness?: number; // 1-10 rating
+  notes?: string;
+}
+
+export interface PlantationExpense extends SyncableModel {
+  plantationId: string;
+  date: Date;
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  receipt?: string; // URL or file path to receipt image
+  notes?: string;
+}
+
+export interface PlantationMaintenance extends SyncableModel {
+  plantationId: string;
+  date: Date;
+  type: string;
+  description: string;
+  cost?: number;
+  notes?: string;
+}
+
+export interface ProductivityRecord extends SyncableModel {
+  plantationId: string;
+  date: Date;
+  growthStage: string;
+  plantHeight?: number; // in cm
+  plantHealth: number; // 1-10 rating
+  notes?: string;
+  images?: string[]; // URLs or file paths to images
+}
+
 // MAINTENANCE TYPES
 export type MaintenanceType = 'fertilization' | 'weed-control' | 'fence-repair' | 'water-system' | 'planting' | 'harvesting' | 'other';
 export type MaintenanceStatus = 'scheduled' | 'completed' | 'canceled';

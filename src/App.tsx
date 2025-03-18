@@ -12,6 +12,8 @@ import InventoryItemDetail from "./pages/InventoryItemDetail";
 import Pastures from "./pages/Pastures";
 import PastureDetail from "./pages/PastureDetail"; 
 import Weighing from "./pages/Weighing";
+import Plantations from "./pages/Plantations";
+import PlantationDetail from "./pages/PlantationDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/pastures" element={<Pastures />} />
           <Route path="/pastures/:pastureId" element={<PastureDetail />} />
           <Route path="/weighing" element={<Weighing />} />
+          <Route path="/plantations" element={<Plantations />} />
+          <Route path="/plantations/:plantationId" element={<PlantationDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
