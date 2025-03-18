@@ -230,61 +230,60 @@ export function MortalityTracker({ lotId, onMortalityAdded }: MortalityTrackerPr
   
   // Normal card display for the main page
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
+    <div className="bg-card rounded-lg p-6 border h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
           <Skull className="h-5 w-5" />
           Mortality Tracking
-        </CardTitle>
+        </h2>
         <Button 
-          variant="outline"
-          size="sm"
-          className="gap-1"
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
           onClick={onMortalityAdded}
         >
           <Plus className="h-4 w-4" />
           Add Mortality
         </Button>
-      </CardHeader>
-      <CardContent>
-        {totalMortalities > 0 ? (
-          <>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Total recorded mortalities:</span>
-              <span className="font-medium">{totalMortalities}</span>
-            </div>
-            
-            <div className="h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#ef4444" name="Mortalities" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="border-t pt-4 mt-4">
-              <h4 className="text-sm font-medium mb-2">Mortality Causes</h4>
-              <div className="space-y-1">
-                {mortalityByCause().map(({ cause, count }) => (
-                  <div key={cause} className="flex justify-between text-sm">
-                    <span className="capitalize">{cause.replace('-', ' ')}</span>
-                    <span>{count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No mortality records for this lot</p>
-            <p className="text-sm mt-1">Click "Add Mortality" to record animal deaths</p>
+      </div>
+      
+      {totalMortalities > 0 ? (
+        <>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Total recorded mortalities:</span>
+            <span className="font-medium">{totalMortalities}</span>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#ef4444" name="Mortalities" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="border-t pt-4 mt-4">
+            <h4 className="text-sm font-medium mb-2">Mortality Causes</h4>
+            <div className="space-y-1">
+              {mortalityByCause().map(({ cause, count }) => (
+                <div key={cause} className="flex justify-between text-sm">
+                  <span className="capitalize">{cause.replace('-', ' ')}</span>
+                  <span>{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No mortality records for this lot</p>
+          <p className="text-sm mt-1">Click "Add Mortality" to record animal deaths</p>
+        </div>
+      )}
+    </div>
   );
 }

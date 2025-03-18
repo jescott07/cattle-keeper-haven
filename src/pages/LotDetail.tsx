@@ -189,8 +189,8 @@ export default function LotDetail() {
                 </div>
               </div>
               
-              <div className="mb-8">
-                <MortalityTracker lotId={lot.id} onMortalityAdded={() => {}} />
+              <div className="grid grid-cols-1 gap-6 mb-8">
+                <MortalityTracker lotId={lot.id} onMortalityAdded={() => setIsMortalityDialogOpen(true)} />
               </div>
               
               <div className="bg-card rounded-lg p-6 border">
