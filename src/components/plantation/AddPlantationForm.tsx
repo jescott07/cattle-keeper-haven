@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -73,27 +72,35 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
   });
 
   function onSubmit(values: FormValues) {
-    // Ensure all required fields are present with their correct types
-    addPlantation({
-      name: values.name,
-      type: values.type,
-      areaInHectares: values.areaInHectares,
-      status: values.status,
-      plantingDate: values.plantingDate,
-      estimatedHarvestDate: values.estimatedHarvestDate,
-      seedCost: values.seedCost,
-      seedsPerHectare: values.seedsPerHectare,
-      expectedYieldPerHectare: values.expectedYieldPerHectare,
-      pastureId: values.pastureId,
-      notes: values.notes,
-    });
+    try {
+      addPlantation({
+        name: values.name,
+        type: values.type,
+        areaInHectares: values.areaInHectares,
+        status: values.status,
+        plantingDate: values.plantingDate,
+        estimatedHarvestDate: values.estimatedHarvestDate,
+        seedCost: values.seedCost,
+        seedsPerHectare: values.seedsPerHectare,
+        expectedYieldPerHectare: values.expectedYieldPerHectare,
+        pastureId: values.pastureId || undefined,
+        notes: values.notes || '',
+      });
 
-    toast({
-      title: "Plantation created",
-      description: `${values.name} has been added to your plantations.`,
-    });
+      toast({
+        title: "Plantation created",
+        description: `${values.name} has been added to your plantations.`,
+      });
 
-    onPlantationAdded();
+      onPlantationAdded();
+    } catch (error) {
+      console.error("Error adding plantation:", error);
+      toast({
+        title: "Error creating plantation",
+        description: "There was a problem adding your plantation. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
