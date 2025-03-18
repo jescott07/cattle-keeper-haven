@@ -73,8 +73,19 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
   });
 
   function onSubmit(values: FormValues) {
+    // Ensure all required fields are present with their correct types
     addPlantation({
-      ...values,
+      name: values.name,
+      type: values.type,
+      areaInHectares: values.areaInHectares,
+      status: values.status,
+      plantingDate: values.plantingDate,
+      estimatedHarvestDate: values.estimatedHarvestDate,
+      seedCost: values.seedCost,
+      seedsPerHectare: values.seedsPerHectare,
+      expectedYieldPerHectare: values.expectedYieldPerHectare,
+      pastureId: values.pastureId,
+      notes: values.notes,
     });
 
     toast({
