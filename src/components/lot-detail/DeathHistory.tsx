@@ -12,31 +12,16 @@ interface DeathHistoryProps {
   lotId: string;
 }
 
-type MortalityCause = 'disease' | 'injury' | 'predator' | 'unknown' | 'other';
-
-interface MortalityRecord {
-  id: string;
-  lotId: string;
-  date: Date;
-  cause: MortalityCause;
-  breed: string;
-  notes?: string;
-  createdAt: Date;
-}
-
 export function DeathHistory({ lotId }: DeathHistoryProps) {
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
+  const mortalityRecords = useStore(state => state.mortalityRecords);
   const [isMortalityDialogOpen, setIsMortalityDialogOpen] = useState(false);
-  
-  // For now, we'll simulate mortality records since they're not in the main store
-  // In a real app, these would come from the global store
-  const mortalityRecords: MortalityRecord[] = [];
   
   // Sort mortality records by date, most recent first
   const sortedRecords = useMemo(() => {
     return [...mortalityRecords]
       .filter(record => record.lotId === lotId)
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [mortalityRecords, lotId]);
   
   return (
@@ -68,7 +53,7 @@ export function DeathHistory({ lotId }: DeathHistoryProps) {
                       {record.cause.charAt(0).toUpperCase() + record.cause.slice(1)}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      {format(record.date, 'MMM d, yyyy')}
+                      {format(new Date(record.date), 'MMM d, yyyy')}
                     </span>
                   </div>
                   

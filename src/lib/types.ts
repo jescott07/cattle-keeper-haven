@@ -192,3 +192,13 @@ export interface MaintenanceRecord {
   updatedAt: Date;
   syncStatus: SyncStatus;
 }
+
+export type MortalityCause = 'disease' | 'injury' | 'predator' | 'unknown' | 'other';
+
+export interface MortalityRecord extends SyncableModel {
+  lotId: string;
+  date: Date;
+  cause: MortalityCause;
+  breed: BreedType;
+  notes?: string;
+}

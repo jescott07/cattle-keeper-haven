@@ -12,7 +12,8 @@ import {
   FarmSummary,
   SoilAnalysis,
   MaintenanceRecord,
-  PasturePlanning
+  PasturePlanning,
+  MortalityRecord
 } from './types';
 
 interface StoreState {
@@ -25,6 +26,7 @@ interface StoreState {
   consumptions: ConsumptionRecord[];
   soilAnalyses: SoilAnalysis[];
   maintenanceRecords: MaintenanceRecord[];
+  mortalityRecords: MortalityRecord[];
   
   // Connection status
   isOnline: boolean;
@@ -71,6 +73,9 @@ interface StoreState {
   removeMaintenanceRecord: (id: string) => void;
   completeMaintenanceRecord: (id: string, completedDate: Date, notes?: string) => void;
   
+  // Actions for mortality records
+  addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  
   // Sync actions
   setOnlineStatus: (isOnline: boolean) => void;
   setSyncTime: (time: Date) => void;
@@ -93,6 +98,7 @@ export const useStore = create<StoreState>()(
       consumptions: [],
       soilAnalyses: [],
       maintenanceRecords: [],
+      mortalityRecords: [],
       isOnline: navigator.onLine,
       lastSyncTime: null,
       
@@ -428,6 +434,41 @@ export const useStore = create<StoreState>()(
         }));
       },
       
+      // Mortality record actions
+      addMortalityRecord: (record) => {
+        const now = new Date();
+        const newRecord: MortalityRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          mortalityRecords: [...state.mortalityRecords, newRecord]
+        }));
+        
+        // Also update the lot's animal count
+        const { lotId } = record;
+        const lot = get().lots.find(l => l.id === lotId);
+        
+        if (lot) {
+          set(state => ({
+            lots: state.lots.map(lot => 
+              lot.id === lotId 
+                ? { 
+                    ...lot, 
+                    numberOfAnimals: Math.max(0, lot.numberOfAnimals - 1),
+                    updatedAt: new Date(), 
+                    syncStatus: 'pending' 
+                  } 
+                : lot
+            )
+          }));
+        }
+      },
+      
       // Sync actions
       setOnlineStatus: (isOnline) => {
         set({ isOnline });
@@ -479,6 +520,12 @@ export const useStore = create<StoreState>()(
             case 'maintenanceRecords':
               return {
                 maintenanceRecords: state.maintenanceRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'mortalityRecords':
+              return {
+                mortalityRecords: state.mortalityRecords.map(record => 
                   record.id === id ? { ...record, syncStatus: status } : record
                 )
               };
@@ -535,10 +582,11 @@ export const useStore = create<StoreState>()(
         const pendingConsumptions = state.consumptions.filter(i => i.syncStatus === 'pending').length;
         const pendingSoilAnalyses = state.soilAnalyses.filter(i => i.syncStatus === 'pending').length;
         const pendingMaintenanceRecords = state.maintenanceRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingMortalityRecords = state.mortalityRecords.filter(i => i.syncStatus === 'pending').length;
         
         return pendingInventory + pendingLots + pendingPastures + 
                pendingWeighings + pendingConsumptions + 
-               pendingSoilAnalyses + pendingMaintenanceRecords;
+               pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords;
       }
     }),
     {
@@ -552,6 +600,7 @@ export const useStore = create<StoreState>()(
         consumptions: state.consumptions,
         soilAnalyses: state.soilAnalyses,
         maintenanceRecords: state.maintenanceRecords,
+        mortalityRecords: state.mortalityRecords,
         lastSyncTime: state.lastSyncTime
       })
     }
