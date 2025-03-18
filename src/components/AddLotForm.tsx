@@ -194,12 +194,13 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
         
         <div className="space-y-2">
           <Label>Breed Composition</Label>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-nowrap items-center gap-2">
             <Select 
               value={currentBreed} 
               onValueChange={(value) => setCurrentBreed(value as BreedType)}
+              className="flex-1"
             >
-              <SelectTrigger id="breed" className="flex-1">
+              <SelectTrigger id="breed">
                 <SelectValue placeholder="Select breed" />
               </SelectTrigger>
               <SelectContent>
@@ -215,7 +216,7 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
               placeholder="Count"
               value={currentCount || ''}
               onChange={(e) => setCurrentCount(parseInt(e.target.value) || 0)}
-              className="w-24"
+              className="w-24 flex-none"
             />
             
             <Button 
@@ -224,7 +225,7 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
               size="sm" 
               onClick={handleAddBreed}
               disabled={currentCount <= 0}
-              className="whitespace-nowrap"
+              className="whitespace-nowrap flex-none"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Breed
