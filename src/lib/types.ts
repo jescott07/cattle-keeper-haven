@@ -1,3 +1,4 @@
+
 // Sync status for all data models
 export type SyncStatus = 'synced' | 'pending' | 'error';
 
@@ -193,6 +194,7 @@ export interface Plantation extends SyncableModel {
   pastureId?: string; // If plantation is on a pasture
   expectedYieldPerHectare?: number;
   actualYieldPerHectare?: number;
+  actualYield?: number; // Adding the missing property
 }
 
 export interface PestControl extends SyncableModel {

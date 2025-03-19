@@ -30,6 +30,7 @@ const formSchema = z.object({
   plantingDate: z.date().optional(),
   estimatedHarvestDate: z.date().optional(),
   actualHarvestDate: z.date().optional(),
+  actualYield: z.coerce.number().nonnegative().optional(),
   status: z.enum(['planned', 'planted', 'growing', 'harvested', 'failed']),
 });
 
@@ -50,6 +51,7 @@ export function EditPlantationDatesForm({ plantation, onSuccess }: EditPlantatio
       plantingDate: plantation.plantingDate ? new Date(plantation.plantingDate) : undefined,
       estimatedHarvestDate: plantation.estimatedHarvestDate ? new Date(plantation.estimatedHarvestDate) : undefined,
       actualHarvestDate: plantation.actualHarvestDate ? new Date(plantation.actualHarvestDate) : undefined,
+      actualYield: plantation.actualYield,
       status: plantation.status,
     },
   });
