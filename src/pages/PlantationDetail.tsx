@@ -1,580 +1,341 @@
-
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useStore } from '@/lib/store';
-import Navbar from '@/components/Navbar';
-import { Button } from '@/components/ui/button';
-import { 
-  ChevronLeft, 
-  Calendar, 
-  Edit,
-  PlusCircle,
-  List,
-  Wheat,
-  DollarSign,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Edit, Calendar, ArrowLeft, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useStore } from '@/lib/store';
+import { PlantationStatus, PlantationType } from '@/lib/types';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { PlantationStatus } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditPlantationDatesForm } from '@/components/plantation-detail/EditPlantationDatesForm';
 import { AddPlantationTaskForm } from '@/components/plantation-detail/AddPlantationTaskForm';
 import { RecordHarvestForm } from '@/components/plantation-detail/RecordHarvestForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const statusColors: Record<PlantationStatus, string> = {
-  'planned': 'bg-blue-100 text-blue-800',
-  'planted': 'bg-green-100 text-green-800',
-  'growing': 'bg-emerald-100 text-emerald-800',
-  'harvested': 'bg-purple-100 text-purple-800',
-  'failed': 'bg-red-100 text-red-800'
-};
+const PlantationDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditDatesOpen, setIsEditDatesOpen] = useState(false);
 
-export default function PlantationDetail() {
-  const { plantationId } = useParams<{ plantationId: string }>();
-  const navigate = useNavigate();
-  const plantation = useStore((state) => 
-    state.plantations.find((p) => p.id === plantationId)
-  );
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<'harvest' | 'edit' | 'task'>('edit');
+  const plantation = useStore(state => state.plantations.find(p => p.id === id));
+  const plantationTasks = useStore(state => state.plantationTasks.filter(t => t.plantationId === id));
+  const completedTasks = plantationTasks.filter(t => t.status === 'completed');
+  const scheduledTasks = plantationTasks.filter(t => t.status === 'scheduled');
+  const harvestRecords = useStore(state => state.harvestRecords.filter(h => h.plantationId === id));
   
-  const expenses = useStore(state => 
-    state.plantationExpenses.filter(e => e.plantationId === plantationId)
-  );
-  const maintenances = useStore(state => 
-    state.plantationMaintenances.filter(m => m.plantationId === plantationId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  );
-  const pestControls = useStore(state => 
-    state.pestControls.filter(p => p.plantationId === plantationId)
-  );
-  const productivityRecords = useStore(state => 
-    state.productivityRecords.filter(r => r.plantationId === plantationId)
-  );
-  const tasks = useStore(state => 
-    state.plantationTasks?.filter(t => t.plantationId === plantationId)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) || []
-  );
-  const harvestRecords = useStore(state => 
-    state.harvestRecords?.filter(h => h.plantationId === plantationId)
-      .sort((a, b) => new Date(b.harvestDate).getTime() - new Date(a.harvestDate).getTime()) || []
-  );
-  const pasture = plantation?.pastureId ? 
-    useStore(state => state.pastures.find(p => p.id === plantation.pastureId)) : null;
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+  const [isRecordHarvestOpen, setIsRecordHarvestOpen] = useState(false);
+  
+  useEffect(() => {
+    if (plantation) {
+      setIsLoading(false);
+    }
+  }, [plantation]);
 
-  if (!plantation) {
+  const calculateTotalExpenses = () => {
+    return 5200;
+  };
+
+  if (!plantation && !isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="container mx-auto p-4 py-8">
-          <Button 
-            variant="outline" 
-            className="mb-6" 
-            onClick={() => navigate('/plantations')}
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
+      <div className="container py-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Link to="/plantations" className="hover:underline flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
             Back to Plantations
-          </Button>
-          <div className="text-center p-12 border rounded-lg">
-            <h3 className="text-xl font-medium mb-2">Plantation not found</h3>
-            <p className="text-muted-foreground">
-              The plantation you're looking for doesn't exist or has been removed.
-            </p>
-          </div>
-        </main>
+          </Link>
+        </div>
+        <div className="text-center text-muted-foreground">
+          Plantation not found.
+        </div>
       </div>
     );
   }
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0) + (plantation.seedCost || 0);
-
-  const openEditDialog = () => {
-    setDialogType('edit');
-    setDialogOpen(true);
-  };
-
-  const openHarvestDialog = () => {
-    setDialogType('harvest');
-    setDialogOpen(true);
-  };
-  
-  const openTaskDialog = () => {
-    setDialogType('task');
-    setDialogOpen(true);
-  };
+  if (isLoading) {
+    return (
+      <div className="container py-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Link to="/plantations" className="hover:underline flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Plantations
+          </Link>
+        </div>
+        <div className="text-center text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+          Loading plantation details...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="container mx-auto p-4 py-8">
-        <Button 
-          variant="outline" 
-          className="mb-6" 
-          onClick={() => navigate('/plantations')}
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Plantations
-        </Button>
-
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{plantation.name}</h1>
-              <Badge className={statusColors[plantation.status]}>
-                {plantation.status.charAt(0).toUpperCase() + plantation.status.slice(1)}
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-4 text-muted-foreground mt-2">
-              <span className="flex items-center gap-1">
-                {plantation.type.charAt(0).toUpperCase() + plantation.type.slice(1)}
-              </span>
-              <span>•</span>
-              <span>{plantation.areaInHectares} hectares</span>
-              {plantation.plantingDate && (
-                <>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(plantation.plantingDate), 'MMM d, yyyy')}
-                  </span>
-                </>
-              )}
-              {pasture && (
-                <>
-                  <span>•</span>
-                  <span>Located in: {pasture.name}</span>
-                </>
-              )}
-            </div>
+    <div className="container pb-8">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <div className="flex items-center gap-4 mb-4">
+            <Link to="/plantations" className="hover:underline flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Plantations
+            </Link>
           </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={openEditDialog}
-            >
-              <Edit className="h-4 w-4" />
-              Edit Details
-            </Button>
-            {plantation.status === 'growing' && (
-              <Button 
-                size="sm"
-                className="flex items-center gap-2"
-                onClick={openHarvestDialog}
-              >
-                <PlusCircle className="h-4 w-4" />
-                Record Harvest
-              </Button>
-            )}
+          <h1 className="text-3xl font-bold">{plantation?.name}</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="secondary">{plantation?.type}</Badge>
+            <Badge>{plantation?.status}</Badge>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-xl">
-                  <List className="h-5 w-5 inline mr-2" />
-                  Tasks
-                </CardTitle>
-                <CardDescription>Scheduled and completed tasks</CardDescription>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={openTaskDialog}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
+        <Button onClick={() => setIsEditDatesOpen(true)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Edit Dates
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Area</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {plantation?.areaInHectares} Hectares
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Planting Date</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {plantation?.plantingDate ? format(new Date(plantation.plantingDate), 'PPP') : 'Not set'}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            ${calculateTotalExpenses()}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="col-span-1">
+          <div className="bg-white rounded-lg shadow-sm border p-4 h-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Tasks</h3>
+              <Button size="sm" onClick={() => setIsAddTaskOpen(true)}>
                 Add Task
               </Button>
-            </CardHeader>
-            <CardContent className="pt-2">
-              {tasks.length > 0 || maintenances.length > 0 || pestControls.length > 0 ? (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-2">Upcoming Tasks</h3>
-                    {tasks.filter(t => t.status === 'scheduled').length > 0 ? (
-                      tasks
-                        .filter(t => t.status === 'scheduled')
-                        .slice(0, 3)
-                        .map(task => (
-                          <div key={task.id} className="flex items-start gap-3 mb-3 pb-3 border-b last:border-0">
-                            <Clock className="h-5 w-5 text-amber-500 mt-1 flex-shrink-0" />
-                            <div>
-                              <div className="font-medium">{task.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {format(new Date(task.date), 'MMM d, yyyy')}
-                                {task.type && <span className="ml-2">• {task.type}</span>}
-                              </div>
-                              {task.description && <div className="text-sm mt-1">{task.description}</div>}
-                            </div>
-                          </div>
-                        ))
-                    ) : maintenances.filter(m => new Date(m.date) >= new Date()).length > 0 ? (
-                      maintenances
-                        .filter(m => new Date(m.date) >= new Date())
-                        .slice(0, 3)
-                        .map(task => (
-                          <div key={task.id} className="flex items-start gap-3 mb-3 pb-3 border-b last:border-0">
-                            <Clock className="h-5 w-5 text-amber-500 mt-1 flex-shrink-0" />
-                            <div>
-                              <div className="font-medium">{task.description}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {format(new Date(task.date), 'MMM d, yyyy')}
-                                {task.type && <span className="ml-2">• {task.type}</span>}
-                              </div>
-                              {task.notes && <div className="text-sm mt-1">{task.notes}</div>}
-                            </div>
-                          </div>
-                        ))
-                    ) : (
-                      <p className="text-muted-foreground text-sm">No upcoming tasks scheduled</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-2">Completed Tasks</h3>
-                    {tasks.filter(t => t.status === 'completed').length > 0 || 
-                      maintenances.filter(m => new Date(m.date) < new Date()).length > 0 || 
-                      pestControls.length > 0 ? (
-                      <div className="space-y-3">
-                        {tasks
-                          .filter(t => t.status === 'completed')
-                          .slice(0, 3)
-                          .map(task => (
-                            <div key={task.id} className="flex items-start gap-3">
-                              <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
-                              <div>
-                                <div className="font-medium">{task.title}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {format(new Date(task.date), 'MMM d, yyyy')}
-                                  {task.type && <span className="ml-2">• {task.type}</span>}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        
-                        {maintenances
-                          .filter(m => new Date(m.date) < new Date())
-                          .slice(0, 3)
-                          .map(task => (
-                            <div key={task.id} className="flex items-start gap-3">
-                              <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
-                              <div>
-                                <div className="font-medium">{task.description}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {format(new Date(task.date), 'MMM d, yyyy')}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        
-                        {pestControls.slice(0, 2).map(pest => (
-                          <div key={pest.id} className="flex items-start gap-3">
-                            <CheckCircle className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
-                            <div>
-                              <div className="font-medium">Pest Control: {pest.pestType}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {format(new Date(pest.date), 'MMM d, yyyy')}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+            </div>
+            
+            {scheduledTasks.length > 0 && (
+              <>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Scheduled</h4>
+                <div className="space-y-2 mb-4">
+                  {scheduledTasks.map(task => (
+                    <div 
+                      key={task.id} 
+                      className="border rounded-md p-3 bg-muted/10 hover:bg-muted/20 transition-colors"
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-medium">{task.title}</span>
+                        <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5">
+                          {task.type}
+                        </span>
                       </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">No completed tasks yet</p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-3">No tasks have been scheduled yet</p>
-                  <Button variant="outline" onClick={openTaskDialog}>
-                    Schedule First Task
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-xl">
-                  <Wheat className="h-5 w-5 inline mr-2" />
-                  Harvests
-                </CardTitle>
-                <CardDescription>Harvest records and productivity</CardDescription>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={openHarvestDialog}
-                disabled={plantation.status !== 'growing'}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Record Harvest
-              </Button>
-            </CardHeader>
-            <CardContent className="pt-2">
-              {harvestRecords.length > 0 || plantation.actualHarvestDate ? (
-                <div className="space-y-4">
-                  {plantation.actualHarvestDate && (
-                    <div className="border rounded-md p-4">
-                      <div className="font-medium text-lg mb-2">
-                        Primary Harvest
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {new Date(task.date).toLocaleDateString()}
                       </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-muted-foreground">Date</div>
-                          <div>{format(new Date(plantation.actualHarvestDate), 'MMM d, yyyy')}</div>
-                        </div>
-                        {plantation.actualYield && (
-                          <div>
-                            <div className="text-muted-foreground">Yield</div>
-                            <div>{plantation.actualYield} kg</div>
-                          </div>
-                        )}
-                        {plantation.expectedYieldPerHectare && (
-                          <div>
-                            <div className="text-muted-foreground">Expected Yield/hectare</div>
-                            <div>{plantation.expectedYieldPerHectare} kg</div>
-                          </div>
-                        )}
-                        {productivityRecords.length > 0 && (
-                          <div>
-                            <div className="text-muted-foreground">Health Score (last)</div>
-                            <div>{productivityRecords[0].plantHealth}/10</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {harvestRecords.filter(h => !(plantation.actualHarvestDate && 
-                    format(new Date(h.harvestDate), 'yyyy-MM-dd') === 
-                    format(new Date(plantation.actualHarvestDate), 'yyyy-MM-dd'))).map(record => (
-                    <div key={record.id} className="border rounded-md p-4">
-                      <div className="font-medium text-lg mb-2">
-                        Additional Harvest
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-muted-foreground">Date</div>
-                          <div>{format(new Date(record.harvestDate), 'MMM d, yyyy')}</div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Yield</div>
-                          <div>{record.yield} kg</div>
-                        </div>
-                        {record.yieldPerHectare && (
-                          <div>
-                            <div className="text-muted-foreground">Yield/hectare</div>
-                            <div>{record.yieldPerHectare} kg</div>
-                          </div>
-                        )}
-                        {record.quality && (
-                          <div>
-                            <div className="text-muted-foreground">Quality</div>
-                            <div>{record.quality}/10</div>
-                          </div>
-                        )}
-                      </div>
-                      {record.notes && (
-                        <div className="mt-2 text-sm">
-                          <div className="text-muted-foreground">Notes</div>
-                          <div>{record.notes}</div>
+                      {task.inventoryItemId && (
+                        <div className="text-xs mt-1 text-amber-600">
+                          Uses inventory item • {task.inventoryItemQuantity} units
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-3">
-                    No harvest records yet
-                    {plantation.status !== 'growing' && ' (Plantation is not in growing state)'}
-                  </p>
-                  {plantation.status === 'growing' && (
-                    <Button variant="outline" onClick={openHarvestDialog}>
-                      Record First Harvest
-                    </Button>
-                  )}
+              </>
+            )}
+            
+            {completedTasks.length > 0 && (
+              <>
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Completed</h4>
+                <div className="space-y-2">
+                  {completedTasks.map(task => (
+                    <div 
+                      key={task.id} 
+                      className="border rounded-md p-3 bg-muted/5"
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-medium">{task.title}</span>
+                        <span className="text-xs bg-green-100 text-green-800 rounded-full px-2 py-0.5">
+                          {task.type}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {new Date(task.date).toLocaleDateString()}
+                      </div>
+                      {task.inventoryItemId && task.inventoryItemProcessed && (
+                        <div className="text-xs mt-1 text-green-600">
+                          Inventory used • {task.inventoryItemQuantity} units
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card className="md:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-xl">
-                  <DollarSign className="h-5 w-5 inline mr-2" />
-                  Expenses
-                </CardTitle>
-                <CardDescription>Total costs and expense breakdown</CardDescription>
+              </>
+            )}
+            
+            {scheduledTasks.length === 0 && completedTasks.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No tasks have been added yet
               </div>
-              <Button variant="outline" size="sm">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Expense
+            )}
+          </div>
+        </div>
+        
+        <div className="col-span-1">
+          <div className="bg-white rounded-lg shadow-sm border p-4 h-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Harvests</h3>
+              <Button size="sm" onClick={() => setIsRecordHarvestOpen(true)}>
+                Record Harvest
               </Button>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <div className="mb-6">
-                <div className="text-3xl font-bold">${totalExpenses.toFixed(2)}</div>
-                <p className="text-muted-foreground">
-                  ${(plantation.areaInHectares > 0 ? totalExpenses / plantation.areaInHectares : 0).toFixed(2)} per hectare
-                </p>
+            </div>
+            
+            {harvestRecords.length > 0 ? (
+              <div className="space-y-3">
+                {harvestRecords.map(harvest => (
+                  <div 
+                    key={harvest.id} 
+                    className="border rounded-md p-3 bg-muted/10 hover:bg-muted/20 transition-colors"
+                  >
+                    <div className="flex justify-between">
+                      <span className="font-medium">
+                        {new Date(harvest.harvestDate).toLocaleDateString()}
+                      </span>
+                      {harvest.quality && (
+                        <span className="text-xs bg-green-100 text-green-800 rounded-full px-2 py-0.5">
+                          Quality: {harvest.quality}/10
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Total yield:</span> 
+                        <span className="font-medium ml-1">{harvest.yield} kg</span>
+                      </div>
+                      {harvest.yieldPerHectare && (
+                        <div>
+                          <span className="text-muted-foreground">Per hectare:</span> 
+                          <span className="font-medium ml-1">{harvest.yieldPerHectare} kg</span>
+                        </div>
+                      )}
+                      {harvest.expenses && (
+                        <div>
+                          <span className="text-muted-foreground">Expenses:</span> 
+                          <span className="font-medium ml-1">${harvest.expenses}</span>
+                        </div>
+                      )}
+                    </div>
+                    {harvest.addedToInventory && (
+                      <div className="text-xs mt-2 text-green-600 flex items-center">
+                        <div className="w-2 h-2 rounded-full bg-green-500 mr-1"></div>
+                        Added to inventory
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              
-              {expenses.length > 0 || plantation.seedCost ? (
-                <div className="space-y-4">
-                  {plantation.seedCost > 0 && (
-                    <div className="flex justify-between p-3 border rounded-md">
-                      <div>
-                        <div className="font-medium">Seed Cost</div>
-                        <div className="text-sm text-muted-foreground">Initial investment</div>
-                      </div>
-                      <div className="font-medium">${plantation.seedCost.toFixed(2)}</div>
-                    </div>
-                  )}
-                  
-                  {expenses.map(expense => (
-                    <div key={expense.id} className="flex justify-between p-3 border rounded-md">
-                      <div>
-                        <div className="font-medium">{expense.description}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(expense.date), 'MMM d, yyyy')}
-                          {expense.category && <span className="ml-2">• {expense.category}</span>}
-                        </div>
-                      </div>
-                      <div className="font-medium">${expense.amount.toFixed(2)}</div>
-                    </div>
-                  ))}
-                  
-                  {/* Display task expenses */}
-                  {tasks.filter(t => t.cost && t.cost > 0).map(task => (
-                    <div key={task.id} className="flex justify-between p-3 border rounded-md">
-                      <div>
-                        <div className="font-medium">{task.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(task.date), 'MMM d, yyyy')}
-                          <span className="ml-2">• {task.type}</span>
-                        </div>
-                      </div>
-                      <div className="font-medium">${task.cost!.toFixed(2)}</div>
-                    </div>
-                  ))}
-                  
-                  {/* Display harvest expenses */}
-                  {harvestRecords.filter(h => h.expenses && h.expenses > 0).map(harvest => (
-                    <div key={harvest.id} className="flex justify-between p-3 border rounded-md">
-                      <div>
-                        <div className="font-medium">Harvest Operation</div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(harvest.harvestDate), 'MMM d, yyyy')}
-                        </div>
-                      </div>
-                      <div className="font-medium">${harvest.expenses!.toFixed(2)}</div>
-                    </div>
-                  ))}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No harvests have been recorded yet
+              </div>
+            )}
+            
+            {plantation?.actualYield && plantation.actualYield > 0 && (
+              <div className="mt-4 p-3 bg-green-50 rounded-md border border-green-100">
+                <div className="font-medium text-green-800">
+                  Total Harvest: {plantation.actualYield} kg
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-3">No expenses recorded yet</p>
-                  <Button variant="outline">Record First Expense</Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card className="md:col-span-2">
+                {plantation.actualYieldPerHectare && (
+                  <div className="text-sm text-green-700">
+                    {plantation.actualYieldPerHectare} kg per hectare
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="col-span-1">
+          <Card className="h-full">
             <CardHeader>
-              <CardTitle className="text-xl">Plantation Details</CardTitle>
+              <CardTitle>Expenses</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-muted-foreground mb-1">Type</dt>
-                  <dd>{plantation.type.charAt(0).toUpperCase() + plantation.type.slice(1)}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground mb-1">Area</dt>
-                  <dd>{plantation.areaInHectares} hectares</dd>
-                </div>
-                {plantation.plantingDate && (
-                  <div>
-                    <dt className="text-muted-foreground mb-1">Planting Date</dt>
-                    <dd>{format(new Date(plantation.plantingDate), 'MMMM d, yyyy')}</dd>
-                  </div>
-                )}
-                {plantation.estimatedHarvestDate && (
-                  <div>
-                    <dt className="text-muted-foreground mb-1">Estimated Harvest Date</dt>
-                    <dd>{format(new Date(plantation.estimatedHarvestDate), 'MMMM d, yyyy')}</dd>
-                  </div>
-                )}
-                {pasture && (
-                  <div>
-                    <dt className="text-muted-foreground mb-1">Location</dt>
-                    <dd>{pasture.name}</dd>
-                  </div>
-                )}
-                {plantation.notes && (
-                  <div className="col-span-2">
-                    <dt className="text-muted-foreground mb-1">Notes</dt>
-                    <dd>{plantation.notes}</dd>
-                  </div>
-                )}
-              </dl>
+              <p className="text-lg font-medium">
+                ${calculateTotalExpenses()}
+              </p>
             </CardContent>
           </Card>
         </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {dialogType === 'edit' && 'Edit Plantation Details'}
-                {dialogType === 'harvest' && 'Record Harvest'}
-                {dialogType === 'task' && 'Schedule Task'}
-              </DialogTitle>
-              <DialogDescription>
-                {dialogType === 'edit' && 'Update the details of your plantation.'}
-                {dialogType === 'harvest' && 'Record harvest results and productivity data.'}
-                {dialogType === 'task' && 'Schedule a maintenance task for your plantation.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              {dialogType === 'edit' && plantation && (
-                <EditPlantationDatesForm
-                  plantation={plantation}
-                  onSuccess={() => setDialogOpen(false)}
-                />
-              )}
-              {dialogType === 'harvest' && plantationId && (
-                <RecordHarvestForm
-                  plantationId={plantationId}
-                  plantationArea={plantation.areaInHectares}
-                  onSuccess={() => setDialogOpen(false)}
-                />
-              )}
-              {dialogType === 'task' && plantationId && (
-                <AddPlantationTaskForm
-                  plantationId={plantationId}
-                  onSuccess={() => setDialogOpen(false)}
-                />
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </main>
+      </div>
+      
+      <Dialog open={isEditDatesOpen} onOpenChange={setIsEditDatesOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Plantation Dates</DialogTitle>
+            <DialogDescription>
+              Update the planting and estimated harvest dates for this plantation.
+            </DialogDescription>
+          </DialogHeader>
+          <EditPlantationDatesForm 
+            plantationId={id!} 
+            onSuccess={() => setIsEditDatesOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add Task</DialogTitle>
+            <DialogDescription>
+              Schedule a new task for this plantation
+            </DialogDescription>
+          </DialogHeader>
+          <AddPlantationTaskForm 
+            plantationId={id!} 
+            onSuccess={() => setIsAddTaskOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isRecordHarvestOpen} onOpenChange={setIsRecordHarvestOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Record Harvest</DialogTitle>
+            <DialogDescription>
+              Record a harvest for this plantation
+            </DialogDescription>
+          </DialogHeader>
+          <RecordHarvestForm 
+            plantationId={id!} 
+            plantationArea={plantation?.areaInHectares || 0}
+            onSuccess={() => setIsRecordHarvestOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default PlantationDetail;

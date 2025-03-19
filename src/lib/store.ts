@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +18,9 @@ import {
   PestControl,
   PlantationExpense,
   PlantationMaintenance,
-  ProductivityRecord
+  ProductivityRecord,
+  PlantationTask,
+  HarvestRecord
 } from './types';
 
 interface StoreState {
@@ -40,6 +41,8 @@ interface StoreState {
   plantationExpenses: PlantationExpense[];
   plantationMaintenances: PlantationMaintenance[];
   productivityRecords: ProductivityRecord[];
+  plantationTasks: PlantationTask[];
+  harvestRecords: HarvestRecord[];
   
   // Connection status
   isOnline: boolean;
@@ -114,6 +117,17 @@ interface StoreState {
   updateProductivityRecord: (id: string, updates: Partial<ProductivityRecord>) => void;
   removeProductivityRecord: (id: string) => void;
   
+  // Actions for plantation tasks
+  addPlantationTask: (task: Omit<PlantationTask, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus' | 'inventoryItemProcessed'>) => void;
+  updatePlantationTask: (id: string, updates: Partial<PlantationTask>) => void;
+  removePlantationTask: (id: string) => void;
+  completePlantationTask: (id: string, completedDate: Date) => void;
+  
+  // Actions for harvest records
+  addHarvestRecord: (record: Omit<HarvestRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus' | 'addedToInventory'>) => void;
+  updateHarvestRecord: (id: string, updates: Partial<HarvestRecord>) => void;
+  removeHarvestRecord: (id: string) => void;
+  
   // Sync actions
   setOnlineStatus: (isOnline: boolean) => void;
   setSyncTime: (time: Date) => void;
@@ -142,6 +156,8 @@ export const useStore = create<StoreState>()(
       plantationExpenses: [],
       plantationMaintenances: [],
       productivityRecords: [],
+      plantationTasks: [],
+      harvestRecords: [],
       isOnline: navigator.onLine,
       lastSyncTime: null,
       
@@ -697,6 +713,182 @@ export const useStore = create<StoreState>()(
         }));
       },
       
+      // Actions for plantation tasks
+      addPlantationTask: (task) => {
+        const now = new Date();
+        const newTask: PlantationTask = {
+          ...task,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending',
+          inventoryItemProcessed: false
+        };
+        
+        set(state => ({
+          plantationTasks: [...state.plantationTasks, newTask]
+        }));
+        
+        // If the task is already completed and uses inventory, update inventory
+        if (task.status === 'completed' && task.inventoryItemId && task.inventoryItemQuantity) {
+          const { inventoryItemId, inventoryItemQuantity } = task;
+          const inventory = get().inventory;
+          const item = inventory.find(i => i.id === inventoryItemId);
+          
+          if (item) {
+            set(state => ({
+              inventory: state.inventory.map(i => 
+                i.id === inventoryItemId 
+                  ? { 
+                      ...i, 
+                      quantity: Math.max(0, i.quantity - inventoryItemQuantity),
+                      updatedAt: new Date(),
+                      syncStatus: 'pending'
+                    } 
+                  : i
+              ),
+              plantationTasks: state.plantationTasks.map(t => 
+                t.id === newTask.id 
+                  ? { ...t, inventoryItemProcessed: true } 
+                  : t
+              )
+            }));
+          }
+        }
+      },
+      
+      updatePlantationTask: (id, updates) => {
+        set(state => ({
+          plantationTasks: state.plantationTasks.map(task => 
+            task.id === id 
+              ? { 
+                  ...task, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : task
+          )
+        }));
+      },
+      
+      removePlantationTask: (id) => {
+        set(state => ({
+          plantationTasks: state.plantationTasks.filter(task => task.id !== id)
+        }));
+      },
+      
+      completePlantationTask: (id, completedDate) => {
+        const task = get().plantationTasks.find(t => t.id === id);
+        
+        if (!task) return;
+        
+        set(state => ({
+          plantationTasks: state.plantationTasks.map(t => 
+            t.id === id 
+              ? { 
+                  ...t, 
+                  status: 'completed',
+                  date: completedDate,
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : t
+          )
+        }));
+        
+        // Process inventory if not already processed
+        if (task.inventoryItemId && task.inventoryItemQuantity && !task.inventoryItemProcessed) {
+          const { inventoryItemId, inventoryItemQuantity } = task;
+          const inventory = get().inventory;
+          const item = inventory.find(i => i.id === inventoryItemId);
+          
+          if (item) {
+            set(state => ({
+              inventory: state.inventory.map(i => 
+                i.id === inventoryItemId 
+                  ? { 
+                      ...i, 
+                      quantity: Math.max(0, i.quantity - inventoryItemQuantity),
+                      updatedAt: new Date(),
+                      syncStatus: 'pending'
+                    } 
+                  : i
+              ),
+              plantationTasks: state.plantationTasks.map(t => 
+                t.id === id 
+                  ? { ...t, inventoryItemProcessed: true } 
+                  : t
+              )
+            }));
+          }
+        }
+      },
+      
+      // Actions for harvest records
+      addHarvestRecord: (record) => {
+        const now = new Date();
+        const newRecord: HarvestRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending',
+          addedToInventory: false
+        };
+        
+        set(state => ({
+          harvestRecords: [...state.harvestRecords, newRecord]
+        }));
+        
+        // Add the harvest to inventory as a new item
+        const plantation = get().plantations.find(p => p.id === record.plantationId);
+        
+        if (plantation) {
+          const newInventoryItem: InventoryItem = {
+            id: uuidv4(),
+            name: `Harvest of ${plantation.name} - ${new Date(record.harvestDate).toLocaleDateString()}`,
+            type: 'other',
+            quantity: record.yield,
+            unit: 'kg',
+            purchaseDate: new Date(record.harvestDate),
+            costPerUnit: 0, // This could be calculated from expenses if needed
+            createdAt: now,
+            updatedAt: now,
+            syncStatus: 'pending',
+            properties: []
+          };
+          
+          set(state => ({
+            inventory: [...state.inventory, newInventoryItem],
+            harvestRecords: state.harvestRecords.map(r => 
+              r.id === newRecord.id ? { ...r, addedToInventory: true } : r
+            )
+          }));
+        }
+      },
+      
+      updateHarvestRecord: (id, updates) => {
+        set(state => ({
+          harvestRecords: state.harvestRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeHarvestRecord: (id) => {
+        set(state => ({
+          harvestRecords: state.harvestRecords.filter(record => record.id !== id)
+        }));
+      },
+      
       // Sync actions
       setOnlineStatus: (isOnline) => {
         set({ isOnline });
@@ -787,6 +979,18 @@ export const useStore = create<StoreState>()(
                   item.id === id ? { ...item, syncStatus: status } : item
                 )
               };
+            case 'plantationTasks':
+              return {
+                plantationTasks: state.plantationTasks.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'harvestRecords':
+              return {
+                harvestRecords: state.harvestRecords.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
             default:
               return {};
           }
@@ -846,12 +1050,15 @@ export const useStore = create<StoreState>()(
         const pendingPlantationExpenses = state.plantationExpenses.filter(i => i.syncStatus === 'pending').length;
         const pendingPlantationMaintenances = state.plantationMaintenances.filter(i => i.syncStatus === 'pending').length;
         const pendingProductivityRecords = state.productivityRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantationTasks = state.plantationTasks.filter(i => i.syncStatus === 'pending').length;
+        const pendingHarvestRecords = state.harvestRecords.filter(i => i.syncStatus === 'pending').length;
         
         return pendingInventory + pendingLots + pendingPastures + 
                pendingWeighings + pendingConsumptions + 
                pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords +
                pendingPlantations + pendingPestControls + pendingPlantationExpenses +
-               pendingPlantationMaintenances + pendingProductivityRecords;
+               pendingPlantationMaintenances + pendingProductivityRecords +
+               pendingPlantationTasks + pendingHarvestRecords;
       }
     }),
     {
@@ -871,6 +1078,8 @@ export const useStore = create<StoreState>()(
         plantationExpenses: state.plantationExpenses,
         plantationMaintenances: state.plantationMaintenances,
         productivityRecords: state.productivityRecords,
+        plantationTasks: state.plantationTasks,
+        harvestRecords: state.harvestRecords,
         lastSyncTime: state.lastSyncTime
       })
     }

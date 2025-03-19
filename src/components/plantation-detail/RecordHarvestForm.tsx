@@ -1,4 +1,5 @@
 
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -56,7 +57,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
 
   // Auto-calculate yield per hectare when total yield changes
   const totalYield = form.watch('yield');
-  React.useEffect(() => {
+  useEffect(() => {
     if (totalYield && plantationArea > 0) {
       const yieldPerHectare = Math.round((totalYield / plantationArea) * 100) / 100;
       form.setValue('yieldPerHectare', yieldPerHectare);
@@ -67,10 +68,6 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     const newHarvestRecord = {
       ...values,
       plantationId,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      syncStatus: 'pending' as const,
     };
     
     addHarvestRecord(newHarvestRecord);
@@ -85,7 +82,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     
     toast({
       title: "Harvest recorded",
-      description: "The harvest data has been saved successfully.",
+      description: "The harvest data has been saved and added to inventory.",
     });
     
     onSuccess();
@@ -222,6 +219,16 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
               </FormItem>
             )}
           />
+        </div>
+        
+        <div className="border p-4 rounded-md bg-muted/10">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+            <h3 className="text-md font-medium">Inventory Update</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            The harvest will be automatically added to your inventory as a new item.
+          </p>
         </div>
         
         <FormField

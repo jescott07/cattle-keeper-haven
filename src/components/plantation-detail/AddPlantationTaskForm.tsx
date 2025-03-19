@@ -1,9 +1,10 @@
 
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Search } from 'lucide-react';
 import { TaskType, TaskStatus } from '@/lib/types';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
@@ -36,6 +45,8 @@ const formSchema = z.object({
   description: z.string().optional(),
   cost: z.coerce.number().nonnegative().optional(),
   notes: z.string().optional(),
+  inventoryItemId: z.string().optional(),
+  inventoryItemQuantity: z.coerce.number().nonnegative().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,6 +59,17 @@ interface AddPlantationTaskFormProps {
 export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantationTaskFormProps) {
   const { toast } = useToast();
   const addPlantationTask = useStore(state => state.addPlantationTask);
+  const inventory = useStore(state => state.inventory);
+  const [isInventoryOpen, setIsInventoryOpen] = React.useState(false);
+  const [inventorySearch, setInventorySearch] = React.useState('');
+  
+  // Filter inventory items based on search
+  const filteredInventory = React.useMemo(() => {
+    return inventory.filter(item => 
+      item.name.toLowerCase().includes(inventorySearch.toLowerCase()) &&
+      item.quantity > 0 // Only show items with stock
+    );
+  }, [inventory, inventorySearch]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,24 +81,44 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
       description: '',
       cost: undefined,
       notes: '',
+      inventoryItemId: undefined,
+      inventoryItemQuantity: 1,
     },
   });
 
+  // Get the selected inventory item
+  const selectedInventoryItemId = form.watch('inventoryItemId');
+  const selectedInventoryItem = React.useMemo(() => 
+    inventory.find(item => item.id === selectedInventoryItemId), 
+    [inventory, selectedInventoryItemId]
+  );
+
   function onSubmit(values: FormValues) {
+    // Validate that inventory quantity is available
+    if (values.inventoryItemId && values.inventoryItemQuantity) {
+      const inventoryItem = inventory.find(item => item.id === values.inventoryItemId);
+      if (inventoryItem && values.inventoryItemQuantity > inventoryItem.quantity) {
+        toast({
+          title: "Not enough inventory",
+          description: `Only ${inventoryItem.quantity} ${inventoryItem.unit} available.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     const newTask = {
       ...values,
       plantationId,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      syncStatus: 'pending' as const,
     };
     
     addPlantationTask(newTask);
     
     toast({
       title: "Task added",
-      description: "The task has been scheduled for this plantation.",
+      description: values.status === 'completed' 
+        ? "The task has been recorded as completed." 
+        : "The task has been scheduled for this plantation.",
     });
     
     onSuccess();
@@ -205,6 +247,97 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
               </FormItem>
             )}
           />
+        </div>
+        
+        <div className="space-y-6 border p-4 rounded-md bg-muted/10">
+          <h3 className="text-md font-medium">Inventory Usage</h3>
+          
+          <FormField
+            control={form.control}
+            name="inventoryItemId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Select Inventory Item (optional)</FormLabel>
+                <Popover open={isInventoryOpen} onOpenChange={setIsInventoryOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={`w-full justify-between ${!field.value ? "text-muted-foreground" : ""}`}
+                      >
+                        {field.value ? (
+                          selectedInventoryItem?.name
+                        ) : (
+                          "Select an item"
+                        )}
+                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput
+                        placeholder="Search inventory..."
+                        className="h-9"
+                        value={inventorySearch}
+                        onValueChange={setInventorySearch}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No items found.</CommandEmpty>
+                        <CommandGroup>
+                          {filteredInventory.map((item) => (
+                            <CommandItem
+                              key={item.id}
+                              value={item.id}
+                              onSelect={() => {
+                                form.setValue("inventoryItemId", item.id);
+                                setIsInventoryOpen(false);
+                                setInventorySearch("");
+                              }}
+                            >
+                              <span className="flex-1">{item.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {item.quantity} {item.unit}
+                              </span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {selectedInventoryItemId && (
+            <FormField
+              control={form.control}
+              name="inventoryItemQuantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantity to Use</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center space-x-2">
+                      <Input 
+                        type="number" 
+                        min="1"
+                        max={selectedInventoryItem?.quantity.toString()}
+                        step="1"
+                        {...field} 
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        / {selectedInventoryItem?.quantity} {selectedInventoryItem?.unit}
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
         
         <FormField

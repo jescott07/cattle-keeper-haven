@@ -193,7 +193,7 @@ export interface Plantation extends SyncableModel {
   pastureId?: string; // If plantation is on a pasture
   expectedYieldPerHectare?: number;
   actualYieldPerHectare?: number;
-  actualYield?: number; // Adding the missing property
+  actualYield?: number;
 }
 
 export interface PestControl extends SyncableModel {
@@ -268,7 +268,7 @@ export interface MortalityRecord extends SyncableModel {
   notes?: string;
 }
 
-// NEW TYPES FOR PLANTATION TASKS AND HARVESTS
+// PLANTATION TASKS AND HARVESTS
 export type TaskType = 'pest-control' | 'fertilization' | 'irrigation' | 'weeding' | 'other';
 export type TaskStatus = 'scheduled' | 'completed' | 'canceled';
 
@@ -281,6 +281,9 @@ export interface PlantationTask extends SyncableModel {
   description?: string;
   cost?: number;
   notes?: string;
+  inventoryItemId?: string;
+  inventoryItemQuantity?: number;
+  inventoryItemProcessed?: boolean;
 }
 
 export interface HarvestRecord extends SyncableModel {
@@ -291,4 +294,5 @@ export interface HarvestRecord extends SyncableModel {
   quality?: number; // Scale 1-10
   notes?: string;
   expenses?: number;
+  addedToInventory?: boolean;
 }
