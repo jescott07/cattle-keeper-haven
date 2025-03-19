@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Weight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import { WeighingManager } from '@/components/weighing/WeighingManager';
+import WeighingManager from '@/components/weighing/WeighingManager';
 import { WeighingForm } from '@/components/WeighingForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

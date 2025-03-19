@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +10,7 @@ import { Pasture } from '@/lib/types';
 import PastureDashboard from '@/components/pasture-detail/PastureDashboard';
 import PastureQualityTracker from '@/components/pasture-detail/PastureQualityTracker';
 import PastureSoilAnalysis from '@/components/pasture-detail/PastureSoilAnalysis';
-import PastureMaintenanceTracker from '@/components/pasture-detail/PastureMaintenanceTracker';
+import { PastureMaintenanceTracker } from '@/components/pasture-detail/PastureMaintenanceTracker';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddPastureForm } from '@/components/AddPastureForm';

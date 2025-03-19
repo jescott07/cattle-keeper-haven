@@ -14,9 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import TransferCriteria from './TransferCriteria';
-import AnimalWeighingRecord from './AnimalWeighingRecord';
-import WeighingSessionSummary from './WeighingSessionSummary';
+import { TransferCriteria } from './TransferCriteria';
+import { AnimalWeighingRecord } from './AnimalWeighingRecord';
+import { WeighingSessionSummary } from './WeighingSessionSummary';
 
 const WeighingManager = () => {
   const { toast } = useToast();
