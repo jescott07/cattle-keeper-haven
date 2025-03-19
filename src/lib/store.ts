@@ -21,27 +21,27 @@ import {
 
 interface StoreState {
   inventoryItems: InventoryItem[];
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateInventoryItem: (id: string, item: Partial<InventoryItem>) => void;
   deleteInventoryItem: (id: string) => void;
 
   lots: Lot[];
-  addLot: (lot: Omit<Lot, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addLot: (lot: Omit<Lot, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateLot: (id: string, lot: Partial<Lot>) => void;
   deleteLot: (id: string) => void;
 
   pastures: Pasture[];
-  addPasture: (pasture: Omit<Pasture, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addPasture: (pasture: Omit<Pasture, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updatePasture: (id: string, pasture: Partial<Pasture>) => void;
   deletePasture: (id: string) => void;
 
   weighingRecords: WeighingRecord[];
-  addWeighingRecord: (record: Omit<WeighingRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addWeighingRecord: (record: Omit<WeighingRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateWeighingRecord: (id: string, record: Partial<WeighingRecord>) => void;
   deleteWeighingRecord: (id: string) => void;
 
   consumptionRecords: ConsumptionRecord[];
-  addConsumptionRecord: (record: Omit<ConsumptionRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addConsumptionRecord: (record: Omit<ConsumptionRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateConsumptionRecord: (id: string, record: Partial<ConsumptionRecord>) => void;
   deleteConsumptionRecord: (id: string) => void;
 
@@ -51,42 +51,42 @@ interface StoreState {
   deletePasturePlanning: (lotId: string, toPastureId: string) => void;
 
   soilAnalyses: SoilAnalysis[];
-  addSoilAnalysis: (analysis: Omit<SoilAnalysis, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addSoilAnalysis: (analysis: Omit<SoilAnalysis, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateSoilAnalysis: (id: string, analysis: Partial<SoilAnalysis>) => void;
   deleteSoilAnalysis: (id: string) => void;
 
   plantations: Plantation[];
-  addPlantation: (plantation: Omit<Plantation, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addPlantation: (plantation: Omit<Plantation, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updatePlantation: (id: string, plantation: Partial<Plantation>) => void;
   deletePlantation: (id: string) => void;
 
   pestControls: PestControl[];
-  addPestControl: (pestControl: Omit<PestControl, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addPestControl: (pestControl: Omit<PestControl, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updatePestControl: (id: string, pestControl: Partial<PestControl>) => void;
   deletePestControl: (id: string) => void;
 
   plantationExpenses: PlantationExpense[];
-  addPlantationExpense: (expense: Omit<PlantationExpense, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addPlantationExpense: (expense: Omit<PlantationExpense, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updatePlantationExpense: (id: string, expense: Partial<PlantationExpense>) => void;
   deletePlantationExpense: (id: string) => void;
 
   plantationMaintenances: PlantationMaintenance[];
-  addPlantationMaintenance: (maintenance: Omit<PlantationMaintenance, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addPlantationMaintenance: (maintenance: Omit<PlantationMaintenance, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updatePlantationMaintenance: (id: string, maintenance: Partial<PlantationMaintenance>) => void;
   deletePlantationMaintenance: (id: string) => void;
 
   productivityRecords: ProductivityRecord[];
-  addProductivityRecord: (record: Omit<ProductivityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addProductivityRecord: (record: Omit<ProductivityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateProductivityRecord: (id: string, record: Partial<ProductivityRecord>) => void;
   deleteProductivityRecord: (id: string) => void;
 
   maintenanceRecords: MaintenanceRecord[];
-  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateMaintenanceRecord: (id: string, record: Partial<MaintenanceRecord>) => void;
   deleteMaintenanceRecord: (id: string) => void;
 
   mortalityRecords: MortalityRecord[];
-  addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>> => void;
+  addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateMortalityRecord: (id: string, record: Partial<MortalityRecord>) => void;
   deleteMortalityRecord: (id: string) => void;
 
@@ -348,3 +348,4 @@ export const useStore = create<StoreState>()(
     }
   )
 );
+
