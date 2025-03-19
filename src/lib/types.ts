@@ -1,4 +1,3 @@
-
 // Sync status for all data models
 export type SyncStatus = 'synced' | 'pending' | 'error';
 
@@ -267,4 +266,29 @@ export interface MortalityRecord extends SyncableModel {
   cause: MortalityCause;
   breed: BreedType;
   notes?: string;
+}
+
+// NEW TYPES FOR PLANTATION TASKS AND HARVESTS
+export type TaskType = 'pest-control' | 'fertilization' | 'irrigation' | 'weeding' | 'other';
+export type TaskStatus = 'scheduled' | 'completed' | 'canceled';
+
+export interface PlantationTask extends SyncableModel {
+  plantationId: string;
+  title: string;
+  type: TaskType;
+  date: Date;
+  status: TaskStatus;
+  description?: string;
+  cost?: number;
+  notes?: string;
+}
+
+export interface HarvestRecord extends SyncableModel {
+  plantationId: string;
+  harvestDate: Date;
+  yield: number; // Total yield in kg
+  yieldPerHectare?: number;
+  quality?: number; // Scale 1-10
+  notes?: string;
+  expenses?: number;
 }
