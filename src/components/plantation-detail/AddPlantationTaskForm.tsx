@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -107,9 +106,18 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
       }
     }
 
+    // Ensure all required fields have values
     const newTask = {
-      ...values,
       plantationId,
+      title: values.title,
+      type: values.type,  // Ensure required fields are explicitly assigned
+      date: values.date,  // Ensure required fields are explicitly assigned
+      status: values.status, // Ensure required fields are explicitly assigned
+      description: values.description,
+      cost: values.cost,
+      notes: values.notes,
+      inventoryItemId: values.inventoryItemId,
+      inventoryItemQuantity: values.inventoryItemQuantity,
     };
     
     addPlantationTask(newTask);

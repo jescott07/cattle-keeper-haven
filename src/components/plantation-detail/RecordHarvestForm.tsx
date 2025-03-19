@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,9 +64,15 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
   }, [totalYield, plantationArea, form]);
 
   function onSubmit(values: FormValues) {
+    // Ensure all required fields have values
     const newHarvestRecord = {
-      ...values,
       plantationId,
+      harvestDate: values.harvestDate, // Explicitly include required field
+      yield: values.yield, // Explicitly include required field
+      yieldPerHectare: values.yieldPerHectare,
+      quality: values.quality,
+      expenses: values.expenses,
+      notes: values.notes,
     };
     
     addHarvestRecord(newHarvestRecord);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Edit, Calendar, ArrowLeft, Loader2 } from 'lucide-react';
@@ -298,7 +299,7 @@ const PlantationDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <EditPlantationDatesForm 
-            plantationId={id!} 
+            plantation={plantation!} 
             onSuccess={() => setIsEditDatesOpen(false)}
           />
         </DialogContent>
