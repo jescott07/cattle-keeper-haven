@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Edit, Calendar, ArrowLeft, Loader2 } from 'lucide-react';
@@ -20,14 +21,16 @@ import {
 } from "@/components/ui/dialog";
 
 const PlantationDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  // Fix: Change from "id" to "plantationId" to match the router parameter
+  const { plantationId } = useParams<{ plantationId: string }>();
   const [isEditDatesOpen, setIsEditDatesOpen] = useState(false);
 
-  const plantation = useStore(state => state.plantations.find(p => p.id === id));
-  const plantationTasks = useStore(state => state.plantationTasks.filter(t => t.plantationId === id));
+  // Update this to use plantationId
+  const plantation = useStore(state => state.plantations.find(p => p.id === plantationId));
+  const plantationTasks = useStore(state => state.plantationTasks.filter(t => t.plantationId === plantationId));
   const completedTasks = plantationTasks.filter(t => t.status === 'completed');
   const scheduledTasks = plantationTasks.filter(t => t.status === 'scheduled');
-  const harvestRecords = useStore(state => state.harvestRecords.filter(h => h.plantationId === id));
+  const harvestRecords = useStore(state => state.harvestRecords.filter(h => h.plantationId === plantationId));
   
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isRecordHarvestOpen, setIsRecordHarvestOpen] = useState(false);
@@ -289,7 +292,7 @@ const PlantationDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <AddPlantationTaskForm 
-            plantationId={id!} 
+            plantationId={plantationId!} 
             onSuccess={() => setIsAddTaskOpen(false)}
           />
         </DialogContent>
@@ -304,7 +307,7 @@ const PlantationDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <RecordHarvestForm 
-            plantationId={id!} 
+            plantationId={plantationId!} 
             plantationArea={plantation.areaInHectares || 0}
             onSuccess={() => setIsRecordHarvestOpen(false)}
           />
