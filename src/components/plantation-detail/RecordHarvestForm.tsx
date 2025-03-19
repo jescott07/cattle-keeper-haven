@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Package } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -11,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -18,7 +20,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
+import { v4 as uuidv4 } from 'uuid';
 
 const formSchema = z.object({
   harvestDate: z.date(),
@@ -27,6 +31,9 @@ const formSchema = z.object({
   quality: z.coerce.number().min(1).max(10).optional(),
   expenses: z.coerce.number().nonnegative().optional(),
   notes: z.string().optional(),
+  addToInventory: z.boolean().default(true),
+  inventoryName: z.string().optional(),
+  inventoryUnit: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,6 +48,8 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
   const { toast } = useToast();
   const addHarvestRecord = useStore(state => state.addHarvestRecord);
   const updatePlantation = useStore(state => state.updatePlantation);
+  const addInventoryItem = useStore(state => state.addInventoryItem);
+  const plantation = useStore(state => state.plantations.find(p => p.id === plantationId));
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -51,11 +60,16 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       quality: 7,
       expenses: undefined,
       notes: '',
+      addToInventory: true,
+      inventoryName: plantation?.name ? `Harvest - ${plantation.name}` : 'Harvest',
+      inventoryUnit: 'kg',
     },
   });
 
   // Auto-calculate yield per hectare when total yield changes
   const totalYield = form.watch('yield');
+  const addToInventory = form.watch('addToInventory');
+  
   useEffect(() => {
     if (totalYield && plantationArea > 0) {
       const yieldPerHectare = Math.round((totalYield / plantationArea) * 100) / 100;
@@ -64,30 +78,55 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
   }, [totalYield, plantationArea, form]);
 
   function onSubmit(values: FormValues) {
-    // Ensure all required fields have values
+    // Generate a unique ID for both the harvest record and inventory item
+    const harvestId = uuidv4();
+    
+    // Create the harvest record
     const newHarvestRecord = {
+      id: harvestId,
       plantationId,
-      harvestDate: values.harvestDate, // Explicitly include required field
-      yield: values.yield, // Explicitly include required field
+      harvestDate: values.harvestDate,
+      yield: values.yield,
       yieldPerHectare: values.yieldPerHectare,
       quality: values.quality,
       expenses: values.expenses,
       notes: values.notes,
+      addedToInventory: values.addToInventory,
     };
     
+    // Add to inventory if checked
+    if (values.addToInventory) {
+      const inventoryName = values.inventoryName || `Harvest - ${plantation?.name || 'Unknown'}`;
+      
+      // Create inventory item
+      addInventoryItem({
+        name: inventoryName,
+        type: 'other',
+        quantity: values.yield,
+        unit: values.inventoryUnit || 'kg',
+        costPerUnit: values.expenses ? (values.expenses / values.yield) : 0,
+        purchaseDate: values.harvestDate,
+        notes: `Harvest from ${plantation?.name} on ${format(values.harvestDate, 'PP')}`,
+        properties: [],
+      });
+    }
+    
+    // Add the harvest record
     addHarvestRecord(newHarvestRecord);
     
-    // Update the plantation status to harvested and record the actual harvest date and yield
+    // Update the plantation status and record the actual harvest
     updatePlantation(plantationId, {
       status: 'harvested',
       actualHarvestDate: values.harvestDate,
-      actualYield: values.yield,
+      actualYield: (plantation?.actualYield || 0) + values.yield,
       actualYieldPerHectare: values.yieldPerHectare,
     });
     
     toast({
       title: "Harvest recorded",
-      description: "The harvest data has been saved and added to inventory.",
+      description: values.addToInventory 
+        ? "The harvest data has been saved and added to inventory."
+        : "The harvest data has been saved.",
     });
     
     onSuccess();
@@ -227,13 +266,61 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
         </div>
         
         <div className="border p-4 rounded-md bg-muted/10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <h3 className="text-md font-medium">Inventory Update</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            The harvest will be automatically added to your inventory as a new item.
-          </p>
+          <FormField
+            control={form.control}
+            name="addToInventory"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 mb-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="flex items-center">
+                    <Package className="h-4 w-4 mr-2 text-muted-foreground" />
+                    Add harvest to inventory
+                  </FormLabel>
+                  <FormDescription>
+                    The harvest will be added as an inventory item
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+          
+          {addToInventory && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <FormField
+                control={form.control}
+                name="inventoryName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Inventory Item Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="inventoryUnit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
         </div>
         
         <FormField
