@@ -47,12 +47,16 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
       seedCost: undefined,
       seedsPerHectare: undefined,
       expectedYieldPerHectare: undefined,
+      pastureId: undefined,
       notes: '',
     },
   });
 
   function onSubmit(values: PlantationFormValues) {
     try {
+      // If pastureId is 'none', convert it to undefined
+      const pastureId = values.pastureId === 'none' ? undefined : values.pastureId;
+      
       addPlantation({
         name: values.name,
         type: values.type,
@@ -63,7 +67,7 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
         seedCost: values.seedCost,
         seedsPerHectare: values.seedsPerHectare,
         expectedYieldPerHectare: values.expectedYieldPerHectare,
-        pastureId: values.pastureId || undefined,
+        pastureId: pastureId,
         notes: values.notes || '',
       });
 

@@ -37,14 +37,15 @@ export function PlantationLocation({ control }: PlantationLocationProps) {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Pasture Location (Optional)</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value || ""}>
+          <Select onValueChange={field.onChange} value={field.value || undefined}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select a pasture (optional)" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              {/* Removed the empty string SelectItem and use null instead */}
+              <SelectItem value="none">None</SelectItem>
               {pastures.map((pasture) => (
                 <SelectItem key={pasture.id} value={pasture.id}>
                   {pasture.name}
