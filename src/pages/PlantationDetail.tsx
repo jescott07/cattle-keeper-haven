@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Edit, Calendar, ArrowLeft, Loader2 } from 'lucide-react';
@@ -35,10 +34,9 @@ const PlantationDetail = () => {
   const [isRecordHarvestOpen, setIsRecordHarvestOpen] = useState(false);
   
   useEffect(() => {
-    // Set a short timeout to give Zustand time to hydrate from localStorage
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 500);
+    }, 800);
     
     return () => clearTimeout(timer);
   }, []);
