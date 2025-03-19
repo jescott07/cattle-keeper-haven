@@ -35,10 +35,13 @@ const PlantationDetail = () => {
   const [isRecordHarvestOpen, setIsRecordHarvestOpen] = useState(false);
   
   useEffect(() => {
-    if (plantation) {
+    // Set a short timeout to give Zustand time to hydrate from localStorage
+    const timer = setTimeout(() => {
       setIsLoading(false);
-    }
-  }, [plantation]);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const calculateTotalExpenses = () => {
     return 5200;
