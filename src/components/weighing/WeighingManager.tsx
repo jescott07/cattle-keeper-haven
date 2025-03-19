@@ -14,9 +14,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { TransferCriteria } from './TransferCriteria';
+import { TransferCriteria, TransferCriterion } from './TransferCriteria';
 import { AnimalWeighingRecord } from './AnimalWeighingRecord';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
+import { useStore } from '@/lib/store';
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -28,6 +29,8 @@ const WeighingManager = () => {
   const [selectedDestinationId, setSelectedDestinationId] = useState<string>('');
   const [showSummary, setShowSummary] = useState(false);
   const [lotName, setLotName] = useState('');
+  const lots = useStore(state => state.lots);
+  const [transferCriteria, setTransferCriteria] = useState<TransferCriterion[]>([]);
   
   // Create a new lot from the weighing if needed
   const createNewLot = () => {
@@ -121,6 +124,14 @@ const WeighingManager = () => {
     setLotName('');
   };
   
+  // Helper function to create a new lot when needed
+  const handleCreateLot = (name: string) => {
+    // Create a new lot and return its ID
+    const newLotId = `lot-${Date.now()}`;
+    // This would actually create the lot in a real app
+    return newLotId;
+  };
+  
   // If showing summary, render the summary component
   if (showSummary) {
     return (
@@ -145,9 +156,14 @@ const WeighingManager = () => {
           {animalWeights.map((weight, index) => (
             <AnimalWeighingRecord
               key={index}
-              animalNumber={index + 1}
-              weight={weight}
-              onChange={(newWeight) => updateWeight(index, newWeight)}
+              onRecordSave={(record) => {
+                // We're just updating the weight for now
+                updateWeight(index, record.weight);
+              }}
+              originLotId=""
+              sourceLotName={`Animal ${index + 1}`}
+              transferCriteria={transferCriteria}
+              defaultBreed="nelore"
             />
           ))}
         </div>
@@ -233,7 +249,10 @@ const WeighingManager = () => {
           
           {activeTab === 'transfer' && (
             <TransferCriteria 
-              onDestinationSelected={setSelectedDestinationId}
+              criteria={transferCriteria}
+              onChange={setTransferCriteria}
+              availableLots={lots}
+              onCreateLot={handleCreateLot}
             />
           )}
         </div>
