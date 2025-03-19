@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { addDays, format } from 'date-fns';
@@ -17,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { TransferCriteria, TransferCriterion } from './TransferCriteria';
 import { AnimalWeighingRecord } from './AnimalWeighingRecord';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
-import { useStore } from '@/lib/store';
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -32,7 +30,6 @@ const WeighingManager = () => {
   const lots = useStore(state => state.lots);
   const [transferCriteria, setTransferCriteria] = useState<TransferCriterion[]>([]);
   
-  // Create a new lot from the weighing if needed
   const createNewLot = () => {
     if (!lotName.trim()) {
       toast({
@@ -61,7 +58,6 @@ const WeighingManager = () => {
     });
   };
   
-  // Record the weighing session
   const recordWeighing = () => {
     if (animalWeights.length === 0) {
       toast({
@@ -92,7 +88,6 @@ const WeighingManager = () => {
       description: `Weighing record created for ${animalWeights.length} animals`,
     });
     
-    // Show summary after recording
     setShowSummary(true);
   };
   
@@ -106,7 +101,6 @@ const WeighingManager = () => {
       return;
     }
     
-    // Initialize the array with zeros
     setAnimalWeights(Array(numberOfAnimals).fill(0));
   };
   
@@ -124,15 +118,11 @@ const WeighingManager = () => {
     setLotName('');
   };
   
-  // Helper function to create a new lot when needed
   const handleCreateLot = (name: string) => {
-    // Create a new lot and return its ID
     const newLotId = `lot-${Date.now()}`;
-    // This would actually create the lot in a real app
     return newLotId;
   };
   
-  // If showing summary, render the summary component
   if (showSummary) {
     return (
       <WeighingSessionSummary 
@@ -143,7 +133,6 @@ const WeighingManager = () => {
     );
   }
   
-  // If the weights array is initialized but not all weights are entered yet
   if (animalWeights.length > 0) {
     return (
       <div className="space-y-4">
@@ -157,7 +146,6 @@ const WeighingManager = () => {
             <AnimalWeighingRecord
               key={index}
               onRecordSave={(record) => {
-                // We're just updating the weight for now
                 updateWeight(index, record.weight);
               }}
               originLotId=""
@@ -204,7 +192,6 @@ const WeighingManager = () => {
     );
   }
   
-  // Initial state: setup the weighing session
   return (
     <Card>
       <CardHeader>
