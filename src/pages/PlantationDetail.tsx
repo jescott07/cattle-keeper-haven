@@ -21,7 +21,6 @@ import {
 
 const PlantationDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [isLoading, setIsLoading] = useState(true);
   const [isEditDatesOpen, setIsEditDatesOpen] = useState(false);
 
   const plantation = useStore(state => state.plantations.find(p => p.id === id));
@@ -32,20 +31,8 @@ const PlantationDetail = () => {
   
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isRecordHarvestOpen, setIsRecordHarvestOpen] = useState(false);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
-  const calculateTotalExpenses = () => {
-    return 5200;
-  };
-
-  if (!plantation && !isLoading) {
+  if (!plantation) {
     return (
       <div className="container py-8">
         <div className="flex items-center gap-4 mb-4">
@@ -61,22 +48,9 @@ const PlantationDetail = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="container py-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Link to="/plantations" className="hover:underline flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Plantations
-          </Link>
-        </div>
-        <div className="text-center text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-          Loading plantation details...
-        </div>
-      </div>
-    );
-  }
+  const calculateTotalExpenses = () => {
+    return 5200;
+  };
 
   return (
     <div className="container pb-8">
@@ -300,7 +274,7 @@ const PlantationDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <EditPlantationDatesForm 
-            plantation={plantation!} 
+            plantation={plantation} 
             onSuccess={() => setIsEditDatesOpen(false)}
           />
         </DialogContent>
@@ -331,7 +305,7 @@ const PlantationDetail = () => {
           </DialogHeader>
           <RecordHarvestForm 
             plantationId={id!} 
-            plantationArea={plantation?.areaInHectares || 0}
+            plantationArea={plantation.areaInHectares || 0}
             onSuccess={() => setIsRecordHarvestOpen(false)}
           />
         </DialogContent>
