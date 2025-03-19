@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, List, PlusSquare, Package, Graveyard, Beef, Syringe } from 'lucide-react';
+import { Home, List, PlusSquare, Package, Skull, Beef, Syringe } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -56,7 +57,7 @@ const Navbar = () => {
     },
     {
       name: 'Mortality',
-      icon: <Graveyard className="w-5 h-5" />,
+      icon: <Skull className="w-5 h-5" />,
       href: '/mortality',
     },
     {

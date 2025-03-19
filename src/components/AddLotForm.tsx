@@ -167,7 +167,8 @@ export function AddLotForm({ lot, onSuccess }: AddLotFormProps) {
           purchaseDate: new Date(data.purchaseDate),
           currentPastureId: data.currentPastureId,
           breed: mainBreed,
-          notes: combinedNotes
+          notes: combinedNotes,
+          plannedTransfers: []
         });
       }
       

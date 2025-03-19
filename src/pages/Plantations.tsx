@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Plus, Tree } from 'lucide-react';
+import { Plus, Trees } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ export default function Plantations() {
 
         {plantations.length === 0 ? (
           <div className="text-center p-12 border rounded-lg bg-card">
-            <Tree className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <Trees className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-xl font-medium mb-2">No plantations added yet</h3>
             <p className="text-muted-foreground mb-6">
               Add your first plantation to start tracking your crops.

@@ -19,36 +19,51 @@ import {
   SanitaryTreatment
 } from './types';
 
+interface InventoryItemTemplate {
+  id: string;
+  name: string;
+  type: string;
+  properties: any[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface StoreState {
   inventoryItems: InventoryItem[];
   addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateInventoryItem: (id: string, item: Partial<InventoryItem>) => void;
   deleteInventoryItem: (id: string) => void;
+  removeInventoryItem: (id: string) => void;
+
+  inventoryTemplates: InventoryItemTemplate[];
+  addInventoryTemplate: (template: Omit<InventoryItemTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateInventoryTemplate: (id: string, template: Partial<InventoryItemTemplate>) => void;
+  removeInventoryTemplate: (id: string) => void;
 
   lots: Lot[];
   addLot: (lot: Omit<Lot, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateLot: (id: string, lot: Partial<Lot>) => void;
   deleteLot: (id: string) => void;
-
-  pastures: Pasture[];
-  addPasture: (pasture: Omit<Pasture, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updatePasture: (id: string, pasture: Partial<Pasture>) => void;
-  deletePasture: (id: string) => void;
+  removeLot: (id: string) => void;
+  addPastureEvaluation: (pastureId: string, evaluation: any) => void;
 
   weighingRecords: WeighingRecord[];
   addWeighingRecord: (record: Omit<WeighingRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateWeighingRecord: (id: string, record: Partial<WeighingRecord>) => void;
   deleteWeighingRecord: (id: string) => void;
+  weighings: WeighingRecord[];
 
   consumptionRecords: ConsumptionRecord[];
   addConsumptionRecord: (record: Omit<ConsumptionRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateConsumptionRecord: (id: string, record: Partial<ConsumptionRecord>) => void;
   deleteConsumptionRecord: (id: string) => void;
+  consumptions: ConsumptionRecord[];
 
   pasturePlannings: PasturePlanning[];
   addPasturePlanning: (planning: Omit<PasturePlanning, 'completed' | 'completedDate' | 'notes'>) => void;
   updatePasturePlanning: (lotId: string, planning: Partial<PasturePlanning>) => void;
   deletePasturePlanning: (lotId: string, toPastureId: string) => void;
+  schedulePastureTransfer: (planning: any) => void;
 
   soilAnalyses: SoilAnalysis[];
   addSoilAnalysis: (analysis: Omit<SoilAnalysis, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
@@ -84,22 +99,30 @@ interface StoreState {
   addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateMaintenanceRecord: (id: string, record: Partial<MaintenanceRecord>) => void;
   deleteMaintenanceRecord: (id: string) => void;
+  completeMaintenanceRecord: (id: string, date: Date) => void;
 
   mortalityRecords: MortalityRecord[];
   addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateMortalityRecord: (id: string, record: Partial<MortalityRecord>) => void;
   deleteMortalityRecord: (id: string) => void;
 
-  // Sanitary Control
   sanitaryTreatments: SanitaryTreatment[];
   addSanitaryTreatment: (treatment: Omit<SanitaryTreatment, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
   updateSanitaryTreatment: (id: string, treatment: Partial<SanitaryTreatment>) => void;
   deleteSanitaryTreatment: (id: string) => void;
+
+  inventory: InventoryItem[];
+  updateSyncStatus: (type: string, id: string, status: string) => void;
+  setSyncTime: (date: Date) => void;
+  isOnline: boolean;
+  getPendingSyncs: () => number;
+  
+  getFarmSummary: () => any;
 }
 
 export const useStore = create<StoreState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       inventoryItems: [],
       addInventoryItem: (item) => set((state) => ({ inventoryItems: [...state.inventoryItems, { id: uuidv4(), ...item, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
       updateInventoryItem: (id, item) => set((state) => ({
@@ -108,24 +131,75 @@ export const useStore = create<StoreState>()(
         )
       })),
       deleteInventoryItem: (id) => set((state) => ({ inventoryItems: state.inventoryItems.filter((item) => item.id !== id) })),
+      removeInventoryItem: (id) => set((state) => ({ inventoryItems: state.inventoryItems.filter((item) => item.id !== id) })),
+
+      inventoryTemplates: [],
+      addInventoryTemplate: (template) => set((state) => ({ 
+        inventoryTemplates: [...state.inventoryTemplates, { 
+          id: uuidv4(), 
+          ...template, 
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        }] 
+      })),
+      updateInventoryTemplate: (id, template) => set((state) => ({
+        inventoryTemplates: state.inventoryTemplates.map((t) =>
+          t.id === id ? { ...t, ...template, updatedAt: new Date() } : t
+        )
+      })),
+      removeInventoryTemplate: (id) => set((state) => ({ 
+        inventoryTemplates: state.inventoryTemplates.filter((t) => t.id !== id) 
+      })),
 
       lots: [],
-      addLot: (lot) => set((state) => ({ lots: [...state.lots, { id: uuidv4(), ...lot, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
+      addLot: (lot) => set((state) => ({ 
+        lots: [...state.lots, { 
+          id: uuidv4(), 
+          ...lot, 
+          plannedTransfers: lot.plannedTransfers || [],
+          createdAt: new Date(), 
+          updatedAt: new Date(), 
+          syncStatus: 'pending' 
+        }] 
+      })),
       updateLot: (id, lot) => set((state) => ({
         lots: state.lots.map((l) =>
           l.id === id ? { ...l, ...lot, updatedAt: new Date(), syncStatus: 'pending' } : l
         )
       })),
       deleteLot: (id) => set((state) => ({ lots: state.lots.filter((lot) => lot.id !== id) })),
+      removeLot: (id) => set((state) => ({ lots: state.lots.filter((lot) => lot.id !== id) })),
 
       pastures: [],
-      addPasture: (pasture) => set((state) => ({ pastures: [...state.pastures, { id: uuidv4(), ...pasture, evaluations: [], createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
+      addPasture: (pasture) => set((state) => ({ 
+        pastures: [...state.pastures, { 
+          id: uuidv4(), 
+          ...pasture, 
+          evaluations: pasture.evaluations || [],
+          createdAt: new Date(), 
+          updatedAt: new Date(), 
+          syncStatus: 'pending' 
+        }] 
+      })),
       updatePasture: (id, pasture) => set((state) => ({
         pastures: state.pastures.map((p) =>
           p.id === id ? { ...p, ...pasture, updatedAt: new Date(), syncStatus: 'pending' } : p
         )
       })),
       deletePasture: (id) => set((state) => ({ pastures: state.pastures.filter((pasture) => pasture.id !== id) })),
+      removePasture: (id) => set((state) => ({ pastures: state.pastures.filter((pasture) => pasture.id !== id) })),
+      addPastureEvaluation: (pastureId, evaluation) => set((state) => ({
+        pastures: state.pastures.map((p) =>
+          p.id === pastureId 
+            ? { 
+                ...p, 
+                evaluations: [...p.evaluations, evaluation],
+                updatedAt: new Date(), 
+                syncStatus: 'pending' 
+              } 
+            : p
+        )
+      })),
 
       weighingRecords: [],
       addWeighingRecord: (record) => set((state) => ({ weighingRecords: [...state.weighingRecords, { id: uuidv4(), ...record, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
@@ -135,6 +209,9 @@ export const useStore = create<StoreState>()(
         )
       })),
       deleteWeighingRecord: (id) => set((state) => ({ weighingRecords: state.weighingRecords.filter((record) => record.id !== id) })),
+      get weighings() {
+        return get().weighingRecords;
+      },
 
       consumptionRecords: [],
       addConsumptionRecord: (record) => set((state) => ({ consumptionRecords: [...state.consumptionRecords, { id: uuidv4(), ...record, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
@@ -144,6 +221,9 @@ export const useStore = create<StoreState>()(
         )
       })),
       deleteConsumptionRecord: (id) => set((state) => ({ consumptionRecords: state.consumptionRecords.filter((record) => record.id !== id) })),
+      get consumptions() {
+        return get().consumptionRecords;
+      },
 
       pasturePlannings: [],
       addPasturePlanning: (planning) => set((state) => {
@@ -278,6 +358,17 @@ export const useStore = create<StoreState>()(
       deleteMaintenanceRecord: (id) => set((state) => ({
         maintenanceRecords: state.maintenanceRecords.filter((record) => record.id !== id)
       })),
+      completeMaintenanceRecord: (id, date) => set((state) => ({
+        maintenanceRecords: state.maintenanceRecords.map((m) =>
+          m.id === id ? { 
+            ...m, 
+            status: 'completed', 
+            completedDate: date,
+            updatedAt: new Date(), 
+            syncStatus: 'pending' 
+          } : m
+        )
+      })),
 
       mortalityRecords: [],
       addMortalityRecord: (record) => set((state) => ({
@@ -298,10 +389,8 @@ export const useStore = create<StoreState>()(
         mortalityRecords: state.mortalityRecords.filter((record) => record.id !== id)
       })),
 
-      // Sanitary Control State
       sanitaryTreatments: [],
       
-      // Sanitary Control Actions
       addSanitaryTreatment: (treatment) => set((state) => {
         const newTreatment: SanitaryTreatment = {
           id: uuidv4(),
@@ -325,11 +414,53 @@ export const useStore = create<StoreState>()(
       deleteSanitaryTreatment: (id) => set((state) => ({
         sanitaryTreatments: state.sanitaryTreatments.filter((t) => t.id !== id)
       })),
+
+      get inventory() {
+        return get().inventoryItems;
+      },
+      
+      updateSyncStatus: (type, id, status) => {
+        console.log(`Updating sync status for ${type} ${id} to ${status}`);
+      },
+      
+      setSyncTime: (date) => {
+        console.log(`Setting sync time to ${date}`);
+      },
+      
+      isOnline: true,
+      
+      getPendingSyncs: () => {
+        const state = get();
+        let count = 0;
+        
+        count += state.inventoryItems.filter(i => i.syncStatus === 'pending').length;
+        count += state.lots.filter(i => i.syncStatus === 'pending').length;
+        count += state.pastures.filter(i => i.syncStatus === 'pending').length;
+        count += state.weighingRecords.filter(i => i.syncStatus === 'pending').length;
+        count += state.consumptionRecords.filter(i => i.syncStatus === 'pending').length;
+        
+        return count;
+      },
+      
+      getFarmSummary: () => {
+        const state = get();
+        
+        return {
+          totalAnimals: state.lots.reduce((sum, lot) => sum + lot.numberOfAnimals, 0),
+          totalPastures: state.pastures.length,
+          totalLots: state.lots.length,
+          activeLots: state.lots.filter(lot => lot.status === 'active').length,
+          totalPastureArea: state.pastures.reduce((sum, pasture) => sum + pasture.sizeInHectares, 0),
+          inventoryValue: state.inventoryItems.reduce((sum, item) => sum + (item.quantity * item.costPerUnit), 0),
+          pendingSyncs: state.getPendingSyncs()
+        };
+      }
     }),
     {
       name: 'farm-management',
       partialize: (state) => ({
         inventoryItems: state.inventoryItems,
+        inventoryTemplates: state.inventoryTemplates,
         lots: state.lots,
         pastures: state.pastures,
         weighingRecords: state.weighingRecords,
@@ -348,4 +479,3 @@ export const useStore = create<StoreState>()(
     }
   )
 );
-

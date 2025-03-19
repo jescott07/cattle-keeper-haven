@@ -72,7 +72,8 @@ export function AddPastureForm({ pasture, onSuccess }: AddPastureFormProps) {
           sizeInHectares: Number(data.sizeInHectares),
           fenceCondition: data.fenceCondition,
           grassType: data.grassType,
-          notes: data.notes
+          notes: data.notes,
+          evaluations: [] // Add this to fix the type error
         });
       }
       
