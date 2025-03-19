@@ -4,22 +4,27 @@ import { Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { PlantationCard } from '@/components/plantation/PlantationCard';
 import { AddPlantationForm } from '@/components/plantation/AddPlantationForm';
 
 export default function Plantations() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const plantations = useStore((state) => state.plantations);
 
-  const handleOpenDialog = () => {
-    console.log('Opening add plantation dialog');
-    setIsAddDialogOpen(true);
+  const openDialog = () => {
+    console.log('Opening dialog...');
+    setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    console.log('Closing add plantation dialog');
-    setIsAddDialogOpen(false);
+  const closeDialog = () => {
+    console.log('Closing dialog...');
+    setDialogOpen(false);
   };
 
   return (
@@ -28,7 +33,7 @@ export default function Plantations() {
       <main className="container mx-auto p-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Plantations</h1>
-          <Button onClick={handleOpenDialog} className="gap-2" type="button">
+          <Button onClick={openDialog} type="button" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add Plantation
           </Button>
@@ -46,19 +51,19 @@ export default function Plantations() {
             <p className="text-muted-foreground mb-6">
               Add your first plantation to start tracking your crops and their productivity.
             </p>
-            <Button onClick={handleOpenDialog} className="gap-2" type="button">
+            <Button onClick={openDialog} type="button" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add First Plantation
             </Button>
           </div>
         )}
 
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Plantation</DialogTitle>
             </DialogHeader>
-            <AddPlantationForm onPlantationAdded={handleCloseDialog} />
+            <AddPlantationForm onPlantationAdded={closeDialog} />
           </DialogContent>
         </Dialog>
       </main>
