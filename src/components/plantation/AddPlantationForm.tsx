@@ -277,7 +277,14 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
               <FormItem>
                 <FormLabel>Seed Cost</FormLabel>
                 <FormControl>
-                  <Input type="number" min="0" step="0.01" placeholder="Optional" {...field} value={field.value || ''} />
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    placeholder="Optional" 
+                    {...field} 
+                    value={field.value === undefined ? '' : field.value} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -291,7 +298,13 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
               <FormItem>
                 <FormLabel>Seeds per Hectare</FormLabel>
                 <FormControl>
-                  <Input type="number" min="0" placeholder="Optional" {...field} value={field.value || ''} />
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    placeholder="Optional" 
+                    {...field} 
+                    value={field.value === undefined ? '' : field.value} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -306,7 +319,14 @@ export function AddPlantationForm({ onPlantationAdded }: AddPlantationFormProps)
             <FormItem>
               <FormLabel>Expected Yield per Hectare</FormLabel>
               <FormControl>
-                <Input type="number" min="0" step="0.1" placeholder="Optional" {...field} value={field.value || ''} />
+                <Input 
+                  type="number" 
+                  min="0" 
+                  step="0.1" 
+                  placeholder="Optional" 
+                  {...field} 
+                  value={field.value === undefined ? '' : field.value} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
