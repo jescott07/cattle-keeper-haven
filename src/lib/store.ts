@@ -1,481 +1,887 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  InventoryItem, 
-  Lot, 
-  Pasture, 
-  WeighingRecord, 
-  ConsumptionRecord, 
-  PasturePlanning, 
+import {
+  SyncableModel,
+  InventoryItem,
+  InventoryItemTemplate,
+  Lot,
+  Pasture,
+  WeighingRecord,
+  ConsumptionRecord,
+  FarmSummary,
   SoilAnalysis,
+  MaintenanceRecord,
+  PasturePlanning,
+  MortalityRecord,
   Plantation,
   PestControl,
   PlantationExpense,
   PlantationMaintenance,
-  ProductivityRecord,
-  MaintenanceRecord,
-  MortalityRecord,
-  SanitaryTreatment
+  ProductivityRecord
 } from './types';
 
-interface InventoryItemTemplate {
-  id: string;
-  name: string;
-  type: string;
-  properties: any[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 interface StoreState {
-  inventoryItems: InventoryItem[];
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateInventoryItem: (id: string, item: Partial<InventoryItem>) => void;
-  deleteInventoryItem: (id: string) => void;
-  removeInventoryItem: (id: string) => void;
-
-  inventoryTemplates: InventoryItemTemplate[];
-  addInventoryTemplate: (template: Omit<InventoryItemTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateInventoryTemplate: (id: string, template: Partial<InventoryItemTemplate>) => void;
-  removeInventoryTemplate: (id: string) => void;
-
-  lots: Lot[];
-  addLot: (lot: Omit<Lot, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateLot: (id: string, lot: Partial<Lot>) => void;
-  deleteLot: (id: string) => void;
-  removeLot: (id: string) => void;
-  addPastureEvaluation: (pastureId: string, evaluation: any) => void;
-
-  weighingRecords: WeighingRecord[];
-  addWeighingRecord: (record: Omit<WeighingRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateWeighingRecord: (id: string, record: Partial<WeighingRecord>) => void;
-  deleteWeighingRecord: (id: string) => void;
-  weighings: WeighingRecord[];
-
-  consumptionRecords: ConsumptionRecord[];
-  addConsumptionRecord: (record: Omit<ConsumptionRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateConsumptionRecord: (id: string, record: Partial<ConsumptionRecord>) => void;
-  deleteConsumptionRecord: (id: string) => void;
-  consumptions: ConsumptionRecord[];
-
-  pasturePlannings: PasturePlanning[];
-  addPasturePlanning: (planning: Omit<PasturePlanning, 'completed' | 'completedDate' | 'notes'>) => void;
-  updatePasturePlanning: (lotId: string, planning: Partial<PasturePlanning>) => void;
-  deletePasturePlanning: (lotId: string, toPastureId: string) => void;
-  schedulePastureTransfer: (planning: any) => void;
-
-  soilAnalyses: SoilAnalysis[];
-  addSoilAnalysis: (analysis: Omit<SoilAnalysis, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateSoilAnalysis: (id: string, analysis: Partial<SoilAnalysis>) => void;
-  deleteSoilAnalysis: (id: string) => void;
-
-  plantations: Plantation[];
-  addPlantation: (plantation: Omit<Plantation, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updatePlantation: (id: string, plantation: Partial<Plantation>) => void;
-  deletePlantation: (id: string) => void;
-
-  pestControls: PestControl[];
-  addPestControl: (pestControl: Omit<PestControl, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updatePestControl: (id: string, pestControl: Partial<PestControl>) => void;
-  deletePestControl: (id: string) => void;
-
-  plantationExpenses: PlantationExpense[];
-  addPlantationExpense: (expense: Omit<PlantationExpense, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updatePlantationExpense: (id: string, expense: Partial<PlantationExpense>) => void;
-  deletePlantationExpense: (id: string) => void;
-
-  plantationMaintenances: PlantationMaintenance[];
-  addPlantationMaintenance: (maintenance: Omit<PlantationMaintenance, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updatePlantationMaintenance: (id: string, maintenance: Partial<PlantationMaintenance>) => void;
-  deletePlantationMaintenance: (id: string) => void;
-
-  productivityRecords: ProductivityRecord[];
-  addProductivityRecord: (record: Omit<ProductivityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateProductivityRecord: (id: string, record: Partial<ProductivityRecord>) => void;
-  deleteProductivityRecord: (id: string) => void;
-
-  maintenanceRecords: MaintenanceRecord[];
-  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateMaintenanceRecord: (id: string, record: Partial<MaintenanceRecord>) => void;
-  deleteMaintenanceRecord: (id: string) => void;
-  completeMaintenanceRecord: (id: string, date: Date) => void;
-
-  mortalityRecords: MortalityRecord[];
-  addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateMortalityRecord: (id: string, record: Partial<MortalityRecord>) => void;
-  deleteMortalityRecord: (id: string) => void;
-
-  sanitaryTreatments: SanitaryTreatment[];
-  addSanitaryTreatment: (treatment: Omit<SanitaryTreatment, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
-  updateSanitaryTreatment: (id: string, treatment: Partial<SanitaryTreatment>) => void;
-  deleteSanitaryTreatment: (id: string) => void;
-
+  // Data collections
   inventory: InventoryItem[];
-  updateSyncStatus: (type: string, id: string, status: string) => void;
-  setSyncTime: (date: Date) => void;
-  isOnline: boolean;
-  getPendingSyncs: () => number;
+  inventoryTemplates: InventoryItemTemplate[];
+  lots: Lot[];
+  pastures: Pasture[];
+  weighings: WeighingRecord[];
+  consumptions: ConsumptionRecord[];
+  soilAnalyses: SoilAnalysis[];
+  maintenanceRecords: MaintenanceRecord[];
+  mortalityRecords: MortalityRecord[];
   
-  getFarmSummary: () => any;
+  // Plantation Management collections
+  plantations: Plantation[];
+  pestControls: PestControl[];
+  plantationExpenses: PlantationExpense[];
+  plantationMaintenances: PlantationMaintenance[];
+  productivityRecords: ProductivityRecord[];
+  
+  // Connection status
+  isOnline: boolean;
+  lastSyncTime: Date | null;
+  
+  // Actions for inventory
+  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateInventoryItem: (id: string, updates: Partial<InventoryItem>) => void;
+  removeInventoryItem: (id: string) => void;
+  
+  // Actions for inventory templates
+  addInventoryTemplate: (template: Omit<InventoryItemTemplate, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateInventoryTemplate: (id: string, updates: Partial<InventoryItemTemplate>) => void;
+  removeInventoryTemplate: (id: string) => void;
+  
+  // Actions for lots
+  addLot: (lot: Omit<Lot, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus' | 'plannedTransfers'>) => void;
+  updateLot: (id: string, updates: Partial<Lot>) => void;
+  removeLot: (id: string) => void;
+  
+  // Actions for pastures
+  addPasture: (pasture: Omit<Pasture, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus' | 'evaluations'>) => void;
+  updatePasture: (id: string, updates: Partial<Pasture>) => void;
+  removePasture: (id: string) => void;
+  addPastureEvaluation: (pastureId: string, evaluation: Omit<Pasture['evaluations'][0], 'id'>) => void;
+  
+  // Pasture transfer action
+  schedulePastureTransfer: (planning: Omit<PasturePlanning, 'id'>) => void;
+  
+  // Actions for weighings
+  addWeighingRecord: (record: Omit<WeighingRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  
+  // Actions for consumption
+  addConsumptionRecord: (record: Omit<ConsumptionRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  
+  // Actions for soil analyses
+  addSoilAnalysis: (analysis: Omit<SoilAnalysis, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateSoilAnalysis: (id: string, updates: Partial<SoilAnalysis>) => void;
+  removeSoilAnalysis: (id: string) => void;
+  
+  // Actions for maintenance records
+  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateMaintenanceRecord: (id: string, updates: Partial<MaintenanceRecord>) => void;
+  removeMaintenanceRecord: (id: string) => void;
+  completeMaintenanceRecord: (id: string, completedDate: Date, notes?: string) => void;
+  
+  // Actions for mortality records
+  addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  
+  // Actions for plantations
+  addPlantation: (plantation: Omit<Plantation, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePlantation: (id: string, updates: Partial<Plantation>) => void;
+  removePlantation: (id: string) => void;
+  
+  // Actions for pest controls
+  addPestControl: (control: Omit<PestControl, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePestControl: (id: string, updates: Partial<PestControl>) => void;
+  removePestControl: (id: string) => void;
+  
+  // Actions for plantation expenses
+  addPlantationExpense: (expense: Omit<PlantationExpense, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePlantationExpense: (id: string, updates: Partial<PlantationExpense>) => void;
+  removePlantationExpense: (id: string) => void;
+  
+  // Actions for plantation maintenances
+  addPlantationMaintenance: (maintenance: Omit<PlantationMaintenance, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updatePlantationMaintenance: (id: string, updates: Partial<PlantationMaintenance>) => void;
+  removePlantationMaintenance: (id: string) => void;
+  
+  // Actions for productivity records
+  addProductivityRecord: (record: Omit<ProductivityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateProductivityRecord: (id: string, updates: Partial<ProductivityRecord>) => void;
+  removeProductivityRecord: (id: string) => void;
+  
+  // Sync actions
+  setOnlineStatus: (isOnline: boolean) => void;
+  setSyncTime: (time: Date) => void;
+  updateSyncStatus: (modelType: string, id: string, status: SyncableModel['syncStatus']) => void;
+  
+  // Utility functions
+  getFarmSummary: () => FarmSummary;
+  getPendingSyncs: () => number;
 }
 
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
-      inventoryItems: [],
-      addInventoryItem: (item) => set((state) => ({ inventoryItems: [...state.inventoryItems, { id: uuidv4(), ...item, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
-      updateInventoryItem: (id, item) => set((state) => ({
-        inventoryItems: state.inventoryItems.map((inv) =>
-          inv.id === id ? { ...inv, ...item, updatedAt: new Date(), syncStatus: 'pending' } : inv
-        )
-      })),
-      deleteInventoryItem: (id) => set((state) => ({ inventoryItems: state.inventoryItems.filter((item) => item.id !== id) })),
-      removeInventoryItem: (id) => set((state) => ({ inventoryItems: state.inventoryItems.filter((item) => item.id !== id) })),
-
+      // Initial data
+      inventory: [],
       inventoryTemplates: [],
-      addInventoryTemplate: (template) => set((state) => ({ 
-        inventoryTemplates: [...state.inventoryTemplates, { 
-          id: uuidv4(), 
-          ...template, 
-          createdAt: new Date(), 
-          updatedAt: new Date() 
-        }] 
-      })),
-      updateInventoryTemplate: (id, template) => set((state) => ({
-        inventoryTemplates: state.inventoryTemplates.map((t) =>
-          t.id === id ? { ...t, ...template, updatedAt: new Date() } : t
-        )
-      })),
-      removeInventoryTemplate: (id) => set((state) => ({ 
-        inventoryTemplates: state.inventoryTemplates.filter((t) => t.id !== id) 
-      })),
-
       lots: [],
-      addLot: (lot) => set((state) => ({ 
-        lots: [...state.lots, { 
-          id: uuidv4(), 
-          ...lot, 
-          plannedTransfers: lot.plannedTransfers || [],
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updateLot: (id, lot) => set((state) => ({
-        lots: state.lots.map((l) =>
-          l.id === id ? { ...l, ...lot, updatedAt: new Date(), syncStatus: 'pending' } : l
-        )
-      })),
-      deleteLot: (id) => set((state) => ({ lots: state.lots.filter((lot) => lot.id !== id) })),
-      removeLot: (id) => set((state) => ({ lots: state.lots.filter((lot) => lot.id !== id) })),
-
       pastures: [],
-      addPasture: (pasture) => set((state) => ({ 
-        pastures: [...state.pastures, { 
-          id: uuidv4(), 
-          ...pasture, 
-          evaluations: pasture.evaluations || [],
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updatePasture: (id, pasture) => set((state) => ({
-        pastures: state.pastures.map((p) =>
-          p.id === id ? { ...p, ...pasture, updatedAt: new Date(), syncStatus: 'pending' } : p
-        )
-      })),
-      deletePasture: (id) => set((state) => ({ pastures: state.pastures.filter((pasture) => pasture.id !== id) })),
-      removePasture: (id) => set((state) => ({ pastures: state.pastures.filter((pasture) => pasture.id !== id) })),
-      addPastureEvaluation: (pastureId, evaluation) => set((state) => ({
-        pastures: state.pastures.map((p) =>
-          p.id === pastureId 
-            ? { 
-                ...p, 
-                evaluations: [...p.evaluations, evaluation],
-                updatedAt: new Date(), 
-                syncStatus: 'pending' 
-              } 
-            : p
-        )
-      })),
-
-      weighingRecords: [],
-      addWeighingRecord: (record) => set((state) => ({ weighingRecords: [...state.weighingRecords, { id: uuidv4(), ...record, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
-      updateWeighingRecord: (id, record) => set((state) => ({
-        weighingRecords: state.weighingRecords.map((w) =>
-          w.id === id ? { ...w, ...record, updatedAt: new Date(), syncStatus: 'pending' } : w
-        )
-      })),
-      deleteWeighingRecord: (id) => set((state) => ({ weighingRecords: state.weighingRecords.filter((record) => record.id !== id) })),
-      get weighings() {
-        return get().weighingRecords;
-      },
-
-      consumptionRecords: [],
-      addConsumptionRecord: (record) => set((state) => ({ consumptionRecords: [...state.consumptionRecords, { id: uuidv4(), ...record, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
-      updateConsumptionRecord: (id, record) => set((state) => ({
-        consumptionRecords: state.consumptionRecords.map((c) =>
-          c.id === id ? { ...c, ...record, updatedAt: new Date(), syncStatus: 'pending' } : c
-        )
-      })),
-      deleteConsumptionRecord: (id) => set((state) => ({ consumptionRecords: state.consumptionRecords.filter((record) => record.id !== id) })),
-      get consumptions() {
-        return get().consumptionRecords;
-      },
-
-      pasturePlannings: [],
-      addPasturePlanning: (planning) => set((state) => {
-        const newPlanning: PasturePlanning = {
-          lotId: planning.lotId,
-          fromPastureId: planning.fromPastureId,
-          toPastureId: planning.toPastureId,
-          scheduledDate: planning.scheduledDate,
-          completed: false,
-          notes: '',
-        };
-        return { pasturePlannings: [...state.pasturePlannings, newPlanning] };
-      }),
-      updatePasturePlanning: (lotId, planning) => set((state) => ({
-        pasturePlannings: state.pasturePlannings.map((p) =>
-          p.lotId === lotId && p.toPastureId === planning.toPastureId ? { ...p, ...planning } : p
-        )
-      })),
-      deletePasturePlanning: (lotId, toPastureId) => set((state) => ({
-        pasturePlannings: state.pasturePlannings.filter((p) => !(p.lotId === lotId && p.toPastureId === toPastureId))
-      })),
-
+      weighings: [],
+      consumptions: [],
       soilAnalyses: [],
-      addSoilAnalysis: (analysis) => set((state) => ({ soilAnalyses: [...state.soilAnalyses, { id: uuidv4(), ...analysis, createdAt: new Date(), updatedAt: new Date(), syncStatus: 'pending' }] })),
-      updateSoilAnalysis: (id, analysis) => set((state) => ({
-        soilAnalyses: state.soilAnalyses.map((s) =>
-          s.id === id ? { ...s, ...analysis, updatedAt: new Date(), syncStatus: 'pending' } : s
-        )
-      })),
-      deleteSoilAnalysis: (id) => set((state) => ({ soilAnalyses: state.soilAnalyses.filter((analysis) => analysis.id !== id) })),
-
-      plantations: [],
-      addPlantation: (plantation) => set((state) => ({ 
-        plantations: [...state.plantations, { 
-          id: uuidv4(), 
-          ...plantation, 
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updatePlantation: (id, plantation) => set((state) => ({
-        plantations: state.plantations.map((p) =>
-          p.id === id ? { ...p, ...plantation, updatedAt: new Date(), syncStatus: 'pending' } : p
-        )
-      })),
-      deletePlantation: (id) => set((state) => ({ plantations: state.plantations.filter((plantation) => plantation.id !== id) })),
-
-      pestControls: [],
-      addPestControl: (pestControl) => set((state) => ({ 
-        pestControls: [...state.pestControls, { 
-          id: uuidv4(), 
-          ...pestControl, 
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updatePestControl: (id, pestControl) => set((state) => ({
-        pestControls: state.pestControls.map((p) =>
-          p.id === id ? { ...p, ...pestControl, updatedAt: new Date(), syncStatus: 'pending' } : p
-        )
-      })),
-      deletePestControl: (id) => set((state) => ({ pestControls: state.pestControls.filter((pestControl) => pestControl.id !== id) })),
-
-      plantationExpenses: [],
-      addPlantationExpense: (expense) => set((state) => ({ 
-        plantationExpenses: [...state.plantationExpenses, { 
-          id: uuidv4(), 
-          ...expense, 
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updatePlantationExpense: (id, expense) => set((state) => ({
-        plantationExpenses: state.plantationExpenses.map((p) =>
-          p.id === id ? { ...p, ...expense, updatedAt: new Date(), syncStatus: 'pending' } : p
-        )
-      })),
-      deletePlantationExpense: (id) => set((state) => ({ plantationExpenses: state.plantationExpenses.filter((expense) => expense.id !== id) })),
-
-      plantationMaintenances: [],
-      addPlantationMaintenance: (maintenance) => set((state) => ({ 
-        plantationMaintenances: [...state.plantationMaintenances, { 
-          id: uuidv4(), 
-          ...maintenance, 
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updatePlantationMaintenance: (id, maintenance) => set((state) => ({
-        plantationMaintenances: state.plantationMaintenances.map((p) =>
-          p.id === id ? { ...p, ...maintenance, updatedAt: new Date(), syncStatus: 'pending' } : p
-        )
-      })),
-      deletePlantationMaintenance: (id) => set((state) => ({ plantationMaintenances: state.plantationMaintenances.filter((maintenance) => maintenance.id !== id) })),
-
-      productivityRecords: [],
-      addProductivityRecord: (record) => set((state) => ({ 
-        productivityRecords: [...state.productivityRecords, { 
-          id: uuidv4(), 
-          ...record, 
-          createdAt: new Date(), 
-          updatedAt: new Date(), 
-          syncStatus: 'pending' 
-        }] 
-      })),
-      updateProductivityRecord: (id, record) => set((state) => ({
-        productivityRecords: state.productivityRecords.map((p) =>
-          p.id === id ? { ...p, ...record, updatedAt: new Date(), syncStatus: 'pending' } : p
-        )
-      })),
-      deleteProductivityRecord: (id) => set((state) => ({ productivityRecords: state.productivityRecords.filter((record) => record.id !== id) })),
-
       maintenanceRecords: [],
-      addMaintenanceRecord: (record) => set((state) => ({
-        maintenanceRecords: [...state.maintenanceRecords, {
-          id: uuidv4(),
-          ...record,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          syncStatus: 'pending'
-        }]
-      })),
-      updateMaintenanceRecord: (id, record) => set((state) => ({
-        maintenanceRecords: state.maintenanceRecords.map((m) =>
-          m.id === id ? { ...m, ...record, updatedAt: new Date(), syncStatus: 'pending' } : m
-        )
-      })),
-      deleteMaintenanceRecord: (id) => set((state) => ({
-        maintenanceRecords: state.maintenanceRecords.filter((record) => record.id !== id)
-      })),
-      completeMaintenanceRecord: (id, date) => set((state) => ({
-        maintenanceRecords: state.maintenanceRecords.map((m) =>
-          m.id === id ? { 
-            ...m, 
-            status: 'completed', 
-            completedDate: date,
-            updatedAt: new Date(), 
-            syncStatus: 'pending' 
-          } : m
-        )
-      })),
-
       mortalityRecords: [],
-      addMortalityRecord: (record) => set((state) => ({
-        mortalityRecords: [...state.mortalityRecords, {
+      plantations: [],
+      pestControls: [],
+      plantationExpenses: [],
+      plantationMaintenances: [],
+      productivityRecords: [],
+      isOnline: navigator.onLine,
+      lastSyncTime: null,
+      
+      // Inventory actions
+      addInventoryItem: (item) => {
+        const now = new Date();
+        const newItem: InventoryItem = {
+          ...item,
           id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending',
+          properties: item.properties || []
+        };
+        
+        set(state => ({
+          inventory: [...state.inventory, newItem]
+        }));
+      },
+      
+      updateInventoryItem: (id, updates) => {
+        set(state => ({
+          inventory: state.inventory.map(item => 
+            item.id === id 
+              ? { 
+                  ...item, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : item
+          )
+        }));
+      },
+      
+      removeInventoryItem: (id) => {
+        set(state => ({
+          inventory: state.inventory.filter(item => item.id !== id)
+        }));
+      },
+      
+      // Inventory template actions
+      addInventoryTemplate: (template) => {
+        const now = new Date();
+        const newTemplate: InventoryItemTemplate = {
+          ...template,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+        };
+        
+        set(state => ({
+          inventoryTemplates: [...state.inventoryTemplates, newTemplate]
+        }));
+      },
+      
+      updateInventoryTemplate: (id, updates) => {
+        set(state => ({
+          inventoryTemplates: state.inventoryTemplates.map(template => 
+            template.id === id 
+              ? { 
+                  ...template, 
+                  ...updates, 
+                  updatedAt: new Date()
+                } 
+              : template
+          )
+        }));
+      },
+      
+      removeInventoryTemplate: (id) => {
+        set(state => ({
+          inventoryTemplates: state.inventoryTemplates.filter(template => template.id !== id)
+        }));
+      },
+      
+      // Lot actions
+      addLot: (lot) => {
+        const now = new Date();
+        const newLot: Lot = {
+          ...lot,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending',
+          plannedTransfers: []
+        };
+        
+        set(state => ({
+          lots: [...state.lots, newLot]
+        }));
+      },
+      
+      updateLot: (id, updates) => {
+        set(state => ({
+          lots: state.lots.map(lot => 
+            lot.id === id 
+              ? { 
+                  ...lot, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : lot
+          )
+        }));
+      },
+      
+      removeLot: (id) => {
+        set(state => ({
+          lots: state.lots.filter(lot => lot.id !== id)
+        }));
+      },
+      
+      // Pasture actions
+      addPasture: (pasture) => {
+        const now = new Date();
+        const newPasture: Pasture = {
+          ...pasture,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending',
+          evaluations: []
+        };
+        
+        set(state => ({
+          pastures: [...state.pastures, newPasture]
+        }));
+      },
+      
+      updatePasture: (id, updates) => {
+        set(state => ({
+          pastures: state.pastures.map(pasture => 
+            pasture.id === id 
+              ? { 
+                  ...pasture, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : pasture
+          )
+        }));
+      },
+      
+      removePasture: (id) => {
+        set(state => ({
+          pastures: state.pastures.filter(pasture => pasture.id !== id)
+        }));
+      },
+      
+      addPastureEvaluation: (pastureId, evaluation) => {
+        set(state => ({
+          pastures: state.pastures.map(pasture => 
+            pasture.id === pastureId 
+              ? { 
+                  ...pasture, 
+                  evaluations: [...pasture.evaluations, evaluation],
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : pasture
+          )
+        }));
+      },
+      
+      // Pasture transfer action
+      schedulePastureTransfer: (planning) => {
+        const { lotId, fromPastureId, toPastureId, scheduledDate, completed, notes } = planning;
+        
+        set(state => {
+          const lotToUpdate = state.lots.find(lot => lot.id === lotId);
+          
+          if (!lotToUpdate) return state;
+          
+          const transfer: PasturePlanning = {
+            ...planning,
+            completedDate: completed ? scheduledDate : undefined,
+          };
+          
+          if (completed) {
+            return {
+              lots: state.lots.map(lot => 
+                lot.id === lotId 
+                  ? { 
+                      ...lot, 
+                      currentPastureId: toPastureId,
+                      plannedTransfers: [...lot.plannedTransfers, transfer],
+                      updatedAt: new Date(), 
+                      syncStatus: 'pending' 
+                    } 
+                  : lot
+              )
+            };
+          } else {
+            return {
+              lots: state.lots.map(lot => 
+                lot.id === lotId 
+                  ? { 
+                      ...lot, 
+                      plannedTransfers: [...lot.plannedTransfers, transfer],
+                      updatedAt: new Date(), 
+                      syncStatus: 'pending' 
+                    } 
+                  : lot
+              )
+            };
+          }
+        });
+      },
+      
+      // Weighing actions
+      addWeighingRecord: (record) => {
+        const now = new Date();
+        const newRecord: WeighingRecord = {
           ...record,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          syncStatus: 'pending'
-        }]
-      })),
-      updateMortalityRecord: (id, record) => set((state) => ({
-        mortalityRecords: state.mortalityRecords.map((m) =>
-          m.id === id ? { ...m, ...record, updatedAt: new Date(), syncStatus: 'pending' } : m
-        )
-      })),
-      deleteMortalityRecord: (id) => set((state) => ({
-        mortalityRecords: state.mortalityRecords.filter((record) => record.id !== id)
-      })),
-
-      sanitaryTreatments: [],
-      
-      addSanitaryTreatment: (treatment) => set((state) => {
-        const newTreatment: SanitaryTreatment = {
           id: uuidv4(),
-          ...treatment,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: now,
+          updatedAt: now,
           syncStatus: 'pending'
         };
         
-        return {
-          sanitaryTreatments: [...state.sanitaryTreatments, newTreatment]
+        set(state => ({
+          weighings: [...state.weighings, newRecord]
+        }));
+      },
+      
+      // Consumption actions
+      addConsumptionRecord: (record) => {
+        const now = new Date();
+        const newRecord: ConsumptionRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
         };
-      }),
-      
-      updateSanitaryTreatment: (id, treatment) => set((state) => ({
-        sanitaryTreatments: state.sanitaryTreatments.map((t) =>
-          t.id === id ? { ...t, ...treatment, updatedAt: new Date(), syncStatus: 'pending' } : t
-        )
-      })),
-      
-      deleteSanitaryTreatment: (id) => set((state) => ({
-        sanitaryTreatments: state.sanitaryTreatments.filter((t) => t.id !== id)
-      })),
-
-      get inventory() {
-        return get().inventoryItems;
-      },
-      
-      updateSyncStatus: (type, id, status) => {
-        console.log(`Updating sync status for ${type} ${id} to ${status}`);
-      },
-      
-      setSyncTime: (date) => {
-        console.log(`Setting sync time to ${date}`);
-      },
-      
-      isOnline: true,
-      
-      getPendingSyncs: () => {
-        const state = get();
-        let count = 0;
         
-        count += state.inventoryItems.filter(i => i.syncStatus === 'pending').length;
-        count += state.lots.filter(i => i.syncStatus === 'pending').length;
-        count += state.pastures.filter(i => i.syncStatus === 'pending').length;
-        count += state.weighingRecords.filter(i => i.syncStatus === 'pending').length;
-        count += state.consumptionRecords.filter(i => i.syncStatus === 'pending').length;
-        
-        return count;
+        set(state => ({
+          consumptions: [...state.consumptions, newRecord]
+        }));
       },
       
+      // Soil Analysis actions
+      addSoilAnalysis: (analysis) => {
+        const now = new Date();
+        const newAnalysis: SoilAnalysis = {
+          ...analysis,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          soilAnalyses: [...state.soilAnalyses, newAnalysis]
+        }));
+      },
+      
+      updateSoilAnalysis: (id, updates) => {
+        set(state => ({
+          soilAnalyses: state.soilAnalyses.map(analysis => 
+            analysis.id === id 
+              ? { 
+                  ...analysis, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : analysis
+          )
+        }));
+      },
+      
+      removeSoilAnalysis: (id) => {
+        set(state => ({
+          soilAnalyses: state.soilAnalyses.filter(analysis => analysis.id !== id)
+        }));
+      },
+      
+      // Maintenance Record actions
+      addMaintenanceRecord: (record) => {
+        const now = new Date();
+        const newRecord: MaintenanceRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          maintenanceRecords: [...state.maintenanceRecords, newRecord]
+        }));
+      },
+      
+      updateMaintenanceRecord: (id, updates) => {
+        set(state => ({
+          maintenanceRecords: state.maintenanceRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeMaintenanceRecord: (id) => {
+        set(state => ({
+          maintenanceRecords: state.maintenanceRecords.filter(record => record.id !== id)
+        }));
+      },
+      
+      completeMaintenanceRecord: (id, completedDate, notes) => {
+        set(state => ({
+          maintenanceRecords: state.maintenanceRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record,
+                  status: 'completed',
+                  completedDate,
+                  notes: notes || record.notes,
+                  updatedAt: new Date(),
+                  syncStatus: 'pending'
+                } 
+              : record
+          )
+        }));
+      },
+      
+      // Mortality record actions
+      addMortalityRecord: (record) => {
+        const now = new Date();
+        const newRecord: MortalityRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          mortalityRecords: [...state.mortalityRecords, newRecord]
+        }));
+        
+        // Also update the lot's animal count
+        const { lotId } = record;
+        const lot = get().lots.find(l => l.id === lotId);
+        
+        if (lot) {
+          set(state => ({
+            lots: state.lots.map(lot => 
+              lot.id === lotId 
+                ? { 
+                    ...lot, 
+                    numberOfAnimals: Math.max(0, lot.numberOfAnimals - 1),
+                    updatedAt: new Date(), 
+                    syncStatus: 'pending' 
+                  } 
+                : lot
+            )
+          }));
+        }
+      },
+      
+      // Plantation actions
+      addPlantation: (plantation) => {
+        const now = new Date();
+        const newPlantation: Plantation = {
+          ...plantation,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          plantations: [...state.plantations, newPlantation]
+        }));
+      },
+      
+      updatePlantation: (id, updates) => {
+        set(state => ({
+          plantations: state.plantations.map(plantation => 
+            plantation.id === id 
+              ? { 
+                  ...plantation, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : plantation
+          )
+        }));
+      },
+      
+      removePlantation: (id) => {
+        set(state => ({
+          plantations: state.plantations.filter(plantation => plantation.id !== id)
+        }));
+      },
+      
+      // Pest control actions
+      addPestControl: (control) => {
+        const now = new Date();
+        const newControl: PestControl = {
+          ...control,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          pestControls: [...state.pestControls, newControl]
+        }));
+      },
+      
+      updatePestControl: (id, updates) => {
+        set(state => ({
+          pestControls: state.pestControls.map(control => 
+            control.id === id 
+              ? { 
+                  ...control, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : control
+          )
+        }));
+      },
+      
+      removePestControl: (id) => {
+        set(state => ({
+          pestControls: state.pestControls.filter(control => control.id !== id)
+        }));
+      },
+      
+      // Plantation expense actions
+      addPlantationExpense: (expense) => {
+        const now = new Date();
+        const newExpense: PlantationExpense = {
+          ...expense,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          plantationExpenses: [...state.plantationExpenses, newExpense]
+        }));
+      },
+      
+      updatePlantationExpense: (id, updates) => {
+        set(state => ({
+          plantationExpenses: state.plantationExpenses.map(expense => 
+            expense.id === id 
+              ? { 
+                  ...expense, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : expense
+          )
+        }));
+      },
+      
+      removePlantationExpense: (id) => {
+        set(state => ({
+          plantationExpenses: state.plantationExpenses.filter(expense => expense.id !== id)
+        }));
+      },
+      
+      // Plantation maintenance actions
+      addPlantationMaintenance: (maintenance) => {
+        const now = new Date();
+        const newMaintenance: PlantationMaintenance = {
+          ...maintenance,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          plantationMaintenances: [...state.plantationMaintenances, newMaintenance]
+        }));
+      },
+      
+      updatePlantationMaintenance: (id, updates) => {
+        set(state => ({
+          plantationMaintenances: state.plantationMaintenances.map(maintenance => 
+            maintenance.id === id 
+              ? { 
+                  ...maintenance, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : maintenance
+          )
+        }));
+      },
+      
+      removePlantationMaintenance: (id) => {
+        set(state => ({
+          plantationMaintenances: state.plantationMaintenances.filter(maintenance => maintenance.id !== id)
+        }));
+      },
+      
+      // Productivity record actions
+      addProductivityRecord: (record) => {
+        const now = new Date();
+        const newRecord: ProductivityRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          productivityRecords: [...state.productivityRecords, newRecord]
+        }));
+      },
+      
+      updateProductivityRecord: (id, updates) => {
+        set(state => ({
+          productivityRecords: state.productivityRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeProductivityRecord: (id) => {
+        set(state => ({
+          productivityRecords: state.productivityRecords.filter(record => record.id !== id)
+        }));
+      },
+      
+      // Sync actions
+      setOnlineStatus: (isOnline) => {
+        set({ isOnline });
+      },
+      
+      setSyncTime: (time) => {
+        set({ lastSyncTime: time });
+      },
+      
+      updateSyncStatus: (modelType, id, status) => {
+        set(state => {
+          switch (modelType) {
+            case 'inventory':
+              return {
+                inventory: state.inventory.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'lots':
+              return {
+                lots: state.lots.map(lot => 
+                  lot.id === id ? { ...lot, syncStatus: status } : lot
+                )
+              };
+            case 'pastures':
+              return {
+                pastures: state.pastures.map(pasture => 
+                  pasture.id === id ? { ...pasture, syncStatus: status } : pasture
+                )
+              };
+            case 'weighings':
+              return {
+                weighings: state.weighings.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'consumptions':
+              return {
+                consumptions: state.consumptions.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'soilAnalyses':
+              return {
+                soilAnalyses: state.soilAnalyses.map(analysis => 
+                  analysis.id === id ? { ...analysis, syncStatus: status } : analysis
+                )
+              };
+            case 'maintenanceRecords':
+              return {
+                maintenanceRecords: state.maintenanceRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'mortalityRecords':
+              return {
+                mortalityRecords: state.mortalityRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'plantations':
+              return {
+                plantations: state.plantations.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'pestControls':
+              return {
+                pestControls: state.pestControls.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'plantationExpenses':
+              return {
+                plantationExpenses: state.plantationExpenses.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'plantationMaintenances':
+              return {
+                plantationMaintenances: state.plantationMaintenances.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            case 'productivityRecords':
+              return {
+                productivityRecords: state.productivityRecords.map(item => 
+                  item.id === id ? { ...item, syncStatus: status } : item
+                )
+              };
+            default:
+              return {};
+          }
+        });
+      },
+      
+      // Utility functions
       getFarmSummary: () => {
         const state = get();
         
+        const totalAnimals = state.lots
+          .filter(lot => lot.status === 'active')
+          .reduce((sum, lot) => sum + lot.numberOfAnimals, 0);
+          
+        const totalPastures = state.pastures.length;
+        
+        const totalLots = state.lots.length;
+        
+        const activeLots = state.lots.filter(lot => lot.status === 'active').length;
+        
+        const totalPastureArea = state.pastures.reduce(
+          (sum, pasture) => sum + pasture.sizeInHectares, 
+          0
+        );
+        
+        const inventoryValue = state.inventory.reduce(
+          (sum, item) => sum + (item.quantity * item.costPerUnit), 
+          0
+        );
+        
+        const pendingSyncs = state.getPendingSyncs();
+        
         return {
-          totalAnimals: state.lots.reduce((sum, lot) => sum + lot.numberOfAnimals, 0),
-          totalPastures: state.pastures.length,
-          totalLots: state.lots.length,
-          activeLots: state.lots.filter(lot => lot.status === 'active').length,
-          totalPastureArea: state.pastures.reduce((sum, pasture) => sum + pasture.sizeInHectares, 0),
-          inventoryValue: state.inventoryItems.reduce((sum, item) => sum + (item.quantity * item.costPerUnit), 0),
-          pendingSyncs: state.getPendingSyncs()
+          totalAnimals,
+          totalPastures,
+          totalLots,
+          activeLots,
+          totalPastureArea,
+          inventoryValue,
+          pendingSyncs
         };
+      },
+      
+      getPendingSyncs: () => {
+        const state = get();
+        
+        const pendingInventory = state.inventory.filter(i => i.syncStatus === 'pending').length;
+        const pendingLots = state.lots.filter(i => i.syncStatus === 'pending').length;
+        const pendingPastures = state.pastures.filter(i => i.syncStatus === 'pending').length;
+        const pendingWeighings = state.weighings.filter(i => i.syncStatus === 'pending').length;
+        const pendingConsumptions = state.consumptions.filter(i => i.syncStatus === 'pending').length;
+        const pendingSoilAnalyses = state.soilAnalyses.filter(i => i.syncStatus === 'pending').length;
+        const pendingMaintenanceRecords = state.maintenanceRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingMortalityRecords = state.mortalityRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantations = state.plantations.filter(i => i.syncStatus === 'pending').length;
+        const pendingPestControls = state.pestControls.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantationExpenses = state.plantationExpenses.filter(i => i.syncStatus === 'pending').length;
+        const pendingPlantationMaintenances = state.plantationMaintenances.filter(i => i.syncStatus === 'pending').length;
+        const pendingProductivityRecords = state.productivityRecords.filter(i => i.syncStatus === 'pending').length;
+        
+        return pendingInventory + pendingLots + pendingPastures + 
+               pendingWeighings + pendingConsumptions + 
+               pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords +
+               pendingPlantations + pendingPestControls + pendingPlantationExpenses +
+               pendingPlantationMaintenances + pendingProductivityRecords;
       }
     }),
     {
-      name: 'farm-management',
+      name: 'cattle-keeper-storage',
       partialize: (state) => ({
-        inventoryItems: state.inventoryItems,
+        inventory: state.inventory,
         inventoryTemplates: state.inventoryTemplates,
         lots: state.lots,
         pastures: state.pastures,
-        weighingRecords: state.weighingRecords,
-        consumptionRecords: state.consumptionRecords,
-        pasturePlannings: state.pasturePlannings,
+        weighings: state.weighings,
+        consumptions: state.consumptions,
         soilAnalyses: state.soilAnalyses,
+        maintenanceRecords: state.maintenanceRecords,
+        mortalityRecords: state.mortalityRecords,
         plantations: state.plantations,
         pestControls: state.pestControls,
         plantationExpenses: state.plantationExpenses,
         plantationMaintenances: state.plantationMaintenances,
         productivityRecords: state.productivityRecords,
-        maintenanceRecords: state.maintenanceRecords,
-        mortalityRecords: state.mortalityRecords,
-        sanitaryTreatments: state.sanitaryTreatments,
-      }),
+        lastSyncTime: state.lastSyncTime
+      })
     }
   )
 );
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    useStore.getState().setOnlineStatus(true);
+  });
+  
+  window.addEventListener('offline', () => {
+    useStore.getState().setOnlineStatus(false);
+  });
+}

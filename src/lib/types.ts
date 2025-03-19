@@ -266,13 +266,3 @@ export interface MortalityRecord extends SyncableModel {
   breed: BreedType;
   notes?: string;
 }
-
-// SANITARY CONTROL TYPES
-export interface SanitaryTreatment extends SyncableModel {
-  name: string;
-  treatmentType: string;
-  date: Date;
-  lotIds: string[];
-  inventoryItemId?: string;
-  notes?: string;
-}
