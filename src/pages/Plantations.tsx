@@ -28,7 +28,7 @@ export default function Plantations() {
       <main className="container mx-auto p-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Plantations</h1>
-          <Button onClick={handleOpenDialog} className="gap-2">
+          <Button onClick={handleOpenDialog} className="gap-2" type="button">
             <Plus className="h-4 w-4" />
             Add Plantation
           </Button>
@@ -46,7 +46,7 @@ export default function Plantations() {
             <p className="text-muted-foreground mb-6">
               Add your first plantation to start tracking your crops and their productivity.
             </p>
-            <Button onClick={handleOpenDialog} className="gap-2">
+            <Button onClick={handleOpenDialog} className="gap-2" type="button">
               <Plus className="h-4 w-4" />
               Add First Plantation
             </Button>

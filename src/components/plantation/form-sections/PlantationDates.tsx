@@ -20,7 +20,7 @@ interface PlantationDatesProps {
 
 export function PlantationDates({ control }: PlantationDatesProps) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <FormField
         control={control}
         name="plantingDate"
@@ -33,6 +33,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                   <Button
                     variant={"outline"}
                     className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                    type="button"
                   >
                     {field.value ? (
                       format(field.value, "PPP")
@@ -43,7 +44,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
+              <PopoverContent className="w-auto p-0 z-[100] pointer-events-auto" align="start">
                 <Calendar
                   mode="single"
                   selected={field.value}
@@ -52,7 +53,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                     date < new Date("1900-01-01")
                   }
                   initialFocus
-                  className="z-50 pointer-events-auto"
+                  className="z-[100] pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -73,6 +74,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                   <Button
                     variant={"outline"}
                     className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                    type="button"
                   >
                     {field.value ? (
                       format(field.value, "PPP")
@@ -83,7 +85,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
+              <PopoverContent className="w-auto p-0 z-[100] pointer-events-auto" align="start">
                 <Calendar
                   mode="single"
                   selected={field.value}
@@ -92,7 +94,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                     date < new Date("1900-01-01")
                   }
                   initialFocus
-                  className="z-50 pointer-events-auto"
+                  className="z-[100] pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
