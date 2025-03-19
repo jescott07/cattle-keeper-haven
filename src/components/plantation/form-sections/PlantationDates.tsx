@@ -43,7 +43,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
                 <Calendar
                   mode="single"
                   selected={field.value}
@@ -52,7 +52,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                     date < new Date("1900-01-01")
                   }
                   initialFocus
-                  className="pointer-events-auto"
+                  className="z-50 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -83,7 +83,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-auto p-0 z-50 pointer-events-auto" align="start">
                 <Calendar
                   mode="single"
                   selected={field.value}
@@ -92,7 +92,7 @@ export function PlantationDates({ control }: PlantationDatesProps) {
                     date < new Date("1900-01-01")
                   }
                   initialFocus
-                  className="pointer-events-auto"
+                  className="z-50 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>

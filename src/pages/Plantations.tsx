@@ -13,12 +13,12 @@ export default function Plantations() {
   const plantations = useStore((state) => state.plantations);
 
   const handleOpenDialog = () => {
-    console.log('Opening dialog');
+    console.log('Opening add plantation dialog');
     setIsAddDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
-    console.log('Closing dialog');
+    console.log('Closing add plantation dialog');
     setIsAddDialogOpen(false);
   };
 
