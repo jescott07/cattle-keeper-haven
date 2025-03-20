@@ -22,7 +22,9 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
+import { InventoryProperties } from '@/components/inventory/InventoryProperties';
 import { v4 as uuidv4 } from 'uuid';
+import { InventoryFormValues, InventoryItemProperty } from '@/lib/types';
 
 const formSchema = z.object({
   harvestDate: z.date(),
@@ -34,6 +36,15 @@ const formSchema = z.object({
   addToInventory: z.boolean().default(true),
   inventoryName: z.string().optional(),
   inventoryUnit: z.string().optional(),
+  properties: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      value: z.string(),
+      unit: z.string(),
+      propertyType: z.enum(['min', 'max', 'exact'])
+    })
+  ).default([]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -49,6 +60,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
   const addHarvestRecord = useStore(state => state.addHarvestRecord);
   const updatePlantation = useStore(state => state.updatePlantation);
   const addInventoryItem = useStore(state => state.addInventoryItem);
+  const inventory = useStore(state => state.inventory);
   const plantation = useStore(state => state.plantations.find(p => p.id === plantationId));
   
   const form = useForm<FormValues>({
@@ -63,6 +75,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       addToInventory: true,
       inventoryName: plantation?.name ? `Harvest - ${plantation.name}` : 'Harvest',
       inventoryUnit: 'kg',
+      properties: [],
     },
   });
 
@@ -98,17 +111,33 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     if (values.addToInventory) {
       const inventoryName = values.inventoryName || `Harvest - ${plantation?.name || 'Unknown'}`;
       
-      // Create inventory item
-      addInventoryItem({
-        name: inventoryName,
-        type: 'other',
-        quantity: values.yield,
-        unit: values.inventoryUnit || 'kg',
-        costPerUnit: values.expenses ? (values.expenses / values.yield) : 0,
-        purchaseDate: values.harvestDate,
-        notes: `Harvest from ${plantation?.name} on ${format(values.harvestDate, 'PP')}`,
-        properties: [],
-      });
+      // Check if a similar inventory item already exists
+      const existingItem = inventory.find(item => 
+        item.name === inventoryName && 
+        item.purchaseDate && 
+        format(new Date(item.purchaseDate), 'PP') === format(values.harvestDate, 'PP')
+      );
+      
+      if (existingItem) {
+        // Show warning toast about duplicate
+        toast({
+          title: "Duplicate harvest detected",
+          description: "A harvest with the same name and date already exists in inventory. It was not added again.",
+          variant: "destructive"
+        });
+      } else {
+        // Create inventory item with properties
+        addInventoryItem({
+          name: inventoryName,
+          type: 'other',
+          quantity: values.yield,
+          unit: values.inventoryUnit || 'kg',
+          costPerUnit: values.expenses ? (values.expenses / values.yield) : 0,
+          purchaseDate: values.harvestDate,
+          notes: `Harvest from ${plantation?.name} on ${format(values.harvestDate, 'PP')}`,
+          properties: values.properties,
+        });
+      }
     }
     
     // Add the harvest record
@@ -291,34 +320,45 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
           />
           
           {addToInventory && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <FormField
-                control={form.control}
-                name="inventoryName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Inventory Item Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="inventoryName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Inventory Item Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="inventoryUnit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
-              <FormField
-                control={form.control}
-                name="inventoryUnit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit</FormLabel>
-                    <FormControl>
-                      <Input {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Add Properties Section */}
+              <div className="mt-4">
+                <InventoryProperties 
+                  control={form.control as any}
+                  register={form.register}
+                  setValue={form.setValue}
+                />
+              </div>
             </div>
           )}
         </div>
