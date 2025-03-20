@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,6 +65,8 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
   
   // Filter inventory items based on search
   const filteredInventory = React.useMemo(() => {
+    if (!inventorySearch.trim()) return inventory.filter(item => item.quantity > 0);
+    
     return inventory.filter(item => 
       item.name.toLowerCase().includes(inventorySearch.toLowerCase()) &&
       item.quantity > 0 // Only show items with stock
@@ -131,6 +134,11 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
     
     onSuccess();
   }
+
+  const handleSelectInventoryItem = (itemId: string) => {
+    form.setValue("inventoryItemId", itemId);
+    setIsInventoryOpen(false);
+  };
 
   return (
     <Form {...form}>
@@ -273,6 +281,7 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
                         variant="outline"
                         role="combobox"
                         className={`w-full justify-between ${!field.value ? "text-muted-foreground" : ""}`}
+                        onClick={() => setIsInventoryOpen(true)}
                       >
                         {field.value ? (
                           selectedInventoryItem?.name
@@ -298,11 +307,8 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
                             <CommandItem
                               key={item.id}
                               value={item.id}
-                              onSelect={() => {
-                                form.setValue("inventoryItemId", item.id);
-                                setIsInventoryOpen(false);
-                                setInventorySearch("");
-                              }}
+                              onSelect={() => handleSelectInventoryItem(item.id)}
+                              className="cursor-pointer"
                             >
                               <span className="flex-1">{item.name}</span>
                               <span className="text-xs text-muted-foreground">
