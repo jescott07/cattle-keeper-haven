@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -88,7 +89,13 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         setEditingTemplate(false);
         setSelectedTemplate(null);
         setIsAddingTemplate(false);
-        onSuccess();
+        return;
+      }
+      
+      // If we're in template mode and not editing, just add the template and return to item mode
+      if (isAddingTemplate) {
+        handleSaveAsTemplate();
+        setIsAddingTemplate(false);
         return;
       }
       
