@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Package } from 'lucide-react';
+import { Calendar as CalendarIcon, Package, Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -25,6 +26,7 @@ import { InventoryProperties } from '@/components/inventory/InventoryProperties'
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryFormValues, InventoryItemProperty } from '@/lib/types';
 
+// Here's the key modification: ensuring that all properties in the schema are required
 const inventoryItemPropertySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -47,10 +49,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-type HarvestFormToInventoryAdapter = Omit<InventoryFormValues, 'properties'> & {
-  properties: InventoryItemProperty[];
-};
 
 interface RecordHarvestFormProps {
   plantationId: string;
@@ -123,6 +121,15 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
           variant: "destructive"
         });
       } else {
+        // Ensure all property objects have required fields
+        const validProperties: InventoryItemProperty[] = values.properties.map(prop => ({
+          id: prop.id || uuidv4(),
+          name: prop.name || '',
+          value: prop.value || '',
+          unit: prop.unit || 'g/kg',
+          propertyType: prop.propertyType || 'min'
+        }));
+        
         addInventoryItem({
           name: inventoryName,
           type: 'other',
@@ -131,7 +138,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
           costPerUnit: values.expenses ? (values.expenses / values.yield) : 0,
           purchaseDate: values.harvestDate,
           notes: `Harvest from ${plantation?.name} on ${format(values.harvestDate, 'PP')}`,
-          properties: values.properties,
+          properties: validProperties,
         });
       }
     }
@@ -155,10 +162,11 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     onSuccess();
   }
 
+  // Create an adapter to handle the different form types between InventoryProperties and our form
   const createAdapter = () => {
-    const registerAdapter = (name: any) => {
+    const registerAdapter = (name: string) => {
       if (name.startsWith('properties.')) {
-        return form.register(name);
+        return form.register(name as any);
       }
       
       const validFields = ['harvestDate', 'yield', 'yieldPerHectare', 'quality', 
@@ -166,13 +174,13 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
                            'inventoryUnit', 'properties'];
       
       if (validFields.includes(name)) {
-        return form.register(name);
+        return form.register(name as any);
       }
       
       return form.register(name as any);
     };
     
-    const setValueAdapter = (name: any, value: any) => {
+    const setValueAdapter = (name: string, value: any) => {
       if (name.startsWith('properties.')) {
         form.setValue(name as any, value);
       } else {
@@ -200,7 +208,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     form.setValue('properties', [
       ...currentProperties,
       {
-        id: uuidv4(),
+        id: uuidv4(), // Ensure ID is always set
         name: '',
         value: '',
         unit: 'g/kg',
@@ -400,8 +408,22 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
               </div>
               
               <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <FormLabel>Properties</FormLabel>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePropertyAdd}
+                    className="gap-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Property
+                  </Button>
+                </div>
+                
                 <InventoryProperties 
-                  control={form.control as any}
+                  control={form.control as any} 
                   register={register as any}
                   setValue={setValue as any}
                 />
