@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -112,9 +111,9 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
     const newTask = {
       plantationId,
       title: values.title,
-      type: values.type,  // Ensure required fields are explicitly assigned
-      date: values.date,  // Ensure required fields are explicitly assigned
-      status: values.status, // Ensure required fields are explicitly assigned
+      type: values.type,
+      date: values.date,
+      status: values.status,
       description: values.description,
       cost: values.cost,
       notes: values.notes,
@@ -138,6 +137,11 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
   const handleSelectInventoryItem = (itemId: string) => {
     form.setValue("inventoryItemId", itemId);
     setIsInventoryOpen(false);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (value: string) => {
+    setInventorySearch(value);
   };
 
   return (
@@ -274,7 +278,10 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Select Inventory Item (optional)</FormLabel>
-                <Popover open={isInventoryOpen} onOpenChange={setIsInventoryOpen}>
+                <Popover 
+                  open={isInventoryOpen} 
+                  onOpenChange={setIsInventoryOpen}
+                >
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -299,7 +306,7 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
                         placeholder="Search inventory..."
                         className="h-9"
                         value={inventorySearch}
-                        onValueChange={setInventorySearch}
+                        onValueChange={handleSearchChange}
                       />
                       <CommandList>
                         <CommandEmpty>No items found.</CommandEmpty>
@@ -309,7 +316,7 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
                               key={item.id}
                               value={item.id}
                               onSelect={() => handleSelectInventoryItem(item.id)}
-                              className="cursor-pointer flex justify-between"
+                              className="flex justify-between cursor-pointer hover:bg-accent"
                             >
                               <div>{item.name}</div>
                               <div className="text-xs text-muted-foreground">
