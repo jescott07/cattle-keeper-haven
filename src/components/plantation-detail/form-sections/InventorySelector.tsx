@@ -84,36 +84,42 @@ export function InventorySelector({ form, inventory, selectedInventoryItem }: In
               </PopoverTrigger>
               <PopoverContent 
                 className="w-[300px] p-0" 
-                sideOffset={4}
                 align="start"
-                style={{ zIndex: 9999 }}
+                sideOffset={8}
+                side="bottom"
+                style={{ 
+                  zIndex: 99999,
+                  position: "relative"
+                }}
               >
-                <Command>
-                  <CommandInput
-                    placeholder="Search inventory..."
-                    className="h-9"
-                    value={inventorySearch}
-                    onValueChange={handleSearchChange}
-                  />
-                  <CommandList className="max-h-[200px] overflow-y-auto">
-                    <CommandEmpty>No items found.</CommandEmpty>
-                    <CommandGroup>
-                      {filteredInventory.map((item) => (
-                        <CommandItem
-                          key={item.id}
-                          value={item.id}
-                          onSelect={() => handleSelectInventoryItem(item.id)}
-                          className="flex justify-between items-center py-3 px-2 cursor-pointer"
-                        >
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.quantity} {item.unit}
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
+                <div className="bg-popover rounded-md border shadow-md">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search inventory..."
+                      className="h-9"
+                      value={inventorySearch}
+                      onValueChange={handleSearchChange}
+                    />
+                    <CommandList className="max-h-[200px] overflow-y-auto">
+                      <CommandEmpty>No items found.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredInventory.map((item) => (
+                          <CommandItem
+                            key={item.id}
+                            value={item.id}
+                            onSelect={() => handleSelectInventoryItem(item.id)}
+                            className="flex justify-between items-center py-3 px-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <div className="font-medium">{item.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.quantity} {item.unit}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </div>
               </PopoverContent>
             </Popover>
             <FormMessage />
