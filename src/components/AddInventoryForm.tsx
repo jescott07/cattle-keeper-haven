@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Separator } from '@/components/ui/separator';
-import { FileUp, PackagePlus } from 'lucide-react';
+import { FileUp, PackagePlus, X } from 'lucide-react';
 import { InventoryItem, InventoryType, InventoryItemProperty, InventoryItemTemplate, InventoryFormValues } from '@/lib/types';
 import { InventoryBasicFields } from './inventory/InventoryBasicFields';
 import { InventoryProperties } from './inventory/InventoryProperties';
@@ -15,6 +14,8 @@ import { InventoryTemplateSelector } from './inventory/InventoryTemplateSelector
 import { useToast } from '@/hooks/use-toast';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Textarea } from './ui/textarea';
 
 interface AddInventoryFormProps {
   item?: InventoryItem;
@@ -38,7 +39,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     defaultValues: {
       name: item?.name || '',
       type: item?.type || 'feed',
-      quantity: item?.quantity || 1, // Default quantity is 1 item
+      quantity: item?.quantity || 1,
       unit: item?.unit || 'kg',
       purchaseDate: item?.purchaseDate ? format(new Date(item.purchaseDate), 'yyyy-MM-dd') : undefined,
       expiryDate: item?.expiryDate ? format(new Date(item.expiryDate), 'yyyy-MM-dd') : undefined,
@@ -46,7 +47,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
       notes: item?.notes || '',
       templateId: item?.templateId,
       properties: item?.properties || [],
-      itemAmount: 1, // New field for the number of items
+      itemAmount: 1,
     }
   });
   
@@ -64,7 +65,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     setIsSubmitting(true);
     
     try {
-      // If we're editing a template, update it
       if (editingTemplate && selectedTemplate) {
         const properties: InventoryItemProperty[] = data.properties.map(prop => ({
           id: prop.id || uuidv4(),
@@ -100,8 +100,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         propertyType: prop.propertyType
       }));
       
-      // Calculate actual inventory quantity (number of items × item quantity)
-      // This assumes the template or main item has a quantity property showing the "per item" amount
       const totalQuantity = Number(data.itemAmount) * Number(data.quantity);
       
       const inventoryData = {
@@ -118,10 +116,8 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
       };
       
       if (item) {
-        // Update existing item
         updateInventoryItem(item.id, inventoryData);
       } else {
-        // Add new item
         addInventoryItem(inventoryData);
       }
       
@@ -177,7 +173,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     setValue('type', template.type);
     setValue('templateId', template.id);
     
-    // Reset the properties array and add the template properties
     const templateProperties = template.properties?.map(prop => ({
       id: uuidv4(),
       name: prop.name,
@@ -210,7 +205,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     });
   };
   
-  // If we're in template mode, show only template creation UI
   if (isAddingTemplate) {
     return (
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -304,7 +298,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     );
   }
   
-  // Normal item addition mode
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="space-y-4 py-4">
