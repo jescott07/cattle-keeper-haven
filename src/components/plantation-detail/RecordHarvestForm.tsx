@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,7 +25,6 @@ import { InventoryProperties } from '@/components/inventory/InventoryProperties'
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryFormValues, InventoryItemProperty } from '@/lib/types';
 
-// Define a property schema that exactly matches InventoryItemProperty
 const inventoryItemPropertySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -35,7 +33,6 @@ const inventoryItemPropertySchema = z.object({
   propertyType: z.enum(['min', 'max', 'exact'])
 });
 
-// Define the form schema with the corrected property type
 const formSchema = z.object({
   harvestDate: z.date(),
   yield: z.coerce.number().positive({ message: "Yield must be positive" }),
@@ -49,14 +46,11 @@ const formSchema = z.object({
   properties: z.array(inventoryItemPropertySchema).default([]),
 });
 
-// Define a type for our form values
 type FormValues = z.infer<typeof formSchema>;
 
-// Create a type that adapts FormValues to comply with InventoryFormValues
-// for compatibility with InventoryProperties component
-interface HarvestFormAdapter extends Omit<FormValues, 'properties'> {
+type HarvestFormToInventoryAdapter = Omit<InventoryFormValues, 'properties'> & {
   properties: InventoryItemProperty[];
-}
+};
 
 interface RecordHarvestFormProps {
   plantationId: string;
@@ -84,11 +78,10 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       addToInventory: true,
       inventoryName: plantation?.name ? `Harvest - ${plantation.name}` : 'Harvest',
       inventoryUnit: 'kg',
-      properties: [], // Empty array with valid structure
+      properties: [],
     },
   });
 
-  // Auto-calculate yield per hectare when total yield changes
   const totalYield = form.watch('yield');
   const addToInventory = form.watch('addToInventory');
   
@@ -100,10 +93,8 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
   }, [totalYield, plantationArea, form]);
 
   function onSubmit(values: FormValues) {
-    // Generate a unique ID for both the harvest record and inventory item
     const harvestId = uuidv4();
     
-    // Create the harvest record
     const newHarvestRecord = {
       id: harvestId,
       plantationId,
@@ -116,11 +107,9 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       addedToInventory: values.addToInventory,
     };
     
-    // Add to inventory if checked
     if (values.addToInventory) {
       const inventoryName = values.inventoryName || `Harvest - ${plantation?.name || 'Unknown'}`;
       
-      // Check if a similar inventory item already exists
       const existingItem = inventory.find(item => 
         item.name === inventoryName && 
         item.purchaseDate && 
@@ -128,14 +117,12 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       );
       
       if (existingItem) {
-        // Show warning toast about duplicate
         toast({
           title: "Duplicate harvest detected",
           description: "A harvest with the same name and date already exists in inventory. It was not added again.",
           variant: "destructive"
         });
       } else {
-        // Create inventory item with properties
         addInventoryItem({
           name: inventoryName,
           type: 'other',
@@ -149,10 +136,8 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       }
     }
     
-    // Add the harvest record
     addHarvestRecord(newHarvestRecord);
     
-    // Update the plantation status and record the actual harvest
     updatePlantation(plantationId, {
       status: 'harvested',
       actualHarvestDate: values.harvestDate,
@@ -170,20 +155,59 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     onSuccess();
   }
 
-  // Create adapter functions to properly pass props to InventoryProperties
-  const createInventoryPropertyAdapter = () => {
-    // Create an adapter for the InventoryProperties component to handle our form type
-    const register = (name: string, options?: any) => form.register(name, options);
-    
-    // Cast the setValue function to the expected type to handle the property path
-    const setValue = (name: any, value: any) => {
-      form.setValue(name as any, value);
+  const createAdapter = () => {
+    const registerAdapter = (name: any) => {
+      if (name.startsWith('properties.')) {
+        return form.register(name);
+      }
+      
+      const validFields = ['harvestDate', 'yield', 'yieldPerHectare', 'quality', 
+                           'expenses', 'notes', 'addToInventory', 'inventoryName', 
+                           'inventoryUnit', 'properties'];
+      
+      if (validFields.includes(name)) {
+        return form.register(name);
+      }
+      
+      return form.register(name as any);
     };
     
-    return { register, setValue };
+    const setValueAdapter = (name: any, value: any) => {
+      if (name.startsWith('properties.')) {
+        form.setValue(name as any, value);
+      } else {
+        const validFields = ['harvestDate', 'yield', 'yieldPerHectare', 'quality', 
+                            'expenses', 'notes', 'addToInventory', 'inventoryName', 
+                            'inventoryUnit', 'properties'];
+        
+        if (validFields.includes(name)) {
+          form.setValue(name as any, value);
+        }
+      }
+    };
+    
+    return {
+      register: registerAdapter,
+      setValue: setValueAdapter
+    };
   };
-  
-  const { register, setValue } = createInventoryPropertyAdapter();
+
+  const { register, setValue } = createAdapter();
+
+  const handlePropertyAdd = () => {
+    const currentProperties = form.getValues('properties') || [];
+    
+    form.setValue('properties', [
+      ...currentProperties,
+      {
+        id: uuidv4(),
+        name: '',
+        value: '',
+        unit: 'g/kg',
+        propertyType: 'min' as const
+      }
+    ]);
+  };
 
   return (
     <Form {...form}>
@@ -375,7 +399,6 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
                 />
               </div>
               
-              {/* Custom Properties Section */}
               <div className="mt-4">
                 <InventoryProperties 
                   control={form.control as any}
