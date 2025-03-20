@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Search } from 'lucide-react';
-import { TaskType, TaskStatus } from '@/lib/types';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -135,6 +134,7 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
     onSuccess();
   }
 
+  // Handle inventory item selection
   const handleSelectInventoryItem = (itemId: string) => {
     form.setValue("inventoryItemId", itemId);
     setIsInventoryOpen(false);
@@ -282,6 +282,7 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
                         role="combobox"
                         className={`w-full justify-between ${!field.value ? "text-muted-foreground" : ""}`}
                         onClick={() => setIsInventoryOpen(true)}
+                        type="button"
                       >
                         {field.value ? (
                           selectedInventoryItem?.name
@@ -308,12 +309,12 @@ export function AddPlantationTaskForm({ plantationId, onSuccess }: AddPlantation
                               key={item.id}
                               value={item.id}
                               onSelect={() => handleSelectInventoryItem(item.id)}
-                              className="cursor-pointer"
+                              className="cursor-pointer flex justify-between"
                             >
-                              <span className="flex-1">{item.name}</span>
-                              <span className="text-xs text-muted-foreground">
+                              <div>{item.name}</div>
+                              <div className="text-xs text-muted-foreground">
                                 {item.quantity} {item.unit}
-                              </span>
+                              </div>
                             </CommandItem>
                           ))}
                         </CommandGroup>
