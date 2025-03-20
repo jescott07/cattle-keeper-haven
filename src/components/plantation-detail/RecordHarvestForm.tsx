@@ -26,6 +26,16 @@ import { InventoryProperties } from '@/components/inventory/InventoryProperties'
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryFormValues, InventoryItemProperty } from '@/lib/types';
 
+// Define a property schema that exactly matches InventoryItemProperty
+const inventoryItemPropertySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  value: z.string(),
+  unit: z.string(),
+  propertyType: z.enum(['min', 'max', 'exact'])
+});
+
+// Define the form schema with the corrected property type
 const formSchema = z.object({
   harvestDate: z.date(),
   yield: z.coerce.number().positive({ message: "Yield must be positive" }),
@@ -36,18 +46,17 @@ const formSchema = z.object({
   addToInventory: z.boolean().default(true),
   inventoryName: z.string().optional(),
   inventoryUnit: z.string().optional(),
-  properties: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      value: z.string(),
-      unit: z.string(),
-      propertyType: z.enum(['min', 'max', 'exact'])
-    })
-  ).default([]),
+  properties: z.array(inventoryItemPropertySchema).default([]),
 });
 
+// Define a type for our form values
 type FormValues = z.infer<typeof formSchema>;
+
+// Create a type that adapts FormValues to comply with InventoryFormValues
+// for compatibility with InventoryProperties component
+interface HarvestFormAdapter extends Omit<FormValues, 'properties'> {
+  properties: InventoryItemProperty[];
+}
 
 interface RecordHarvestFormProps {
   plantationId: string;
@@ -75,7 +84,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
       addToInventory: true,
       inventoryName: plantation?.name ? `Harvest - ${plantation.name}` : 'Harvest',
       inventoryUnit: 'kg',
-      properties: [],
+      properties: [], // Empty array with valid structure
     },
   });
 
@@ -160,6 +169,21 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     
     onSuccess();
   }
+
+  // Create adapter functions to properly pass props to InventoryProperties
+  const createInventoryPropertyAdapter = () => {
+    // Create an adapter for the InventoryProperties component to handle our form type
+    const register = (name: string, options?: any) => form.register(name, options);
+    
+    // Cast the setValue function to the expected type to handle the property path
+    const setValue = (name: any, value: any) => {
+      form.setValue(name as any, value);
+    };
+    
+    return { register, setValue };
+  };
+  
+  const { register, setValue } = createInventoryPropertyAdapter();
 
   return (
     <Form {...form}>
@@ -351,12 +375,12 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
                 />
               </div>
               
-              {/* Add Properties Section */}
+              {/* Custom Properties Section */}
               <div className="mt-4">
                 <InventoryProperties 
                   control={form.control as any}
-                  register={form.register}
-                  setValue={form.setValue}
+                  register={register as any}
+                  setValue={setValue as any}
                 />
               </div>
             </div>
