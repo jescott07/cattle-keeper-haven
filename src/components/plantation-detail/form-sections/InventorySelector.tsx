@@ -82,7 +82,12 @@ export function InventorySelector({ form, inventory, selectedInventoryItem }: In
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0">
+              <PopoverContent 
+                className="w-[300px] p-0" 
+                sideOffset={4}
+                align="start"
+                style={{ zIndex: 9999 }}
+              >
                 <Command>
                   <CommandInput
                     placeholder="Search inventory..."
@@ -90,7 +95,7 @@ export function InventorySelector({ form, inventory, selectedInventoryItem }: In
                     value={inventorySearch}
                     onValueChange={handleSearchChange}
                   />
-                  <CommandList>
+                  <CommandList className="max-h-[200px] overflow-y-auto">
                     <CommandEmpty>No items found.</CommandEmpty>
                     <CommandGroup>
                       {filteredInventory.map((item) => (
@@ -98,9 +103,9 @@ export function InventorySelector({ form, inventory, selectedInventoryItem }: In
                           key={item.id}
                           value={item.id}
                           onSelect={() => handleSelectInventoryItem(item.id)}
-                          className="flex justify-between cursor-pointer hover:bg-accent"
+                          className="flex justify-between items-center py-3 px-2 cursor-pointer"
                         >
-                          <div>{item.name}</div>
+                          <div className="font-medium">{item.name}</div>
                           <div className="text-xs text-muted-foreground">
                             {item.quantity} {item.unit}
                           </div>
