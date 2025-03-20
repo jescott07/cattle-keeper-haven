@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -6,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useStore } from '@/lib/store';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileUp, PackagePlus } from 'lucide-react';
 import { InventoryItem, InventoryType, InventoryItemProperty, InventoryItemTemplate, InventoryFormValues } from '@/lib/types';
 import { InventoryBasicFields } from './inventory/InventoryBasicFields';
 import { InventoryProperties } from './inventory/InventoryProperties';
 import { InventoryTemplateSelector } from './inventory/InventoryTemplateSelector';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
 
 interface AddInventoryFormProps {
   item?: InventoryItem;
@@ -21,7 +24,7 @@ interface AddInventoryFormProps {
 export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('manual');
+  const [isAddingTemplate, setIsAddingTemplate] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<InventoryItemTemplate | null>(null);
   const [editingTemplate, setEditingTemplate] = useState(false);
   
@@ -35,18 +38,18 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
     defaultValues: {
       name: item?.name || '',
       type: item?.type || 'feed',
-      quantity: item?.quantity || 0,
+      quantity: item?.quantity || 1, // Default quantity is 1 item
       unit: item?.unit || 'kg',
       purchaseDate: item?.purchaseDate ? format(new Date(item.purchaseDate), 'yyyy-MM-dd') : undefined,
       expiryDate: item?.expiryDate ? format(new Date(item.expiryDate), 'yyyy-MM-dd') : undefined,
       costPerUnit: item?.costPerUnit || 0,
       notes: item?.notes || '',
       templateId: item?.templateId,
-      properties: item?.properties || []
+      properties: item?.properties || [],
+      itemAmount: 1, // New field for the number of items
     }
   });
   
-  // Set values for type with useEffect
   useEffect(() => {
     if (item) {
       setValue('type', item.type);
@@ -55,6 +58,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
   
   const watchedName = watch('name');
   const watchedType = watch('type');
+  const watchedItemAmount = watch('itemAmount');
   
   const onSubmit = async (data: InventoryFormValues) => {
     setIsSubmitting(true);
@@ -83,6 +87,7 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         
         setEditingTemplate(false);
         setSelectedTemplate(null);
+        setIsAddingTemplate(false);
         onSuccess();
         return;
       }
@@ -95,10 +100,14 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         propertyType: prop.propertyType
       }));
       
+      // Calculate actual inventory quantity (number of items × item quantity)
+      // This assumes the template or main item has a quantity property showing the "per item" amount
+      const totalQuantity = Number(data.itemAmount) * Number(data.quantity);
+      
       const inventoryData = {
         name: data.name,
         type: data.type,
-        quantity: Number(data.quantity),
+        quantity: totalQuantity,
         unit: data.unit,
         purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
         expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
@@ -158,10 +167,11 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
       title: "Success",
       description: "Template saved successfully",
     });
+    
+    setIsAddingTemplate(false);
   };
   
   const handleSelectTemplate = (template: InventoryItemTemplate) => {
-    console.log("Selected template:", template);
     setSelectedTemplate(template);
     setValue('name', template.name);
     setValue('type', template.type);
@@ -182,12 +192,14 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
   const handleEditTemplate = (template: InventoryItemTemplate) => {
     setEditingTemplate(true);
     setSelectedTemplate(template);
+    setIsAddingTemplate(true);
     reset({
       name: template.name,
       type: template.type,
       quantity: 0,
       unit: 'kg',
       costPerUnit: 0,
+      itemAmount: 1,
       properties: template.properties.map(prop => ({
         id: prop.id,
         name: prop.name,
@@ -196,73 +208,248 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         propertyType: prop.propertyType
       }))
     });
-    setActiveTab('manual');
   };
   
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-          <TabsTrigger value="template">From Template</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="manual" className="space-y-4 py-4">
-          <InventoryBasicFields 
-            register={register} 
-            control={control} 
-            errors={errors} 
-            setValue={setValue} 
-            isTemplate={editingTemplate}
-          />
+  // If we're in template mode, show only template creation UI
+  if (isAddingTemplate) {
+    return (
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="name-template">Template Name</Label>
+            <Input
+              id="name-template"
+              placeholder="Enter template name"
+              {...register('name', { required: 'Template name is required' })}
+            />
+            {errors.name && <p className="text-sm text-destructive">{errors.name.message as string}</p>}
+          </div>
           
-          {!editingTemplate && <Separator />}
+          <div className="space-y-2">
+            <Label htmlFor="type-template">Type</Label>
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <Select 
+                  onValueChange={(value) => setValue('type', value as InventoryType)} 
+                  value={field.value}
+                >
+                  <SelectTrigger id="type-template">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="feed">Feed</SelectItem>
+                    <SelectItem value="mineral">Mineral</SelectItem>
+                    <SelectItem value="medication">Medication</SelectItem>
+                    <SelectItem value="equipment">Equipment</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="quantity-template">Unit Amount</Label>
+            <Input
+              id="quantity-template"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g., 25 for a 25kg bag"
+              {...register('quantity', { 
+                required: 'Quantity is required',
+                min: { value: 0, message: 'Quantity cannot be negative' }
+              })}
+            />
+            {errors.quantity && <p className="text-sm text-destructive">{errors.quantity.message as string}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="unit-template">Unit</Label>
+            <Input
+              id="unit-template"
+              placeholder="e.g., kg, liters, pieces"
+              {...register('unit', { required: 'Unit is required' })}
+            />
+            {errors.unit && <p className="text-sm text-destructive">{errors.unit.message as string}</p>}
+          </div>
+          
+          <Separator />
           
           <InventoryProperties 
             control={control} 
             register={register} 
             setValue={setValue} 
-            onSaveTemplate={!editingTemplate ? handleSaveAsTemplate : undefined}
           />
-        </TabsContent>
+        </div>
         
-        <TabsContent value="template" className="space-y-4 py-4">
-          <InventoryTemplateSelector
-            selectedTemplate={selectedTemplate}
-            onSelectTemplate={handleSelectTemplate}
-            onEditTemplate={handleEditTemplate}
-          />
+        <DialogFooter className="mt-6">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => {
+              setIsAddingTemplate(false);
+              setEditingTemplate(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {editingTemplate ? 'Update Template' : 'Save Template'}
+          </Button>
+        </DialogFooter>
+      </form>
+    );
+  }
+  
+  // Normal item addition mode
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="space-y-4 py-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Item Details</h3>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="gap-2" 
+            onClick={() => setIsAddingTemplate(true)}
+          >
+            <FileUp className="h-4 w-4" />
+            Add Template
+          </Button>
+        </div>
+        
+        <Separator />
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <InventoryTemplateSelector
+              selectedTemplate={selectedTemplate}
+              onSelectTemplate={handleSelectTemplate}
+              onEditTemplate={handleEditTemplate}
+            />
+          </div>
           
-          {selectedTemplate && (
+          {selectedTemplate ? (
             <>
-              <InventoryBasicFields 
-                register={register} 
-                control={control} 
-                errors={errors} 
-                setValue={setValue} 
-                isTemplate
-              />
+              <div className="p-4 border rounded-md bg-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">{selectedTemplate.name}</h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedTemplate(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">Type: {selectedTemplate.type}</p>
+                
+                {selectedTemplate.properties.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <p className="text-sm font-medium">Properties:</p>
+                    {selectedTemplate.properties.map(prop => (
+                      <p key={prop.id} className="text-xs text-muted-foreground">
+                        {prop.name}: {prop.value} {prop.unit}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="itemAmount">Number of Items</Label>
+                  <Input
+                    id="itemAmount"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="How many of this item?"
+                    {...register('itemAmount', { 
+                      required: 'Number of items is required',
+                      min: { value: 1, message: 'Must add at least one item' },
+                      valueAsNumber: true
+                    })}
+                  />
+                  {errors.itemAmount && <p className="text-sm text-destructive">{errors.itemAmount.message as string}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="costPerUnit">Cost Per Unit</Label>
+                  <Input
+                    id="costPerUnit"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...register('costPerUnit', { 
+                      required: 'Cost is required',
+                      min: { value: 0, message: 'Cost cannot be negative' }
+                    })}
+                  />
+                  {errors.costPerUnit && <p className="text-sm text-destructive">{errors.costPerUnit.message as string}</p>}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="purchaseDate">Purchase Date</Label>
+                  <Input
+                    id="purchaseDate"
+                    type="date"
+                    {...register('purchaseDate', {
+                      required: 'Purchase date is required'
+                    })}
+                  />
+                  {errors.purchaseDate && <p className="text-sm text-destructive">{errors.purchaseDate.message as string}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="expiryDate">Expiry Date (Optional)</Label>
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    {...register('expiryDate')}
+                  />
+                </div>
+              </div>
               
               <div className="space-y-2">
-                <InventoryProperties 
-                  control={control}
-                  register={register}
-                  setValue={setValue}
-                  readOnly
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Enter any additional notes"
+                  className="min-h-[80px]"
+                  {...register('notes')}
                 />
               </div>
             </>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-md">
+              <PackagePlus className="h-12 w-12 text-muted-foreground mb-3" />
+              <p className="font-medium">Select a template to add inventory</p>
+              <p className="text-sm text-muted-foreground text-center mt-1">
+                Templates help you quickly add items with predefined properties
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-4 gap-2" 
+                onClick={() => setIsAddingTemplate(true)}
+              >
+                <FileUp className="h-4 w-4" />
+                Create New Template
+              </Button>
+            </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
       
       <DialogFooter className="mt-6">
-        <Button type="submit" disabled={isSubmitting}>
-          {editingTemplate 
-            ? 'Update Template' 
-            : item 
-              ? 'Update Item' 
-              : 'Add Item'}
+        <Button type="submit" disabled={isSubmitting || !selectedTemplate}>
+          {item ? 'Update Item' : 'Add Item'}
         </Button>
       </DialogFooter>
     </form>

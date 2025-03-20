@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Package, Plus, Search, FilterX, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';

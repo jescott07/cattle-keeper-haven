@@ -53,6 +53,7 @@ export interface InventoryFormValues {
   notes?: string;
   templateId?: string;
   properties: InventoryItemProperty[];
+  itemAmount?: number; // Number of items being added
 }
 
 // Lot Management Types

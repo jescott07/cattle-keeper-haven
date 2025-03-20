@@ -38,7 +38,7 @@ export function InventoryTemplateSelector({
   
   return (
     <div className="space-y-2">
-      <Label>Select Item Template</Label>
+      <Label>Select Template</Label>
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full flex justify-between items-center">
@@ -48,7 +48,7 @@ export function InventoryTemplateSelector({
         </DialogTrigger>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select Item Template</DialogTitle>
+            <DialogTitle>Select Template</DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[400px] pr-4">
             {templates.length === 0 && (
@@ -56,7 +56,7 @@ export function InventoryTemplateSelector({
                 <Package className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
                 <h3 className="text-lg font-medium">No templates yet</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Create a template by filling out the manual form and clicking "Save as Template"
+                  Create a template by clicking the "Add Template" button
                 </p>
               </div>
             )}
