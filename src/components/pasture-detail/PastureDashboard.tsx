@@ -2,7 +2,7 @@
 import React from 'react';
 import { useStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pasture, Lot } from '@/lib/types';
+import { Pasture } from '@/lib/types';
 import BasicInfo from './dashboard/BasicInfo';
 import Occupancy from './dashboard/Occupancy';
 import QualityStatus from './dashboard/QualityStatus';

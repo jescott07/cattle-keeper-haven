@@ -29,31 +29,57 @@ interface DataTrendsProps {
 const DataTrends = ({ qualityData, soilData, maintenanceData, pastureId }: DataTrendsProps) => {
   const lots = useStore(state => state.lots);
   const [occupancyData, setOccupancyData] = useState<any[]>([]);
-  const lotMovements = useStore(state => state.lotMovements);
   
   // Prepare occupancy data on component mount
   useEffect(() => {
-    // Get movements involving this pasture (entries and exits)
-    const relevantMovements = lotMovements.filter(
-      m => m.toPastureId === pastureId || m.fromPastureId === pastureId
-    ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Get all lots that have been in this pasture (through planned transfers)
+    const relevantLots = lots.filter(lot => {
+      // Check if any planned transfers involve this pasture
+      return lot.plannedTransfers.some(
+        transfer => transfer.toPastureId === pastureId || transfer.fromPastureId === pastureId
+      );
+    });
     
-    if (relevantMovements.length === 0) return;
+    if (relevantLots.length === 0) return;
     
+    // Collect all transfers involving this pasture
+    const transfers: {
+      date: Date;
+      isPastureEntry: boolean; // true if animals entered this pasture, false if they left
+      animalCount: number;
+    }[] = [];
+    
+    relevantLots.forEach(lot => {
+      lot.plannedTransfers
+        .filter(transfer => 
+          (transfer.toPastureId === pastureId || transfer.fromPastureId === pastureId) &&
+          transfer.completed && 
+          transfer.completedDate
+        )
+        .forEach(transfer => {
+          transfers.push({
+            date: new Date(transfer.completedDate || transfer.scheduledDate),
+            isPastureEntry: transfer.toPastureId === pastureId,
+            animalCount: lot.numberOfAnimals
+          });
+        });
+    });
+    
+    // Sort transfers by date
+    transfers.sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    if (transfers.length === 0) return;
+    
+    // Calculate occupancy over time
     const occupancyOverTime: any[] = [];
     let currentOccupancy = 0;
     
-    // Calculate animal count after each movement
-    relevantMovements.forEach(movement => {
-      const date = new Date(movement.date);
-      
+    transfers.forEach(movement => {
       // If animals entered this pasture
-      if (movement.toPastureId === pastureId) {
+      if (movement.isPastureEntry) {
         currentOccupancy += movement.animalCount;
-      }
-      
-      // If animals left this pasture
-      if (movement.fromPastureId === pastureId) {
+      } else {
+        // If animals left this pasture
         currentOccupancy -= movement.animalCount;
       }
       
@@ -61,13 +87,13 @@ const DataTrends = ({ qualityData, soilData, maintenanceData, pastureId }: DataT
       currentOccupancy = Math.max(0, currentOccupancy);
       
       occupancyOverTime.push({
-        date: date.toISOString().split('T')[0],
+        date: movement.date.toISOString().split('T')[0],
         occupancy: currentOccupancy
       });
     });
     
     setOccupancyData(occupancyOverTime);
-  }, [pastureId, lotMovements, lots]);
+  }, [pastureId, lots]);
 
   return (
     <Card>
