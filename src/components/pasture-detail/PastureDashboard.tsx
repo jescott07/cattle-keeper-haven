@@ -42,6 +42,7 @@ const PastureDashboard = ({ pasture }: PastureDashboardProps) => {
         qualityData={qualityData}
         soilData={soilData}
         maintenanceData={maintenanceData}
+        pastureId={pasture.id}
       />
       
       {/* Notes Section */}

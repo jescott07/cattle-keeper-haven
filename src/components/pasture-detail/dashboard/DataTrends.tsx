@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartPieIcon, LineChart } from 'lucide-react';
+import { useStore } from '@/lib/store';
 import { 
   LineChart as RechartsLineChart, 
   Line, 
@@ -23,9 +23,52 @@ interface DataTrendsProps {
     timeline: any[];
     costs: any[];
   };
+  pastureId: string;
 }
 
-const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps) => {
+const DataTrends = ({ qualityData, soilData, maintenanceData, pastureId }: DataTrendsProps) => {
+  const lots = useStore(state => state.lots);
+  const [occupancyData, setOccupancyData] = useState<any[]>([]);
+  const lotMovements = useStore(state => state.lotMovements);
+  
+  // Prepare occupancy data on component mount
+  useEffect(() => {
+    // Get movements involving this pasture (entries and exits)
+    const relevantMovements = lotMovements.filter(
+      m => m.toPastureId === pastureId || m.fromPastureId === pastureId
+    ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    if (relevantMovements.length === 0) return;
+    
+    const occupancyOverTime: any[] = [];
+    let currentOccupancy = 0;
+    
+    // Calculate animal count after each movement
+    relevantMovements.forEach(movement => {
+      const date = new Date(movement.date);
+      
+      // If animals entered this pasture
+      if (movement.toPastureId === pastureId) {
+        currentOccupancy += movement.animalCount;
+      }
+      
+      // If animals left this pasture
+      if (movement.fromPastureId === pastureId) {
+        currentOccupancy -= movement.animalCount;
+      }
+      
+      // Don't allow negative occupancy
+      currentOccupancy = Math.max(0, currentOccupancy);
+      
+      occupancyOverTime.push({
+        date: date.toISOString().split('T')[0],
+        occupancy: currentOccupancy
+      });
+    });
+    
+    setOccupancyData(occupancyOverTime);
+  }, [pastureId, lotMovements, lots]);
+
   return (
     <Card>
       <CardHeader>
@@ -34,23 +77,53 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
           Data Trends
         </CardTitle>
         <CardDescription>
-          Track the evolution of pasture quality, soil composition, and maintenance over time
+          Track the evolution of pasture quality, soil composition, maintenance, and occupancy over time
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="quality" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-6">
-            <TabsTrigger value="quality">Quality Metrics</TabsTrigger>
-            <TabsTrigger value="soil">Soil Analysis</TabsTrigger>
-            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          </TabsList>
+        <div className="space-y-10">
+          {/* Occupancy Chart */}
+          <div>
+            <h3 className="text-base font-medium mb-4">Pasture Occupancy Evolution</h3>
+            {occupancyData.length > 1 ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsLineChart
+                    data={occupancyData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="occupancy" 
+                      name="Number of Animals"
+                      stroke="#3b82f6" 
+                      activeDot={{ r: 8 }} 
+                    />
+                  </RechartsLineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <ChartPieIcon className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                <p>Not enough occupancy data to display trends.</p>
+                <p className="text-sm">Transfer animals to and from this pasture to see occupancy trends.</p>
+              </div>
+            )}
+          </div>
           
-          <TabsContent value="quality">
+          {/* Quality Metrics Section */}
+          <div>
+            <h3 className="text-base font-medium mb-4">Quality Metrics</h3>
             {qualityData.length > 1 ? (
               <div className="space-y-8">
                 {/* Grass Height Chart */}
                 <div>
-                  <h3 className="text-base font-medium mb-2">Grass Height (cm)</h3>
+                  <h4 className="text-sm font-medium mb-2">Grass Height (cm)</h4>
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsLineChart
@@ -77,7 +150,7 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 {/* NDVI Value Chart (Only if data exists) */}
                 {qualityData.some(d => d.ndvi !== null) && (
                   <div>
-                    <h3 className="text-base font-medium mb-2">NDVI Value</h3>
+                    <h4 className="text-sm font-medium mb-2">NDVI Value</h4>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsLineChart
@@ -103,7 +176,7 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 
                 {/* Grass Color Chart */}
                 <div>
-                  <h3 className="text-base font-medium mb-2">Grass Color (1-5 scale)</h3>
+                  <h4 className="text-sm font-medium mb-2">Grass Color (1-5 scale)</h4>
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsLineChart
@@ -141,14 +214,16 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 <p className="text-sm">Add at least two quality evaluations to see the chart.</p>
               </div>
             )}
-          </TabsContent>
+          </div>
           
-          <TabsContent value="soil">
+          {/* Soil Analysis Section */}
+          <div>
+            <h3 className="text-base font-medium mb-4">Soil Analysis</h3>
             {soilData.length > 1 ? (
               <div className="space-y-8">
                 {/* pH Chart */}
                 <div>
-                  <h3 className="text-base font-medium mb-2">Soil pH</h3>
+                  <h4 className="text-sm font-medium mb-2">Soil pH</h4>
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsLineChart
@@ -168,7 +243,7 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 
                 {/* Macronutrients Chart */}
                 <div>
-                  <h3 className="text-base font-medium mb-2">Macronutrients (P, K, Ca, Mg, S)</h3>
+                  <h4 className="text-sm font-medium mb-2">Macronutrients (P, K, Ca, Mg, S)</h4>
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsLineChart
@@ -197,13 +272,15 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 <p className="text-sm">Add at least two soil analyses to see the chart.</p>
               </div>
             )}
-          </TabsContent>
+          </div>
           
-          <TabsContent value="maintenance">
+          {/* Maintenance Section */}
+          <div>
+            <h3 className="text-base font-medium mb-4">Maintenance</h3>
             {maintenanceData.timeline.length > 0 ? (
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-base font-medium mb-2">Maintenance Activities by Month</h3>
+                  <h4 className="text-sm font-medium mb-2">Maintenance Activities by Month</h4>
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsBarChart
@@ -229,7 +306,7 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 
                 {maintenanceData.costs.length > 0 && (
                   <div>
-                    <h3 className="text-base font-medium mb-2">Maintenance Costs by Month</h3>
+                    <h4 className="text-sm font-medium mb-2">Maintenance Costs by Month</h4>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsLineChart
@@ -255,8 +332,8 @@ const DataTrends = ({ qualityData, soilData, maintenanceData }: DataTrendsProps)
                 <p className="text-sm">Add maintenance records and mark them as completed to see the charts.</p>
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
