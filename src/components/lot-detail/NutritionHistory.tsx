@@ -61,7 +61,9 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
                 <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                   <div>
                     <span className="text-muted-foreground">Per animal:</span>{' '}
-                    <span className="font-medium">{record.quantityPerAnimal} {getUnitLabel(record.unit)}/day</span>
+                    <span className="font-medium">
+                      {record.displayQuantityPerAnimal || record.quantityPerAnimal} {getUnitLabel(record.unit)}/day
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total:</span>{' '}
