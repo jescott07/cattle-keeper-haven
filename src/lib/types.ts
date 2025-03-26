@@ -150,6 +150,7 @@ export interface FarmSummary {
   totalPastureArea: number;
   inventoryValue: number;
   pendingSyncs: number;
+  lastUpdated?: Date; // Added this as it was being used in the implementation
 }
 
 // Diet record for tracking lot diet

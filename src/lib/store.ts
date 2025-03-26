@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
@@ -579,7 +578,7 @@ export const useStore = create<StoreState>()(
                       syncStatus: 'pending'
                     } 
                   : i
-              )
+              ))
             }));
           }
         }
@@ -957,7 +956,7 @@ export const useStore = create<StoreState>()(
                   syncStatus: 'pending' 
                 } 
               : record
-          )
+          ))
         }));
       },
       
@@ -994,7 +993,7 @@ export const useStore = create<StoreState>()(
                   syncStatus: 'pending' 
                 } 
               : record
-          )
+          ))
         }));
       },
       
@@ -1129,18 +1128,18 @@ export const useStore = create<StoreState>()(
         const state = get();
         
         // Count active lots and animals
-        const activeLots = state.lots.filter(lot => !lot.sold && !lot.archived);
+        const activeLots = state.lots.filter(lot => lot.status === 'active');
         const totalAnimals = activeLots.reduce((sum, lot) => sum + lot.numberOfAnimals, 0);
         
         // Calculate total area
-        const totalPastureArea = state.pastures.reduce((sum, pasture) => sum + pasture.area, 0);
+        const totalPastureArea = state.pastures.reduce((sum, pasture) => sum + pasture.sizeInHectares, 0);
         
         // Get latest weighing data
         const latestWeighings = state.weighings.sort((a, b) => 
           new Date(b.date).getTime() - new Date(a.date).getTime()
         ).slice(0, 10);
         
-        // Count inventory by category
+        // Count inventory by category and calculate total value
         const inventoryByCategory = state.inventory.reduce((acc, item) => {
           const category = item.type || 'other';
           if (!acc[category]) acc[category] = 0;
@@ -1148,12 +1147,22 @@ export const useStore = create<StoreState>()(
           return acc;
         }, {} as Record<string, number>);
         
+        // Calculate total inventory value
+        const inventoryValue = state.inventory.reduce((sum, item) => 
+          sum + (item.quantity * item.costPerUnit), 0
+        );
+        
+        // Get pending syncs count
+        const pendingSyncs = get().getPendingSyncs();
+        
         return {
-          totalLots: activeLots.length,
+          totalLots: state.lots.length,
           totalAnimals,
+          totalPastures: state.pastures.length,
+          activeLots: activeLots.length,
           totalPastureArea,
-          latestWeighings,
-          inventoryByCategory,
+          inventoryValue,
+          pendingSyncs,
           lastUpdated: new Date()
         };
       },
