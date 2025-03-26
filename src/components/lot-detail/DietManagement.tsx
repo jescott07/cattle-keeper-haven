@@ -42,6 +42,7 @@ interface DietRecord {
   totalQuantity: number; // In the selected item's unit
   unit: string;
   notes?: string;
+  lastConsumptionDate?: Date; // Track when the last consumption was deducted
   createdAt: Date;
   updatedAt: Date;
   syncStatus: 'synced' | 'pending' | 'error';
@@ -155,6 +156,12 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
       
       addDietRecord(dietRecord);
       
+      // If the start date is today, deduct the first day's consumption from inventory
+      if (new Date(data.startDate).setHours(0, 0, 0, 0) === new Date().setHours(0, 0, 0, 0)) {
+        // The consumption will be applied by the useEffect in NutritionHistory
+        dietRecord.lastConsumptionDate = new Date();
+      }
+      
       toast({
         title: 'Diet Plan Added',
         description: `Diet plan for ${selectedItem.name} has been added to the lot`,
@@ -181,6 +188,25 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
   const handleSelectInventoryItem = (itemId: string) => {
     setValue("inventoryItemId", itemId);
     setIsInventoryPopoverOpen(false);
+  };
+
+  // Check if the selected item has enough quantity for the diet plan
+  const hasEnoughInventory = () => {
+    if (!selectedItem || !lot) return true;
+    
+    const totalQuantity = calculateTotalQuantity();
+    return selectedItem.quantity >= totalQuantity;
+  };
+
+  // Display a warning if not enough inventory
+  const inventoryWarning = () => {
+    if (!selectedItem || hasEnoughInventory()) return null;
+    
+    return (
+      <div className="text-amber-600 text-sm mt-1">
+        Warning: The selected item's quantity may not be sufficient for the entire diet period.
+      </div>
+    );
   };
 
   return (
@@ -312,6 +338,11 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
                 <span className="font-medium">Total quantity per day:</span>{' '}
                 {calculateTotalQuantity().toFixed(4)} {selectedItem.unit}
               </div>
+              <div className="text-sm mt-1">
+                <span className="font-medium">Available in inventory:</span>{' '}
+                {selectedItem.quantity.toFixed(4)} {selectedItem.unit}
+              </div>
+              {inventoryWarning()}
               <div className="text-xs text-muted-foreground mt-1">
                 Based on {lot.numberOfAnimals} animals in the lot
               </div>

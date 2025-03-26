@@ -162,6 +162,7 @@ export interface DietRecord extends SyncableModel {
   displayQuantityPerAnimal: number; // In the selected item's unit for display
   totalQuantity: number;
   unit: string;
+  lastConsumptionDate?: Date; // Track when the last consumption was deducted
   notes?: string;
 }
 
