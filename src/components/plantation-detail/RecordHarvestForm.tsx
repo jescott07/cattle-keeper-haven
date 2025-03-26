@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,8 +24,8 @@ import {
 import { InventoryProperties } from '@/components/inventory/InventoryProperties';
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryFormValues, InventoryItemProperty } from '@/lib/types';
+import { STANDARD_UNITS } from '@/lib/constants';
 
-// Here's the key modification: ensuring that all properties in the schema are required
 const inventoryItemPropertySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -121,7 +120,6 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
           variant: "destructive"
         });
       } else {
-        // Ensure all property objects have required fields
         const validProperties: InventoryItemProperty[] = values.properties.map(prop => ({
           id: prop.id || uuidv4(),
           name: prop.name || '',
@@ -162,7 +160,6 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     onSuccess();
   }
 
-  // Create an adapter to handle the different form types between InventoryProperties and our form
   const createAdapter = () => {
     const registerAdapter = (name: string) => {
       if (name.startsWith('properties.')) {
@@ -208,7 +205,7 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     form.setValue('properties', [
       ...currentProperties,
       {
-        id: uuidv4(), // Ensure ID is always set
+        id: uuidv4(),
         name: '',
         value: '',
         unit: 'g/kg',
@@ -399,7 +396,28 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
                       <FormControl>
-                        <Input {...field} value={field.value || ''} />
+                        <Controller
+                          name="inventoryUnit"
+                          control={form.control}
+                          defaultValue="kg"
+                          render={({ field }) => (
+                            <Select 
+                              onValueChange={field.onChange} 
+                              value={field.value || 'kg'}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STANDARD_UNITS.map((unit) => (
+                                  <SelectItem key={unit.value} value={unit.value}>
+                                    {unit.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -461,3 +479,4 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     </Form>
   );
 }
+

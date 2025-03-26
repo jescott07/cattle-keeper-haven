@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DietManagement } from './DietManagement';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { getUnitLabel } from '@/lib/constants';
 
 interface NutritionHistoryProps {
   lotId: string;
@@ -60,11 +61,11 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
                 <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                   <div>
                     <span className="text-muted-foreground">Per animal:</span>{' '}
-                    <span className="font-medium">{record.quantityPerAnimal} {record.unit}/day</span>
+                    <span className="font-medium">{record.quantityPerAnimal} {getUnitLabel(record.unit)}/day</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total:</span>{' '}
-                    <span className="font-medium">{record.totalQuantity} {record.unit}/day</span>
+                    <span className="font-medium">{record.totalQuantity} {getUnitLabel(record.unit)}/day</span>
                   </div>
                 </div>
                 

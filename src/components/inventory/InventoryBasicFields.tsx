@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InventoryType } from '@/lib/types';
+import { STANDARD_UNITS } from '@/lib/constants';
 
 interface InventoryBasicFieldsProps {
   register: UseFormRegister<any>;
@@ -105,17 +106,32 @@ export function InventoryBasicFields({
           {errors.quantity && <p className="text-sm text-destructive">{errors.quantity.message as string}</p>}
         </div>
         
-        {!isTemplate && (
-          <div className="space-y-2">
-            <Label htmlFor={unitId}>Unit</Label>
-            <Input
-              id={unitId}
-              placeholder="e.g., kg, liters, pieces"
-              {...register('unit', { required: 'Unit is required' })}
-            />
-            {errors.unit && <p className="text-sm text-destructive">{errors.unit.message as string}</p>}
-          </div>
-        )}
+        <div className="space-y-2">
+          <Label htmlFor={unitId}>Unit</Label>
+          <Controller
+            name="unit"
+            control={control}
+            defaultValue="kg"
+            render={({ field }) => (
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+              >
+                <SelectTrigger id={unitId}>
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STANDARD_UNITS.map((unit) => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      {unit.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.unit && <p className="text-sm text-destructive">{errors.unit.message as string}</p>}
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -17,6 +16,7 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { STANDARD_UNITS } from '@/lib/constants';
 
 interface AddInventoryFormProps {
   item?: InventoryItem;
@@ -92,7 +92,6 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
         return;
       }
       
-      // If we're in template mode and not editing, just add the template and return to item mode
       if (isAddingTemplate) {
         handleSaveAsTemplate();
         setIsAddingTemplate(false);
@@ -269,10 +268,27 @@ export function AddInventoryForm({ item, onSuccess }: AddInventoryFormProps) {
           
           <div className="space-y-2">
             <Label htmlFor="unit-template">Unit</Label>
-            <Input
-              id="unit-template"
-              placeholder="e.g., kg, liters, pieces"
-              {...register('unit', { required: 'Unit is required' })}
+            <Controller
+              name="unit"
+              control={control}
+              defaultValue="kg"
+              render={({ field }) => (
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                >
+                  <SelectTrigger id="unit-template">
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STANDARD_UNITS.map((unit) => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
             {errors.unit && <p className="text-sm text-destructive">{errors.unit.message as string}</p>}
           </div>
