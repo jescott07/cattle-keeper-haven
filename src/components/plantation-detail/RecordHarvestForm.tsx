@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -21,6 +22,13 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
 import { InventoryProperties } from '@/components/inventory/InventoryProperties';
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryFormValues, InventoryItemProperty } from '@/lib/types';
@@ -479,4 +487,3 @@ export function RecordHarvestForm({ plantationId, plantationArea, onSuccess }: R
     </Form>
   );
 }
-
