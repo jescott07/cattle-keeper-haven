@@ -152,6 +152,18 @@ export interface FarmSummary {
   pendingSyncs: number;
 }
 
+// Diet record for tracking lot diet
+export interface DietRecord extends SyncableModel {
+  lotId: string;
+  inventoryItemId: string;
+  startDate: Date;
+  endDate: Date;
+  quantityPerAnimal: number;
+  totalQuantity: number;
+  unit: string;
+  notes?: string;
+}
+
 // NEW TYPES FOR SOIL ANALYSIS
 export interface SoilAnalysis {
   id: string;

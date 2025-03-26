@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, CircleDollarSign } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, CircleDollarSign, Skull, Wheat } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -22,6 +22,8 @@ import { TransferManagement } from '@/components/lot-detail/TransferManagement';
 import { DeathHistory } from '@/components/lot-detail/DeathHistory';
 import { SaleHistory } from '@/components/lot-detail/SaleHistory';
 import { SaleManagement } from '@/components/lot-detail/SaleManagement';
+import { MortalityTracker } from '@/components/lot-detail/MortalityTracker';
+import { DietManagement } from '@/components/lot-detail/DietManagement';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +45,7 @@ export default function LotDetail() {
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [isMortalityDialogOpen, setIsMortalityDialogOpen] = useState(false);
   const [isSaleDialogOpen, setIsSaleDialogOpen] = useState(false);
+  const [isDietDialogOpen, setIsDietDialogOpen] = useState(false);
   
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
   const weighings = useStore(state => state.weighings.filter(w => w.lotId === lotId));
@@ -166,6 +169,26 @@ export default function LotDetail() {
             <Button 
               variant="outline" 
               size="sm" 
+              className="gap-2"
+              onClick={() => setIsMortalityDialogOpen(true)}
+            >
+              <Skull className="h-4 w-4" />
+              Record Mortality
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setIsDietDialogOpen(true)}
+            >
+              <Wheat className="h-4 w-4" />
+              Manage Diet
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
               className="gap-2 text-green-600 border-green-200 hover:text-green-700 hover:bg-green-50 hover:border-green-300"
               onClick={() => setIsSaleDialogOpen(true)}
               disabled={lot.status === 'sold' || lot.numberOfAnimals === 0}
@@ -263,6 +286,30 @@ export default function LotDetail() {
             </DialogTitle>
           </DialogHeader>
           <TransferManagement initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isMortalityDialogOpen} onOpenChange={setIsMortalityDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Skull className="h-5 w-5" />
+              Record Mortality
+            </DialogTitle>
+          </DialogHeader>
+          <MortalityTracker lotId={lot.id} onMortalityAdded={() => setIsMortalityDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDietDialogOpen} onOpenChange={setIsDietDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wheat className="h-5 w-5" />
+              Diet Management
+            </DialogTitle>
+          </DialogHeader>
+          <DietManagement lotId={lot.id} onComplete={() => setIsDietDialogOpen(false)} />
         </DialogContent>
       </Dialog>
 
