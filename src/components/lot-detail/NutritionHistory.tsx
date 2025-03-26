@@ -20,13 +20,28 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
   );
   const inventory = useStore(state => state.inventory);
   const lots = useStore(state => state.lots);
+  const weighings = useStore(state => state.weighings.filter(w => w.lotId === lotId));
   const updateInventoryItem = useStore(state => state.updateInventoryItem);
 
   const lot = lots.find(l => l.id === lotId);
 
+  // Get the latest average weight
+  const getAverageWeight = () => {
+    if (!weighings || weighings.length === 0) return lot?.averageWeight || 0;
+    
+    // Sort weighings by date (most recent first)
+    const sortedWeighings = [...weighings].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    return sortedWeighings[0].averageWeight;
+  };
+  
+  const averageWeight = getAverageWeight();
+
   // Effect to update inventory based on daily consumption
   useEffect(() => {
-    if (!lot) return;
+    if (!lot || !averageWeight) return;
     
     const today = new Date();
     
@@ -45,8 +60,12 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
       const inventoryItem = inventory.find(item => item.id === record.inventoryItemId);
       if (!inventoryItem) return;
       
-      // Calculate today's consumption in the inventory item's unit
-      const dailyConsumptionInKg = record.totalQuantity * (record.unit === 'kg' ? 1 : convertUnits(1, record.unit, 'kg'));
+      // Calculate today's consumption based on quantity per kg of live weight
+      const dailyConsumptionPerAnimalInGrams = record.quantityPerAnimal * averageWeight;
+      const totalDailyConsumptionInGrams = dailyConsumptionPerAnimalInGrams * lot.numberOfAnimals;
+      
+      // Convert to kg and then to the inventory item's unit
+      const dailyConsumptionInKg = totalDailyConsumptionInGrams / 1000; // Convert grams to kg
       const dailyConsumptionInItemUnit = convertUnits(dailyConsumptionInKg, 'kg', inventoryItem.unit);
       
       // Update the inventory with reduced quantity
@@ -65,7 +84,7 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
       };
       useStore.getState().updateDietRecord(record.id, recordUpdate);
     });
-  }, [dietRecords, inventory, lot, updateInventoryItem]);
+  }, [dietRecords, inventory, lot, updateInventoryItem, averageWeight]);
 
   const getItemName = (itemId: string) => {
     const item = inventory.find(item => item.id === itemId);
@@ -143,13 +162,13 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
                 
                 <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                   <div>
-                    <span className="text-muted-foreground">Per animal:</span>{' '}
+                    <span className="text-muted-foreground">Per kg of live weight:</span>{' '}
                     <span className="font-medium">
                       {record.displayQuantityPerAnimal || record.quantityPerAnimal} {getUnitLabel(record.unit)}/day
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Total:</span>{' '}
+                    <span className="text-muted-foreground">Total daily:</span>{' '}
                     <span className="font-medium">{record.totalQuantity} {getUnitLabel(record.unit)}/day</span>
                   </div>
                 </div>

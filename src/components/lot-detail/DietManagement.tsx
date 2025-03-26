@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Search } from 'lucide-react';
+import { Calendar, Search, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
   Popover, 
@@ -22,6 +22,12 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { v4 as uuidv4 } from 'uuid';
 import { UNIT_CONVERSION_FACTORS, convertUnits } from '@/lib/constants';
 
@@ -37,7 +43,7 @@ interface DietRecord {
   inventoryItemId: string;
   startDate: Date;
   endDate: Date;
-  quantityPerAnimal: number; // Always in grams
+  quantityPerAnimal: number; // Always in grams per kg of live weight
   displayQuantityPerAnimal: number; // In the selected item's unit for display
   totalQuantity: number; // In the selected item's unit
   unit: string;
@@ -53,18 +59,33 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
   const inventory = useStore(state => state.inventory.filter(item => item.quantity > 0));
   const addDietRecord = useStore(state => state.addDietRecord || (() => {}));
+  const weighings = useStore(state => state.weighings.filter(w => w.lotId === lotId));
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInventoryPopoverOpen, setIsInventoryPopoverOpen] = useState(false);
   const [inventorySearch, setInventorySearch] = useState('');
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   
+  // Get the latest average weight
+  const getAverageWeight = () => {
+    if (!weighings || weighings.length === 0) return lot?.averageWeight || 0;
+    
+    // Sort weighings by date (most recent first)
+    const sortedWeighings = [...weighings].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    return sortedWeighings[0].averageWeight;
+  };
+  
+  const averageWeight = getAverageWeight();
+  
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // 30 days later
       inventoryItemId: '',
-      quantityPerAnimal: '', // This will always be in grams
+      quantityPerAnimal: '', // This will always be in grams per kg of live weight
       notes: ''
     }
   });
@@ -79,15 +100,15 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
         item.name.toLowerCase().includes(inventorySearch.toLowerCase())
       );
   
-  // Calculate total quantity based on quantity per animal and current animal count
+  // Calculate total quantity based on quantity per animal, current animal count, and average weight
   const calculateTotalQuantity = () => {
-    if (!lot || !watchQuantityPerAnimal || !selectedItem) return 0;
+    if (!lot || !watchQuantityPerAnimal || !selectedItem || !averageWeight) return 0;
     
-    const qtyPerAnimal = parseFloat(watchQuantityPerAnimal.toString());
-    if (isNaN(qtyPerAnimal)) return 0;
+    const qtyPerAnimalPerKg = parseFloat(watchQuantityPerAnimal.toString());
+    if (isNaN(qtyPerAnimalPerKg)) return 0;
     
-    // Get the total in grams
-    const totalInGrams = qtyPerAnimal * lot.numberOfAnimals;
+    // Calculate total quantity: qtyPerAnimalPerKg * averageWeight * numberOfAnimals (in grams)
+    const totalInGrams = qtyPerAnimalPerKg * averageWeight * lot.numberOfAnimals;
     
     // Convert from grams to the selected item's unit for display
     return convertUnits(totalInGrams, 'g', selectedItem.unit);
@@ -107,12 +128,23 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
   const getDisplayQuantityPerAnimal = () => {
     if (!watchQuantityPerAnimal || !selectedItem) return '';
     
-    const qtyPerAnimal = parseFloat(watchQuantityPerAnimal.toString());
-    if (isNaN(qtyPerAnimal)) return '';
+    const qtyPerAnimalPerKg = parseFloat(watchQuantityPerAnimal.toString());
+    if (isNaN(qtyPerAnimalPerKg)) return '';
     
     // Convert from grams to the selected item's unit for display
-    const displayQty = convertUnits(qtyPerAnimal, 'g', selectedItem.unit);
+    const displayQty = convertUnits(qtyPerAnimalPerKg, 'g', selectedItem.unit);
     return displayQty.toFixed(4);
+  };
+  
+  // Calculate the total quantity per animal per day
+  const calculateQuantityPerAnimalPerDay = () => {
+    if (!watchQuantityPerAnimal || !averageWeight) return 0;
+    
+    const qtyPerAnimalPerKg = parseFloat(watchQuantityPerAnimal.toString());
+    if (isNaN(qtyPerAnimalPerKg)) return 0;
+    
+    // Calculate total quantity per animal per day: qtyPerAnimalPerKg * averageWeight (in grams)
+    return qtyPerAnimalPerKg * averageWeight;
   };
   
   const onSubmit = async (data: any) => {
@@ -121,15 +153,16 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
     try {
       if (!lot) throw new Error("Lot not found");
       if (!selectedItem) throw new Error("No inventory item selected");
+      if (!averageWeight) throw new Error("No average weight available for this lot");
       
-      const quantityPerAnimalInGrams = parseFloat(data.quantityPerAnimal);
-      if (isNaN(quantityPerAnimalInGrams) || quantityPerAnimalInGrams <= 0) {
+      const quantityPerAnimalPerKg = parseFloat(data.quantityPerAnimal);
+      if (isNaN(quantityPerAnimalPerKg) || quantityPerAnimalPerKg <= 0) {
         throw new Error("Invalid quantity per animal");
       }
       
       // Convert to the original unit for display
       const displayQuantityPerAnimal = convertUnits(
-        quantityPerAnimalInGrams,
+        quantityPerAnimalPerKg,
         'g',
         selectedItem.unit
       );
@@ -144,7 +177,7 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
         inventoryItemId: data.inventoryItemId,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        quantityPerAnimal: quantityPerAnimalInGrams, // Stored in grams
+        quantityPerAnimal: quantityPerAnimalPerKg, // Stored in grams per kg of live weight
         displayQuantityPerAnimal, // Stored in original unit for display
         totalQuantity,
         unit: selectedItem.unit,
@@ -208,6 +241,19 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
       </div>
     );
   };
+
+  // Show alert if no weight data is available
+  if (!averageWeight) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800">
+          <p className="font-medium">Cannot add diet plan</p>
+          <p className="mt-1">There is no weight data available for this lot. Please record at least one weighing session before adding a diet plan.</p>
+        </div>
+        <Button onClick={onComplete} className="w-full">Close</Button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -301,18 +347,30 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
         )}
       </div>
       
-      {/* Quantity per animal */}
+      {/* Quantity per animal per kg of live weight */}
       {selectedItem && (
         <div className="space-y-2">
-          <Label htmlFor="quantityPerAnimal">
-            Quantity per animal per day (grams)
-          </Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="quantityPerAnimal">
+              Quantity per kg of live weight per day (grams)
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>This value will be multiplied by the animal's live weight to calculate the total daily consumption.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Input
             id="quantityPerAnimal"
             type="number"
             step="0.0001"
             min="0.0001"
-            placeholder="Enter amount in grams"
+            placeholder="Enter amount in grams per kg of live weight"
             {...register('quantityPerAnimal', { 
               required: 'Quantity is required',
               min: { value: 0.0001, message: 'Must be greater than 0' }
@@ -324,15 +382,24 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
           
           {/* Show unit conversion info */}
           <p className="text-xs text-muted-foreground">
-            Always enter the amount in grams, regardless of the item's unit.
+            Always enter the amount in grams per kg of live weight, regardless of the item's unit.
           </p>
+          
+          {/* Display lot weight information */}
+          <div className="text-xs text-blue-600">
+            Current average weight: {averageWeight.toFixed(2)} kg per animal
+          </div>
           
           {/* Display converted quantity */}
           {watchQuantityPerAnimal && lot && selectedItem && !isNaN(parseFloat(watchQuantityPerAnimal.toString())) && (
             <div className="mt-4 p-3 bg-muted/30 rounded-md">
               <div className="text-sm">
                 <span className="font-medium">In original unit:</span>{' '}
-                {getDisplayQuantityPerAnimal()} {selectedItem.unit} per animal per day
+                {getDisplayQuantityPerAnimal()} {selectedItem.unit} per kg of live weight per day
+              </div>
+              <div className="text-sm mt-1">
+                <span className="font-medium">Per animal per day:</span>{' '}
+                {convertUnits(calculateQuantityPerAnimalPerDay(), 'g', selectedItem.unit).toFixed(4)} {selectedItem.unit}
               </div>
               <div className="text-sm mt-1">
                 <span className="font-medium">Total quantity per day:</span>{' '}
@@ -344,7 +411,7 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
               </div>
               {inventoryWarning()}
               <div className="text-xs text-muted-foreground mt-1">
-                Based on {lot.numberOfAnimals} animals in the lot
+                Based on {lot.numberOfAnimals} animals with average weight of {averageWeight.toFixed(2)} kg
               </div>
             </div>
           )}
@@ -365,7 +432,7 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
       <Button 
         type="submit" 
         className="w-full"
-        disabled={isSubmitting || !lot || !selectedItem || !watchQuantityPerAnimal}
+        disabled={isSubmitting || !lot || !selectedItem || !watchQuantityPerAnimal || !averageWeight}
       >
         Add Diet Plan
       </Button>
