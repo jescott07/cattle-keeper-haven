@@ -21,7 +21,8 @@ import {
   ProductivityRecord,
   PlantationTask,
   HarvestRecord,
-  SaleRecord
+  SaleRecord,
+  DietRecord
 } from './types';
 
 interface StoreState {
@@ -35,6 +36,7 @@ interface StoreState {
   soilAnalyses: SoilAnalysis[];
   maintenanceRecords: MaintenanceRecord[];
   mortalityRecords: MortalityRecord[];
+  dietRecords: DietRecord[];
   
   // Plantation Management collections
   plantations: Plantation[];
@@ -95,6 +97,11 @@ interface StoreState {
   
   // Actions for mortality records
   addMortalityRecord: (record: Omit<MortalityRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  
+  // Actions for diet records
+  addDietRecord: (record: DietRecord) => void;
+  updateDietRecord: (id: string, updates: Partial<DietRecord>) => void;
+  removeDietRecord: (id: string) => void;
   
   // Actions for plantations
   addPlantation: (plantation: Omit<Plantation, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
@@ -160,6 +167,7 @@ export const useStore = create<StoreState>()(
       soilAnalyses: [],
       maintenanceRecords: [],
       mortalityRecords: [],
+      dietRecords: [],
       plantations: [],
       pestControls: [],
       plantationExpenses: [],
@@ -536,6 +544,34 @@ export const useStore = create<StoreState>()(
             )
           }));
         }
+      },
+      
+      // Diet record actions
+      addDietRecord: (record) => {
+        set(state => ({
+          dietRecords: [...state.dietRecords, record]
+        }));
+      },
+      
+      updateDietRecord: (id, updates) => {
+        set(state => ({
+          dietRecords: state.dietRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeDietRecord: (id) => {
+        set(state => ({
+          dietRecords: state.dietRecords.filter(record => record.id !== id)
+        }));
       },
       
       // Plantation actions
@@ -1098,6 +1134,7 @@ export const useStore = create<StoreState>()(
         const pendingSoilAnalyses = state.soilAnalyses.filter(i => i.syncStatus === 'pending').length;
         const pendingMaintenanceRecords = state.maintenanceRecords.filter(i => i.syncStatus === 'pending').length;
         const pendingMortalityRecords = state.mortalityRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingDietRecords = state.dietRecords.filter(i => i.syncStatus === 'pending').length;
         const pendingPlantations = state.plantations.filter(i => i.syncStatus === 'pending').length;
         const pendingPestControls = state.pestControls.filter(i => i.syncStatus === 'pending').length;
         const pendingPlantationExpenses = state.plantationExpenses.filter(i => i.syncStatus === 'pending').length;
@@ -1110,7 +1147,7 @@ export const useStore = create<StoreState>()(
         return pendingInventory + pendingLots + pendingPastures + 
                pendingWeighings + pendingConsumptions + 
                pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords +
-               pendingPlantations + pendingPestControls + pendingPlantationExpenses +
+               pendingDietRecords + pendingPlantations + pendingPestControls + pendingPlantationExpenses +
                pendingPlantationMaintenances + pendingProductivityRecords +
                pendingPlantationTasks + pendingHarvestRecords + pendingSaleRecords;
       }
@@ -1127,6 +1164,7 @@ export const useStore = create<StoreState>()(
         soilAnalyses: state.soilAnalyses,
         maintenanceRecords: state.maintenanceRecords,
         mortalityRecords: state.mortalityRecords,
+        dietRecords: state.dietRecords,
         plantations: state.plantations,
         pestControls: state.pestControls,
         plantationExpenses: state.plantationExpenses,

@@ -16,7 +16,7 @@ interface NutritionHistoryProps {
 export function NutritionHistory({ lotId }: NutritionHistoryProps) {
   const [isDietDialogOpen, setIsDietDialogOpen] = useState(false);
   const dietRecords = useStore(state => 
-    state.dietRecords?.filter(record => record.lotId === lotId) || []
+    state.dietRecords.filter(record => record.lotId === lotId) || []
   );
   const inventory = useStore(state => state.inventory);
 
