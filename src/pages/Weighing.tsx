@@ -2,110 +2,54 @@
 import { useState } from 'react';
 import { Weight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import { WeighingOptions } from '@/components/weighing/WeighingOptions';
+import { ManualWeighing } from '@/components/weighing/ManualWeighing';
 import WeighingManager from '@/components/weighing/WeighingManager';
-import { WeighingForm } from '@/components/WeighingForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStore } from '@/lib/store';
 
 const Weighing = () => {
-  const [activeTab, setActiveTab] = useState('advanced');
+  const [mode, setMode] = useState<'select' | 'manual' | 'automatic'>('select');
   const weighings = useStore(state => state.weighings);
-  const lots = useStore(state => state.lots);
   
-  // Sort weighings by date, most recent first
-  const recentWeighings = [...weighings]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in animate-slide-in">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Weighing Records</h1>
           <p className="text-muted-foreground mt-1">Track and manage cattle weights and transfers.</p>
         </div>
         
-        <Tabs defaultValue="advanced" value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <TabsList className="w-full max-w-md mx-auto">
-            <TabsTrigger value="advanced" className="flex-1">Individual Weighing</TabsTrigger>
-            <TabsTrigger value="bulk" className="flex-1">Bulk Weighing</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="advanced" className="mt-6">
-            <WeighingManager />
-          </TabsContent>
-          
-          <TabsContent value="bulk" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Weighing Form */}
-              <div className="lg:col-span-1">
-                <WeighingForm />
-              </div>
-              
-              {/* Recent Weighings */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <Weight className="h-5 w-5" />
-                      Recent Weighings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {recentWeighings.length > 0 ? (
-                      <div className="divide-y">
-                        {recentWeighings.map(weighing => {
-                          const lot = lots.find(l => l.id === weighing.lotId);
-                          const destinationLot = weighing.destinationLotId
-                            ? lots.find(l => l.id === weighing.destinationLotId)
-                            : null;
-                          
-                          return (
-                            <div key={weighing.id} className="py-4 first:pt-0 last:pb-0">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h4 className="font-medium">{lot?.name || 'Unknown Lot'}</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(weighing.date).toLocaleDateString()}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <div className="font-medium">{weighing.totalWeight.toFixed(1)} kg total</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {weighing.averageWeight.toFixed(1)} kg avg • {weighing.numberOfAnimals} animals
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {destinationLot && (
-                                <div className="bg-muted/30 px-3 py-2 rounded text-sm mt-2">
-                                  <span className="font-medium">Transfer: </span>
-                                  {weighing.numberOfAnimals} animals transferred to {destinationLot.name}
-                                </div>
-                              )}
-                              
-                              {weighing.notes && (
-                                <div className="text-sm text-muted-foreground mt-2">{weighing.notes}</div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Weight className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                        <p>No weighing records yet</p>
-                        <p className="text-sm mt-1">Use the form to add your first record</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+        {mode === 'select' && (
+          <WeighingOptions 
+            onSelectManual={() => setMode('manual')}
+            onSelectAutomatic={() => setMode('automatic')}
+          />
+        )}
+        
+        {mode === 'manual' && (
+          <ManualWeighing 
+            onBack={() => setMode('select')}
+          />
+        )}
+        
+        {mode === 'automatic' && (
+          <div className="animate-fade-in">
+            <div className="mb-4">
+              <button 
+                onClick={() => setMode('select')}
+                className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+                Back to options
+              </button>
             </div>
-          </TabsContent>
-        </Tabs>
+            <WeighingManager />
+          </div>
+        )}
       </main>
     </div>
   );
