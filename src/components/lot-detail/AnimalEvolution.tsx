@@ -34,8 +34,8 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     
     // Sort by completion date, most recent first
     const sortedTransfers = completedTransfers.sort((a, b) => {
-      const dateA = a.completedDate?.getTime() || a.scheduledDate.getTime();
-      const dateB = b.completedDate?.getTime() || b.scheduledDate.getTime();
+      const dateA = a.completedDate ? new Date(a.completedDate).getTime() : new Date(a.scheduledDate).getTime();
+      const dateB = b.completedDate ? new Date(b.completedDate).getTime() : new Date(b.scheduledDate).getTime();
       return dateB - dateA;
     });
     
@@ -49,7 +49,10 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     
     // Go back in time and recalculate animal count at each transfer point
     for (const transfer of sortedTransfers) {
-      const date = transfer.completedDate || transfer.scheduledDate;
+      // Ensure we're working with Date objects
+      const transferDate = transfer.completedDate ? 
+        new Date(transfer.completedDate) : 
+        new Date(transfer.scheduledDate);
       
       // Determine if this was incoming or outgoing
       if (transfer.toPastureId === lot.currentPastureId) {
@@ -61,18 +64,30 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
       }
       
       timeline.push({
-        date,
+        date: transferDate,
         animalCount,
-        formattedDate: format(date, 'MMM d, yyyy')
+        formattedDate: format(transferDate, 'MMM d, yyyy')
       });
     }
     
-    // Sort by date, oldest first - this is where the error occurs
+    // Sort by date, oldest first
     return timeline.sort((a, b) => {
-      // Ensure both a.date and b.date are Date objects before calling getTime()
-      const timeA = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
-      const timeB = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
-      return timeA - timeB;
+      // Create new Date objects to ensure we're working with proper Date instances
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      // Validate that dates are valid before calling getTime()
+      if (isNaN(dateA.getTime())) {
+        console.warn('Invalid date found:', a.date);
+        return -1; // Place invalid dates at the beginning
+      }
+      
+      if (isNaN(dateB.getTime())) {
+        console.warn('Invalid date found:', b.date);
+        return 1; // Place invalid dates at the beginning
+      }
+      
+      return dateA.getTime() - dateB.getTime();
     });
   }, [lot]);
   
