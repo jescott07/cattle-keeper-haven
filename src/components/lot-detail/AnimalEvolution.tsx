@@ -75,10 +75,12 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
       // Determine if this was incoming or outgoing
       if (transfer.toPastureId === lot.currentPastureId) {
         // This was an incoming transfer, so before this, we had fewer animals
-        animalCount -= transfer.animalCount || lot.numberOfAnimals;
+        // Use default of 1 if no specific count available (assuming at least one animal was transferred)
+        animalCount -= 1; // Default to 1 animal transferred if count is not available
       } else if (transfer.fromPastureId === lot.currentPastureId) {
         // This was an outgoing transfer, so before this, we had more animals
-        animalCount += transfer.animalCount || lot.numberOfAnimals;
+        // Use default of 1 if no specific count available
+        animalCount += 1; // Default to 1 animal transferred if count is not available
       }
       
       timeline.push({
@@ -91,7 +93,7 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     // Sort by date, oldest first
     return timeline.sort((a, b) => {
       try {
-        // Ensure we have valid Date objects
+        // Ensure a.date and b.date are valid Date objects
         const dateA = a.date instanceof Date ? a.date : new Date(a.date);
         const dateB = b.date instanceof Date ? b.date : new Date(b.date);
         
