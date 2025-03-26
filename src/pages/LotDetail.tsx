@@ -1,9 +1,9 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, CircleDollarSign, Skull, Wheat } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
@@ -197,39 +197,34 @@ export default function LotDetail() {
             </Button>
           </div>
           
-          <Tabs defaultValue="overview" className="mt-6">
-            <TabsList className="grid grid-cols-1 w-full">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-            </TabsList>
+          {/* Removed Tabs component and now showing content directly */}
+          <div className="mt-6">
+            <div className="bg-card rounded-lg p-6 border mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Weight Analysis</h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <AnimalEvolution lotId={lot.id} />
+                <TotalWeightProjection lotId={lot.id} />
+                <WeightDistribution weighings={weighings} showFullChart />
+                <DailyGainChart weighings={weighings} showFullChart />
+              </div>
+            </div>
             
-            <TabsContent value="overview" className="mt-6">
-              <div className="bg-card rounded-lg p-6 border mb-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Weight Analysis</h2>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <AnimalEvolution lotId={lot.id} />
-                  <TotalWeightProjection lotId={lot.id} />
-                  <WeightDistribution weighings={weighings} showFullChart />
-                  <DailyGainChart weighings={weighings} showFullChart />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <PastureHistory lotId={lot.id} />
-                <TransferHistory lotId={lot.id} showFullHistory />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <DeathHistory lotId={lot.id} />
-                <NutritionHistory lotId={lot.id} />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <PastureHistory lotId={lot.id} />
+              <TransferHistory lotId={lot.id} showFullHistory />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <DeathHistory lotId={lot.id} />
+              <NutritionHistory lotId={lot.id} />
+            </div>
 
-              <div className="mb-8">
-                <SaleHistory lotId={lot.id} />
-              </div>
-            </TabsContent>
-          </Tabs>
+            <div className="mb-8">
+              <SaleHistory lotId={lot.id} />
+            </div>
+          </div>
           
           <div className="flex justify-center mt-12 pt-6 border-t">
             <Button 
@@ -333,4 +328,3 @@ export default function LotDetail() {
     </div>
   );
 }
-

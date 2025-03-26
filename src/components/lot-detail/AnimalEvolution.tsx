@@ -34,9 +34,15 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     
     // Sort by completion date, most recent first
     const sortedTransfers = completedTransfers.sort((a, b) => {
-      const dateA = a.completedDate ? new Date(a.completedDate).getTime() : new Date(a.scheduledDate).getTime();
-      const dateB = b.completedDate ? new Date(b.completedDate).getTime() : new Date(b.scheduledDate).getTime();
-      return dateB - dateA;
+      // Make sure we have valid Date objects before getting time
+      const dateA = a.completedDate ? new Date(a.completedDate) : new Date(a.scheduledDate);
+      const dateB = b.completedDate ? new Date(b.completedDate) : new Date(b.scheduledDate);
+      
+      // Check if dates are valid
+      if (isNaN(dateA.getTime())) return 1;
+      if (isNaN(dateB.getTime())) return -1;
+      
+      return dateB.getTime() - dateA.getTime();
     });
     
     // Create a timeline of animal count changes
@@ -49,18 +55,30 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     
     // Go back in time and recalculate animal count at each transfer point
     for (const transfer of sortedTransfers) {
-      // Ensure we're working with Date objects
-      const transferDate = transfer.completedDate ? 
-        new Date(transfer.completedDate) : 
-        new Date(transfer.scheduledDate);
+      // Make sure we have a valid Date object for the transfer date
+      let transferDate;
+      try {
+        transferDate = transfer.completedDate ? 
+          new Date(transfer.completedDate) : 
+          new Date(transfer.scheduledDate);
+          
+        // Skip if invalid date
+        if (isNaN(transferDate.getTime())) {
+          console.warn('Invalid transfer date, skipping:', transfer);
+          continue;
+        }
+      } catch (e) {
+        console.warn('Error processing transfer date, skipping:', transfer, e);
+        continue;
+      }
       
       // Determine if this was incoming or outgoing
       if (transfer.toPastureId === lot.currentPastureId) {
         // This was an incoming transfer, so before this, we had fewer animals
-        animalCount -= lot.numberOfAnimals; // This is simplified and would need real transfer counts
+        animalCount -= transfer.animalCount || lot.numberOfAnimals;
       } else if (transfer.fromPastureId === lot.currentPastureId) {
         // This was an outgoing transfer, so before this, we had more animals
-        animalCount += lot.numberOfAnimals; // This is simplified and would need real transfer counts
+        animalCount += transfer.animalCount || lot.numberOfAnimals;
       }
       
       timeline.push({
@@ -72,22 +90,27 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
     
     // Sort by date, oldest first
     return timeline.sort((a, b) => {
-      // Create new Date objects to ensure we're working with proper Date instances
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      
-      // Validate that dates are valid before calling getTime()
-      if (isNaN(dateA.getTime())) {
-        console.warn('Invalid date found:', a.date);
-        return -1; // Place invalid dates at the beginning
+      try {
+        // Ensure we have valid Date objects
+        const dateA = a.date instanceof Date ? a.date : new Date(a.date);
+        const dateB = b.date instanceof Date ? b.date : new Date(b.date);
+        
+        // Verify the dates are valid before calling getTime()
+        if (isNaN(dateA.getTime())) {
+          console.warn('Invalid date found:', a.date);
+          return -1; // Place invalid dates at the beginning
+        }
+        
+        if (isNaN(dateB.getTime())) {
+          console.warn('Invalid date found:', b.date);
+          return 1; // Place invalid dates at the beginning
+        }
+        
+        return dateA.getTime() - dateB.getTime();
+      } catch (e) {
+        console.error('Error comparing dates:', e, a.date, b.date);
+        return 0; // Keep order unchanged if error occurs
       }
-      
-      if (isNaN(dateB.getTime())) {
-        console.warn('Invalid date found:', b.date);
-        return 1; // Place invalid dates at the beginning
-      }
-      
-      return dateA.getTime() - dateB.getTime();
     });
   }, [lot]);
   
