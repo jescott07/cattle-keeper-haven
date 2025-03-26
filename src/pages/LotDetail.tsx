@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine } from 'lucide-react';
+import { ArrowLeft, Edit, Trash, Scale, ArrowLeftRight, TreePine, CircleDollarSign } from 'lucide-react';
 import { LotHeader } from '@/components/lot-detail/LotHeader';
 import { AnimalEvolution } from '@/components/lot-detail/AnimalEvolution';
 import { WeightDistribution } from '@/components/lot-detail/WeightDistribution';
@@ -19,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PastureTransfer } from '@/components/pasture-management/PastureTransfer';
 import { TransferManagement } from '@/components/lot-detail/TransferManagement';
 import { DeathHistory } from '@/components/lot-detail/DeathHistory';
+import { SaleHistory } from '@/components/lot-detail/SaleHistory';
+import { SaleManagement } from '@/components/lot-detail/SaleManagement';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +42,7 @@ export default function LotDetail() {
   const [isPastureTransferDialogOpen, setIsPastureTransferDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [isMortalityDialogOpen, setIsMortalityDialogOpen] = useState(false);
+  const [isSaleDialogOpen, setIsSaleDialogOpen] = useState(false);
   
   const lot = useStore(state => state.lots.find(l => l.id === lotId));
   const weighings = useStore(state => state.weighings.filter(w => w.lotId === lotId));
@@ -128,6 +132,49 @@ export default function LotDetail() {
             </div>
           </div>
           
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => navigate('/weighing')}
+            >
+              <Scale className="h-4 w-4" />
+              Go to Weighing
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setIsPastureTransferDialogOpen(true)}
+            >
+              <TreePine className="h-4 w-4" />
+              Pasture Management
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setIsTransferDialogOpen(true)}
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              Transfer Management
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 text-green-600 border-green-200 hover:text-green-700 hover:bg-green-50 hover:border-green-300"
+              onClick={() => setIsSaleDialogOpen(true)}
+              disabled={lot.status === 'sold' || lot.numberOfAnimals === 0}
+            >
+              <CircleDollarSign className="h-4 w-4" />
+              Register Sale
+            </Button>
+          </div>
+          
           <Tabs defaultValue="overview" className="mt-6">
             <TabsList className="grid grid-cols-1 w-full">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -137,15 +184,6 @@ export default function LotDetail() {
               <div className="bg-card rounded-lg p-6 border mb-8">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Weight Analysis</h2>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={() => navigate('/weighing')}
-                  >
-                    <Scale className="h-4 w-4" />
-                    Go to Weighing
-                  </Button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <AnimalEvolution lotId={lot.id} />
@@ -159,15 +197,6 @@ export default function LotDetail() {
                 <div className="bg-card rounded-lg p-6 border h-full">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Pasture History</h2>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-2"
-                      onClick={() => setIsPastureTransferDialogOpen(true)}
-                    >
-                      <TreePine className="h-4 w-4" />
-                      Pasture Management
-                    </Button>
                   </div>
                   <PastureHistory lotId={lot.id} />
                 </div>
@@ -175,15 +204,6 @@ export default function LotDetail() {
                 <div className="bg-card rounded-lg p-6 border h-full">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Transfer History</h2>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-2"
-                      onClick={() => setIsTransferDialogOpen(true)}
-                    >
-                      <ArrowLeftRight className="h-4 w-4" />
-                      Transfer Management
-                    </Button>
                   </div>
                   <TransferHistory lotId={lot.id} showFullHistory />
                 </div>
@@ -192,6 +212,10 @@ export default function LotDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <DeathHistory lotId={lot.id} />
                 <NutritionHistory lotId={lot.id} />
+              </div>
+
+              <div className="mb-8">
+                <SaleHistory lotId={lot.id} />
               </div>
             </TabsContent>
           </Tabs>
@@ -239,6 +263,18 @@ export default function LotDetail() {
             </DialogTitle>
           </DialogHeader>
           <TransferManagement initialLotId={lot.id} onTransferComplete={() => setIsTransferDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSaleDialogOpen} onOpenChange={setIsSaleDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CircleDollarSign className="h-5 w-5" />
+              Register Sale
+            </DialogTitle>
+          </DialogHeader>
+          <SaleManagement initialLotId={lot.id} onSaleComplete={() => setIsSaleDialogOpen(false)} />
         </DialogContent>
       </Dialog>
       

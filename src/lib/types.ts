@@ -129,6 +129,18 @@ export interface ConsumptionRecord extends SyncableModel {
   notes?: string;
 }
 
+// Sale record for tracking lot sales
+export interface SaleRecord extends SyncableModel {
+  lotId: string;
+  date: Date;
+  numberOfAnimals: number;
+  finalWeight: number;
+  pricePerArroba: number;
+  totalValue: number;
+  buyer: string;
+  notes?: string;
+}
+
 // Farm Summary Statistics
 export interface FarmSummary {
   totalAnimals: number;

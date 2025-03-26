@@ -20,7 +20,8 @@ import {
   PlantationMaintenance,
   ProductivityRecord,
   PlantationTask,
-  HarvestRecord
+  HarvestRecord,
+  SaleRecord
 } from './types';
 
 interface StoreState {
@@ -43,6 +44,9 @@ interface StoreState {
   productivityRecords: ProductivityRecord[];
   plantationTasks: PlantationTask[];
   harvestRecords: HarvestRecord[];
+  
+  // Sale records collection
+  saleRecords: SaleRecord[];
   
   // Connection status
   isOnline: boolean;
@@ -128,6 +132,11 @@ interface StoreState {
   updateHarvestRecord: (id: string, updates: Partial<HarvestRecord>) => void;
   removeHarvestRecord: (id: string) => void;
   
+  // Actions for sale records
+  addSaleRecord: (record: Omit<SaleRecord, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => void;
+  updateSaleRecord: (id: string, updates: Partial<SaleRecord>) => void;
+  removeSaleRecord: (id: string) => void;
+  
   // Sync actions
   setOnlineStatus: (isOnline: boolean) => void;
   setSyncTime: (time: Date) => void;
@@ -158,6 +167,7 @@ export const useStore = create<StoreState>()(
       productivityRecords: [],
       plantationTasks: [],
       harvestRecords: [],
+      saleRecords: [],
       isOnline: navigator.onLine,
       lastSyncTime: null,
       
@@ -889,6 +899,43 @@ export const useStore = create<StoreState>()(
         }));
       },
       
+      // Actions for sale records
+      addSaleRecord: (record) => {
+        const now = new Date();
+        const newRecord: SaleRecord = {
+          ...record,
+          id: uuidv4(),
+          createdAt: now,
+          updatedAt: now,
+          syncStatus: 'pending'
+        };
+        
+        set(state => ({
+          saleRecords: [...state.saleRecords, newRecord]
+        }));
+      },
+      
+      updateSaleRecord: (id, updates) => {
+        set(state => ({
+          saleRecords: state.saleRecords.map(record => 
+            record.id === id 
+              ? { 
+                  ...record, 
+                  ...updates, 
+                  updatedAt: new Date(), 
+                  syncStatus: 'pending' 
+                } 
+              : record
+          )
+        }));
+      },
+      
+      removeSaleRecord: (id) => {
+        set(state => ({
+          saleRecords: state.saleRecords.filter(record => record.id !== id)
+        }));
+      },
+      
       // Sync actions
       setOnlineStatus: (isOnline) => {
         set({ isOnline });
@@ -991,6 +1038,12 @@ export const useStore = create<StoreState>()(
                   item.id === id ? { ...item, syncStatus: status } : item
                 )
               };
+            case 'saleRecords':
+              return {
+                saleRecords: state.saleRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
             default:
               return {};
           }
@@ -1052,13 +1105,14 @@ export const useStore = create<StoreState>()(
         const pendingProductivityRecords = state.productivityRecords.filter(i => i.syncStatus === 'pending').length;
         const pendingPlantationTasks = state.plantationTasks.filter(i => i.syncStatus === 'pending').length;
         const pendingHarvestRecords = state.harvestRecords.filter(i => i.syncStatus === 'pending').length;
+        const pendingSaleRecords = state.saleRecords.filter(i => i.syncStatus === 'pending').length;
         
         return pendingInventory + pendingLots + pendingPastures + 
                pendingWeighings + pendingConsumptions + 
                pendingSoilAnalyses + pendingMaintenanceRecords + pendingMortalityRecords +
                pendingPlantations + pendingPestControls + pendingPlantationExpenses +
                pendingPlantationMaintenances + pendingProductivityRecords +
-               pendingPlantationTasks + pendingHarvestRecords;
+               pendingPlantationTasks + pendingHarvestRecords + pendingSaleRecords;
       }
     }),
     {
@@ -1080,6 +1134,7 @@ export const useStore = create<StoreState>()(
         productivityRecords: state.productivityRecords,
         plantationTasks: state.plantationTasks,
         harvestRecords: state.harvestRecords,
+        saleRecords: state.saleRecords,
         lastSyncTime: state.lastSyncTime
       })
     }
