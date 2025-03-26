@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
@@ -1041,4 +1042,170 @@ export const useStore = create<StoreState>()(
               };
             case 'consumptions':
               return {
-                consumptions: state.consumptions.map(record
+                consumptions: state.consumptions.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'soilAnalyses':
+              return {
+                soilAnalyses: state.soilAnalyses.map(analysis => 
+                  analysis.id === id ? { ...analysis, syncStatus: status } : analysis
+                )
+              };
+            case 'maintenanceRecords':
+              return {
+                maintenanceRecords: state.maintenanceRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'mortalityRecords':
+              return {
+                mortalityRecords: state.mortalityRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'dietRecords':
+              return {
+                dietRecords: state.dietRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'plantations':
+              return {
+                plantations: state.plantations.map(plantation => 
+                  plantation.id === id ? { ...plantation, syncStatus: status } : plantation
+                )
+              };
+            case 'pestControls':
+              return {
+                pestControls: state.pestControls.map(control => 
+                  control.id === id ? { ...control, syncStatus: status } : control
+                )
+              };
+            case 'plantationExpenses':
+              return {
+                plantationExpenses: state.plantationExpenses.map(expense => 
+                  expense.id === id ? { ...expense, syncStatus: status } : expense
+                )
+              };
+            case 'plantationMaintenances':
+              return {
+                plantationMaintenances: state.plantationMaintenances.map(maintenance => 
+                  maintenance.id === id ? { ...maintenance, syncStatus: status } : maintenance
+                )
+              };
+            case 'productivityRecords':
+              return {
+                productivityRecords: state.productivityRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'plantationTasks':
+              return {
+                plantationTasks: state.plantationTasks.map(task => 
+                  task.id === id ? { ...task, syncStatus: status } : task
+                )
+              };
+            case 'harvestRecords':
+              return {
+                harvestRecords: state.harvestRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            case 'saleRecords':
+              return {
+                saleRecords: state.saleRecords.map(record => 
+                  record.id === id ? { ...record, syncStatus: status } : record
+                )
+              };
+            default:
+              return state;
+          }
+        });
+      },
+      
+      // Utility functions
+      getFarmSummary: () => {
+        const state = get();
+        
+        // Count active lots and animals
+        const activeLots = state.lots.filter(lot => !lot.sold && !lot.archived);
+        const totalAnimals = activeLots.reduce((sum, lot) => sum + lot.numberOfAnimals, 0);
+        
+        // Calculate total area
+        const totalPastureArea = state.pastures.reduce((sum, pasture) => sum + pasture.area, 0);
+        
+        // Get latest weighing data
+        const latestWeighings = state.weighings.sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        ).slice(0, 10);
+        
+        // Count inventory by category
+        const inventoryByCategory = state.inventory.reduce((acc, item) => {
+          const category = item.type || 'other';
+          if (!acc[category]) acc[category] = 0;
+          acc[category]++;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        return {
+          totalLots: activeLots.length,
+          totalAnimals,
+          totalPastureArea,
+          latestWeighings,
+          inventoryByCategory,
+          lastUpdated: new Date()
+        };
+      },
+      
+      getPendingSyncs: () => {
+        const state = get();
+        let count = 0;
+        
+        // Count all entities with pending sync status
+        count += state.inventory.filter(i => i.syncStatus === 'pending').length;
+        count += state.lots.filter(i => i.syncStatus === 'pending').length;
+        count += state.pastures.filter(i => i.syncStatus === 'pending').length;
+        count += state.weighings.filter(i => i.syncStatus === 'pending').length;
+        count += state.consumptions.filter(i => i.syncStatus === 'pending').length;
+        count += state.soilAnalyses.filter(i => i.syncStatus === 'pending').length;
+        count += state.maintenanceRecords.filter(i => i.syncStatus === 'pending').length;
+        count += state.mortalityRecords.filter(i => i.syncStatus === 'pending').length;
+        count += state.plantations.filter(i => i.syncStatus === 'pending').length;
+        count += state.pestControls.filter(i => i.syncStatus === 'pending').length;
+        count += state.plantationExpenses.filter(i => i.syncStatus === 'pending').length;
+        count += state.plantationMaintenances.filter(i => i.syncStatus === 'pending').length;
+        count += state.productivityRecords.filter(i => i.syncStatus === 'pending').length;
+        count += state.plantationTasks.filter(i => i.syncStatus === 'pending').length;
+        count += state.harvestRecords.filter(i => i.syncStatus === 'pending').length;
+        count += state.saleRecords.filter(i => i.syncStatus === 'pending').length;
+        
+        return count;
+      }
+    }),
+    {
+      name: 'farm-manager-storage',
+      partialize: (state) => ({
+        inventory: state.inventory,
+        inventoryTemplates: state.inventoryTemplates,
+        lots: state.lots,
+        pastures: state.pastures,
+        weighings: state.weighings,
+        consumptions: state.consumptions,
+        soilAnalyses: state.soilAnalyses,
+        maintenanceRecords: state.maintenanceRecords,
+        mortalityRecords: state.mortalityRecords,
+        dietRecords: state.dietRecords,
+        plantations: state.plantations,
+        pestControls: state.pestControls,
+        plantationExpenses: state.plantationExpenses,
+        plantationMaintenances: state.plantationMaintenances,
+        productivityRecords: state.productivityRecords,
+        plantationTasks: state.plantationTasks,
+        harvestRecords: state.harvestRecords,
+        saleRecords: state.saleRecords,
+        lastSyncTime: state.lastSyncTime
+      })
+    }
+  )
+);
