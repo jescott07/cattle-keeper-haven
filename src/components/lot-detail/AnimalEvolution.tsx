@@ -67,8 +67,13 @@ export function AnimalEvolution({ lotId }: AnimalEvolutionProps) {
       });
     }
     
-    // Sort by date, oldest first
-    return timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Sort by date, oldest first - this is where the error occurs
+    return timeline.sort((a, b) => {
+      // Ensure both a.date and b.date are Date objects before calling getTime()
+      const timeA = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
+      const timeB = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
+      return timeA - timeB;
+    });
   }, [lot]);
   
   const initialAnimalCount = useMemo(() => {

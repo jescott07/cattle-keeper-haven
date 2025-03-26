@@ -34,7 +34,7 @@ export function PastureHistory({ lotId }: PastureHistoryProps) {
   };
   
   return (
-    <div className="bg-card rounded-lg p-6 border h-full">
+    <div className="rounded-lg p-6 border h-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <TreePine className="h-5 w-5" />
