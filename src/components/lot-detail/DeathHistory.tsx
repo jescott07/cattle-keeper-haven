@@ -1,12 +1,11 @@
 
 import { useMemo, useState } from 'react';
-import { Skull, Plus } from 'lucide-react';
+import { Skull } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { MortalityTracker } from './MortalityTracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MortalityTracker } from './MortalityTracker';
 
 interface DeathHistoryProps {
   lotId: string;
@@ -31,15 +30,6 @@ export function DeathHistory({ lotId }: DeathHistoryProps) {
           <Skull className="h-5 w-5" />
           Death History
         </h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          onClick={() => setIsMortalityDialogOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Add Mortality
-        </Button>
       </div>
       
       {sortedRecords.length > 0 ? (

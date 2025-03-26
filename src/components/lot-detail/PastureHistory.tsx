@@ -1,6 +1,5 @@
 
 import { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TreePine, ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { format } from 'date-fns';
@@ -35,57 +34,56 @@ export function PastureHistory({ lotId }: PastureHistoryProps) {
   };
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
+    <div className="bg-card rounded-lg p-6 border h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
           <TreePine className="h-5 w-5" />
           Pasture History
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {pastureHistory.length > 0 ? (
-          <div className="space-y-3">
-            {pastureHistory.map((transfer, index) => {
-              const completedDate = transfer.completedDate || transfer.scheduledDate;
-              
-              return (
-                <div key={index} className="border rounded-md p-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Completed</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {format(completedDate, 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="font-medium">
-                          {getPastureName(transfer.fromPastureId)}
-                        </span>
-                        <ArrowRight className="h-4 w-4" />
-                        <span className="font-medium">
-                          {getPastureName(transfer.toPastureId)}
-                        </span>
-                      </div>
+        </h2>
+      </div>
+      
+      {pastureHistory.length > 0 ? (
+        <div className="space-y-3">
+          {pastureHistory.map((transfer, index) => {
+            const completedDate = transfer.completedDate || transfer.scheduledDate;
+            
+            return (
+              <div key={index} className="border rounded-md p-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Completed</Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {format(completedDate, 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="font-medium">
+                        {getPastureName(transfer.fromPastureId)}
+                      </span>
+                      <ArrowRight className="h-4 w-4" />
+                      <span className="font-medium">
+                        {getPastureName(transfer.toPastureId)}
+                      </span>
                     </div>
                   </div>
-                  
-                  {transfer.notes && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      {transfer.notes}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No pasture history available for this lot</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                
+                {transfer.notes && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {transfer.notes}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No pasture history available for this lot</p>
+        </div>
+      )}
+    </div>
   );
 }

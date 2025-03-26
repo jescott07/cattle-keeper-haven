@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
@@ -217,19 +216,8 @@ export default function LotDetail() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-card rounded-lg p-6 border h-full">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Pasture History</h2>
-                  </div>
-                  <PastureHistory lotId={lot.id} />
-                </div>
-                
-                <div className="bg-card rounded-lg p-6 border h-full">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Transfer History</h2>
-                  </div>
-                  <TransferHistory lotId={lot.id} showFullHistory />
-                </div>
+                <PastureHistory lotId={lot.id} />
+                <TransferHistory lotId={lot.id} showFullHistory />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -345,3 +333,4 @@ export default function LotDetail() {
     </div>
   );
 }
+
