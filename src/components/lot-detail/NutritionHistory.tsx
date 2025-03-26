@@ -6,9 +6,9 @@ import { Wheat, Plus } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DietManagement } from './DietManagement';
-import { format } from 'date-fns';
+import { format, differenceInDays, min } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { getUnitLabel } from '@/lib/constants';
+import { getUnitLabel, convertUnits } from '@/lib/constants';
 
 interface NutritionHistoryProps {
   lotId: string;
@@ -20,11 +20,48 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
     state.dietRecords.filter(record => record.lotId === lotId) || []
   );
   const inventory = useStore(state => state.inventory);
+  const lots = useStore(state => state.lots);
+
+  // Get lot information for animal count
+  const lot = lots.find(l => l.id === lotId);
 
   // Get item name from inventory
   const getItemName = (itemId: string) => {
     const item = inventory.find(item => item.id === itemId);
     return item ? item.name : 'Unknown Item';
+  };
+
+  // Calculate total consumption for a diet (in kg)
+  const calculateTotalConsumption = (record: any) => {
+    const today = new Date();
+    const endDate = new Date(record.endDate);
+    const startDate = new Date(record.startDate);
+    
+    // Determine which date to use for calculation (today or end date, whichever comes first)
+    const calculationEndDate = endDate > today ? today : endDate;
+    
+    // Check if start date is in the future
+    if (startDate > today) {
+      return 0; // Diet hasn't started yet
+    }
+    
+    // Calculate days the diet has been active until now or end date
+    const daysActive = differenceInDays(calculationEndDate, startDate) + 1;
+    
+    // Use positive days only (in case of data errors)
+    const activeDays = Math.max(0, daysActive);
+    
+    // Calculate total consumption in original unit
+    const totalConsumptionInOriginalUnit = record.totalQuantity * activeDays;
+    
+    // Convert to kg for display
+    const totalConsumptionInKg = convertUnits(
+      totalConsumptionInOriginalUnit, 
+      record.unit, 
+      'kg'
+    );
+    
+    return totalConsumptionInKg;
   };
 
   return (
@@ -69,6 +106,14 @@ export function NutritionHistory({ lotId }: NutritionHistoryProps) {
                     <span className="text-muted-foreground">Total:</span>{' '}
                     <span className="font-medium">{record.totalQuantity} {getUnitLabel(record.unit)}/day</span>
                   </div>
+                </div>
+                
+                <div className="mt-2 p-2 bg-muted/30 rounded-md">
+                  <span className="text-sm font-medium">Total consumption:</span>{' '}
+                  <span className="text-sm">
+                    {calculateTotalConsumption(record).toFixed(2)} kg
+                    {new Date(record.endDate) > new Date() ? ' (ongoing)' : ' (completed)'}
+                  </span>
                 </div>
                 
                 {record.notes && (
