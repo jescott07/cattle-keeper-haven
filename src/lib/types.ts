@@ -159,6 +159,7 @@ export interface DietRecord extends SyncableModel {
   startDate: Date;
   endDate: Date;
   quantityPerAnimal: number;
+  displayQuantityPerAnimal?: number; // Added this property
   totalQuantity: number;
   unit: string;
   notes?: string;
