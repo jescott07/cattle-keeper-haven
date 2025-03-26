@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
@@ -578,7 +579,7 @@ export const useStore = create<StoreState>()(
                       syncStatus: 'pending'
                     } 
                   : i
-              ))
+              )
             }));
           }
         }
@@ -956,7 +957,7 @@ export const useStore = create<StoreState>()(
                   syncStatus: 'pending' 
                 } 
               : record
-          ))
+          )
         }));
       },
       
@@ -993,7 +994,7 @@ export const useStore = create<StoreState>()(
                   syncStatus: 'pending' 
                 } 
               : record
-          ))
+          )
         }));
       },
       
