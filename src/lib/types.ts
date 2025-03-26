@@ -158,8 +158,8 @@ export interface DietRecord extends SyncableModel {
   inventoryItemId: string;
   startDate: Date;
   endDate: Date;
-  quantityPerAnimal: number;
-  displayQuantityPerAnimal?: number; // Added this property
+  quantityPerAnimal: number; // Always in grams
+  displayQuantityPerAnimal: number; // In the selected item's unit for display
   totalQuantity: number;
   unit: string;
   notes?: string;

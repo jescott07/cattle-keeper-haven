@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useStore } from '@/lib/store';
@@ -36,8 +37,8 @@ interface DietRecord {
   inventoryItemId: string;
   startDate: Date;
   endDate: Date;
-  quantityPerAnimal: number; // In grams (or ml for liquids)
-  displayQuantityPerAnimal: number; // In the selected item's unit
+  quantityPerAnimal: number; // Always in grams
+  displayQuantityPerAnimal: number; // In the selected item's unit for display
   totalQuantity: number; // In the selected item's unit
   unit: string;
   notes?: string;
@@ -62,7 +63,7 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // 30 days later
       inventoryItemId: '',
-      quantityPerAnimal: '',
+      quantityPerAnimal: '', // This will always be in grams
       notes: ''
     }
   });
@@ -84,8 +85,11 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
     const qtyPerAnimal = parseFloat(watchQuantityPerAnimal.toString());
     if (isNaN(qtyPerAnimal)) return 0;
     
-    // Calculate total in the selected item's unit
-    return qtyPerAnimal * lot.numberOfAnimals;
+    // Get the total in grams
+    const totalInGrams = qtyPerAnimal * lot.numberOfAnimals;
+    
+    // Convert from grams to the selected item's unit for display
+    return convertUnits(totalInGrams, 'g', selectedItem.unit);
   };
   
   // When inventory item changes, update the selected item
@@ -98,6 +102,18 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
     }
   }, [watchInventoryItemId, inventory]);
   
+  // Calculate the display quantity per animal in the original item unit
+  const getDisplayQuantityPerAnimal = () => {
+    if (!watchQuantityPerAnimal || !selectedItem) return '';
+    
+    const qtyPerAnimal = parseFloat(watchQuantityPerAnimal.toString());
+    if (isNaN(qtyPerAnimal)) return '';
+    
+    // Convert from grams to the selected item's unit for display
+    const displayQty = convertUnits(qtyPerAnimal, 'g', selectedItem.unit);
+    return displayQty.toFixed(4);
+  };
+  
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     
@@ -105,20 +121,17 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
       if (!lot) throw new Error("Lot not found");
       if (!selectedItem) throw new Error("No inventory item selected");
       
-      const quantityPerAnimalInOriginalUnit = parseFloat(data.quantityPerAnimal);
-      if (isNaN(quantityPerAnimalInOriginalUnit) || quantityPerAnimalInOriginalUnit <= 0) {
+      const quantityPerAnimalInGrams = parseFloat(data.quantityPerAnimal);
+      if (isNaN(quantityPerAnimalInGrams) || quantityPerAnimalInGrams <= 0) {
         throw new Error("Invalid quantity per animal");
       }
       
-      // Convert to grams/ml for internal storage (base unit)
-      const quantityPerAnimalInBaseUnit = convertUnits(
-        quantityPerAnimalInOriginalUnit, 
-        selectedItem.unit, 
-        ['g', 'kg', 't'].includes(selectedItem.unit) ? 'g' : 'ml'
+      // Convert to the original unit for display
+      const displayQuantityPerAnimal = convertUnits(
+        quantityPerAnimalInGrams,
+        'g',
+        selectedItem.unit
       );
-      
-      // Keep display value in the original unit for UI
-      const displayQuantityPerAnimal = quantityPerAnimalInOriginalUnit;
       
       // Calculate total quantity in the original unit
       const totalQuantity = calculateTotalQuantity();
@@ -130,7 +143,7 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
         inventoryItemId: data.inventoryItemId,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        quantityPerAnimal: quantityPerAnimalInBaseUnit, // Stored in base unit (g or ml)
+        quantityPerAnimal: quantityPerAnimalInGrams, // Stored in grams
         displayQuantityPerAnimal, // Stored in original unit for display
         totalQuantity,
         unit: selectedItem.unit,
@@ -168,20 +181,6 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
   const handleSelectInventoryItem = (itemId: string) => {
     setValue("inventoryItemId", itemId);
     setIsInventoryPopoverOpen(false);
-  };
-  
-  // Get the appropriate unit description based on the selected item
-  const getUnitDescription = () => {
-    if (!selectedItem) return '';
-    
-    const unit = selectedItem.unit;
-    if (['g', 'kg', 't'].includes(unit)) {
-      return `Enter the amount in ${unit}. For reference: 1 kg = 1000 g, 1 t = 1000 kg.`;
-    } else if (['ml', 'L'].includes(unit)) {
-      return `Enter the amount in ${unit}. For reference: 1 L = 1000 ml.`;
-    } else {
-      return `Enter the amount in ${unit}.`;
-    }
   };
 
   return (
@@ -280,13 +279,14 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
       {selectedItem && (
         <div className="space-y-2">
           <Label htmlFor="quantityPerAnimal">
-            Quantity per animal per day ({selectedItem.unit})
+            Quantity per animal per day (grams)
           </Label>
           <Input
             id="quantityPerAnimal"
             type="number"
             step="0.0001"
             min="0.0001"
+            placeholder="Enter amount in grams"
             {...register('quantityPerAnimal', { 
               required: 'Quantity is required',
               min: { value: 0.0001, message: 'Must be greater than 0' }
@@ -296,15 +296,19 @@ export function DietManagement({ lotId, onComplete }: DietManagementProps) {
             <p className="text-sm text-destructive">{errors.quantityPerAnimal.message}</p>
           )}
           
-          {/* Show unit description */}
+          {/* Show unit conversion info */}
           <p className="text-xs text-muted-foreground">
-            {getUnitDescription()}
+            Always enter the amount in grams, regardless of the item's unit.
           </p>
           
-          {/* Display total quantity */}
+          {/* Display converted quantity */}
           {watchQuantityPerAnimal && lot && selectedItem && !isNaN(parseFloat(watchQuantityPerAnimal.toString())) && (
             <div className="mt-4 p-3 bg-muted/30 rounded-md">
               <div className="text-sm">
+                <span className="font-medium">In original unit:</span>{' '}
+                {getDisplayQuantityPerAnimal()} {selectedItem.unit} per animal per day
+              </div>
+              <div className="text-sm mt-1">
                 <span className="font-medium">Total quantity per day:</span>{' '}
                 {calculateTotalQuantity().toFixed(4)} {selectedItem.unit}
               </div>
