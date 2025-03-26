@@ -1041,4 +1041,4 @@ export const useStore = create<StoreState>()(
               };
             case 'consumptions':
               return {
-                consumptions: state.consumptions.map(record =>
+                consumptions: state.consumptions.map(record
