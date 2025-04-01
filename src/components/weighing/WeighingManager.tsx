@@ -159,23 +159,14 @@ const WeighingManager = () => {
     
     if (weight > 0 && transferCriteria.length > 0) {
       const sortedCriteria = [...transferCriteria].sort((a, b) => a.weightValue - b.weightValue);
-      
       let destinationLotId = '';
       
-      for (let i = 0; i < sortedCriteria.length; i++) {
-        const criterion = sortedCriteria[i];
-        const nextCriterion = sortedCriteria[i + 1];
-        
-        if (i === sortedCriteria.length - 1 || weight <= nextCriterion.weightValue) {
-          if (weight <= criterion.weightValue) {
-            destinationLotId = criterion.destinationLotId;
-            break;
-          }
+      for (const criterion of sortedCriteria) {
+        if (weight >= criterion.weightValue) {
+          destinationLotId = criterion.destinationLotId;
+        } else {
+          break;
         }
-      }
-      
-      if (!destinationLotId && sortedCriteria.length > 0) {
-        destinationLotId = sortedCriteria[sortedCriteria.length - 1].destinationLotId;
       }
       
       const newDestinations = [...animalDestinations];
@@ -391,107 +382,87 @@ const WeighingManager = () => {
                 {transferCriteria.map((criterion, index) => {
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-3 text-sm">
-                        {index === 0 ? (
-                          <div className="flex items-center gap-2">
-                            <span>≤</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.1"
-                              value={criterion.weightValue || ''}
-                              onChange={(e) => handleCriterionChange(
-                                criterion.id, 
-                                'weightValue', 
-                                parseFloat(e.target.value) || 0
-                              )}
-                              className="w-20"
-                            />
-                            <span className="text-sm">kg</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-sm">
-                            <span>{`> ${transferCriteria[index-1]?.weightValue || 0} kg`}</span>
-                            <span className="mx-1">and ≤</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.1"
-                              value={criterion.weightValue || ''}
-                              onChange={(e) => handleCriterionChange(
-                                criterion.id, 
-                                'weightValue', 
-                                parseFloat(e.target.value) || 0
-                              )}
-                              className="w-20"
-                            />
-                            <span>kg</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="col-span-1 text-center">→</div>
-                      <div className="col-span-7">
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={criterion.destinationLotId}
-                            onValueChange={(value) => handleCriterionChange(
+                      <div className="col-span-4">
+                        <div className="flex items-center gap-1 text-sm">
+                          <span>≥</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={criterion.weightValue || ''}
+                            onChange={(e) => handleCriterionChange(
                               criterion.id, 
-                              'destinationLotId', 
-                              value
+                              'weightValue', 
+                              parseFloat(e.target.value) || 0
                             )}
-                          >
-                            <SelectTrigger className="flex-1">
-                              <SelectValue placeholder="Destination lot" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={selectedLotId}>(Current Lot)</SelectItem>
-                              {lots.filter(lot => lot.id !== selectedLotId).map(lot => (
-                                <SelectItem key={lot.id} value={lot.id}>
-                                  {lot.name}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="create-new">
-                                <div className="flex items-center gap-1">
-                                  <Plus className="h-3.5 w-3.5" />
-                                  <span>Create new lot</span>
-                                </div>
+                            className="w-20"
+                          />
+                          <span>kg</span>
+                        </div>
+                      </div>
+                      
+                      <div className="col-span-1 text-center">→</div>
+                      <div className="col-span-6">
+                        <Select
+                          value={criterion.destinationLotId}
+                          onValueChange={(value) => handleCriterionChange(
+                            criterion.id, 
+                            'destinationLotId', 
+                            value
+                          )}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Destination lot" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={selectedLotId}>(Current Lot)</SelectItem>
+                            {lots.filter(lot => lot.id !== selectedLotId).map(lot => (
+                              <SelectItem key={lot.id} value={lot.id}>
+                                {lot.name}
                               </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveCriterion(criterion.id)}
+                            ))}
+                            <SelectItem value="create-new">
+                              <div className="flex items-center gap-1">
+                                <Plus className="h-3.5 w-3.5" />
+                                <span>Create new lot</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveCriterion(criterion.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {criterion.destinationLotId === 'create-new' && (
+                        <div className="col-span-12 mt-2 flex gap-2">
+                          <Input
+                            placeholder="New lot name"
+                            value={newLotName}
+                            onChange={(e) => setNewLotName(e.target.value)}
+                          />
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              if (newLotName.trim()) {
+                                const newLotId = handleCreateNewLot(newLotName);
+                                handleCriterionChange(criterion.id, 'destinationLotId', newLotId);
+                                setNewLotName('');
+                              }
+                            }}
+                            disabled={!newLotName.trim()}
                           >
-                            <Trash className="h-4 w-4" />
+                            Create
                           </Button>
                         </div>
-                        
-                        {criterion.destinationLotId === 'create-new' && (
-                          <div className="mt-2 flex gap-2">
-                            <Input
-                              placeholder="New lot name"
-                              value={newLotName}
-                              onChange={(e) => setNewLotName(e.target.value)}
-                            />
-                            <Button 
-                              size="sm"
-                              onClick={() => {
-                                if (newLotName.trim()) {
-                                  const newLotId = handleCreateNewLot(newLotName);
-                                  handleCriterionChange(criterion.id, 'destinationLotId', newLotId);
-                                  setNewLotName('');
-                                }
-                              }}
-                              disabled={!newLotName.trim()}
-                            >
-                              Create
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -502,8 +473,8 @@ const WeighingManager = () => {
               <div className="flex items-start gap-2 mt-4 p-3 bg-muted rounded-md text-sm">
                 <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <p className="text-muted-foreground">
-                  Animals will be automatically assigned to destination lots based on weight thresholds.
-                  You can review and modify these assignments in the summary after weighing.
+                  Animals will be assigned to destination lots based on weight thresholds.
+                  Animals with weight greater than or equal to the threshold will be transferred to the selected lot.
                 </p>
               </div>
             )}
