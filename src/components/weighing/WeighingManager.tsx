@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -79,18 +78,14 @@ const WeighingManager = () => {
   const handleCreateNewLot = (name: string) => {
     const newLotId = `lot-${Date.now()}`;
     
-    // Fixed: Removed 'id' from the object passed to addLot as it's excluded in the type
+    // Fixed: Removed both id and syncStatus as they're excluded in the type
     addLot({
       name,
       numberOfAnimals: 0, // Will be populated as animals are transferred
       source: "other",
       status: "active",
       purchaseDate: new Date(),
-      currentPastureId: "",
-      syncStatus: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      plannedTransfers: []
+      currentPastureId: ""
     });
     
     toast({
@@ -313,8 +308,8 @@ const WeighingManager = () => {
                   index, 
                   record.weight, 
                   record.breed, 
-                  // Fixed: Use optional chaining to safely access notes property
-                  record.notes
+                  // Fixed: Use type assertion since we know AnimalRecord has notes property
+                  (record as AnimalRecord).notes
                 );
               }}
               originLotId=""
