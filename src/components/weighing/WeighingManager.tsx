@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -411,37 +412,87 @@ const WeighingManager = () => {
                   
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-5 text-sm">
-                        {rangeDisplay}
+                      <div className="col-span-3 text-sm">
+                        {index === 0 ? (
+                          <div className="flex items-center gap-2">
+                            <span>≤</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              value={criterion.weightValue || ''}
+                              onChange={(e) => handleCriterionChange(
+                                criterion.id, 
+                                'weightValue', 
+                                parseFloat(e.target.value) || 0
+                              )}
+                              className="w-20"
+                            />
+                            <span className="text-sm">kg</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-sm">
+                            <span>{`> ${transferCriteria[index-1]?.weightValue || 0} kg`}</span>
+                            {index !== transferCriteria.length - 1 && (
+                              <>
+                                <span className="mx-1">and ≤</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  value={criterion.weightValue || ''}
+                                  onChange={(e) => handleCriterionChange(
+                                    criterion.id, 
+                                    'weightValue', 
+                                    parseFloat(e.target.value) || 0
+                                  )}
+                                  className="w-20"
+                                />
+                                <span>kg</span>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="col-span-2 text-center">→</div>
-                      <div className="col-span-4">
-                        <Select
-                          value={criterion.destinationLotId}
-                          onValueChange={(value) => handleCriterionChange(
-                            criterion.id, 
-                            'destinationLotId', 
-                            value
-                          )}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Destination lot" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={selectedLotId}>(Current Lot)</SelectItem>
-                            {lots.filter(lot => lot.id !== selectedLotId).map(lot => (
-                              <SelectItem key={lot.id} value={lot.id}>
-                                {lot.name}
+                      <div className="col-span-1 text-center">→</div>
+                      <div className="col-span-7">
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={criterion.destinationLotId}
+                            onValueChange={(value) => handleCriterionChange(
+                              criterion.id, 
+                              'destinationLotId', 
+                              value
+                            )}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Destination lot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={selectedLotId}>(Current Lot)</SelectItem>
+                              {lots.filter(lot => lot.id !== selectedLotId).map(lot => (
+                                <SelectItem key={lot.id} value={lot.id}>
+                                  {lot.name}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="create-new">
+                                <div className="flex items-center gap-1">
+                                  <Plus className="h-3.5 w-3.5" />
+                                  <span>Create new lot</span>
+                                </div>
                               </SelectItem>
-                            ))}
-                            <SelectItem value="create-new">
-                              <div className="flex items-center gap-1">
-                                <Plus className="h-3.5 w-3.5" />
-                                <span>Create new lot</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                            </SelectContent>
+                          </Select>
+                          
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveCriterion(criterion.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
                         
                         {criterion.destinationLotId === 'create-new' && (
                           <div className="mt-2 flex gap-2">
@@ -466,42 +517,6 @@ const WeighingManager = () => {
                           </div>
                         )}
                       </div>
-                      <div className="col-span-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveCriterion(criterion.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      {index < transferCriteria.length - 1 ? (
-                        <div className="col-span-12 flex gap-2 items-center mt-1">
-                          <Label className="text-sm">Weight threshold:</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.1"
-                            value={criterion.weightValue || ''}
-                            onChange={(e) => handleCriterionChange(
-                              criterion.id, 
-                              'weightValue', 
-                              parseFloat(e.target.value) || 0
-                            )}
-                            placeholder="Weight (kg)"
-                            className="w-32"
-                          />
-                          <span className="text-sm text-muted-foreground">kg</span>
-                        </div>
-                      ) : (
-                        <div className="col-span-12">
-                          <p className="text-xs text-muted-foreground mt-1">
-                            All animals over {transferCriteria[index-1]?.weightValue || 0} kg will go to this lot
-                          </p>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
