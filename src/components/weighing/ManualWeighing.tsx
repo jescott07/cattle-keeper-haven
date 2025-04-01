@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Check, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -37,6 +36,8 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const [currentBreed, setCurrentBreed] = useState<BreedType>('nelore');
   const [currentNotes, setCurrentNotes] = useState('');
   const [showSummary, setShowSummary] = useState(false);
+  const [partialWeighing, setPartialWeighing] = useState(false);
+  const [weighedAnimalsCount, setWeighedAnimalsCount] = useState(0);
   
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
   const activeLots = lots.filter(lot => lot.status === 'active');
@@ -52,6 +53,8 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       setCurrentBreed(selectedLot.breed || 'nelore');
       setCurrentNotes('');
       setCurrentAnimalIndex(0);
+      setWeighedAnimalsCount(0);
+      setPartialWeighing(false);
     }
   }, [selectedLotId, selectedLot]);
 
@@ -85,6 +88,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setAnimalWeights(newWeights);
     setAnimalBreeds(newBreeds);
     setAnimalNotes(newNotes);
+    setWeighedAnimalsCount(weighedAnimalsCount + 1);
     
     // Clear inputs for next animal
     setCurrentWeight('');
@@ -94,27 +98,56 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setCurrentAnimalIndex(currentAnimalIndex + 1);
   };
 
+  const skipAnimal = () => {
+    // Skip current animal (will use average weight at the end)
+    setCurrentAnimalIndex(currentAnimalIndex + 1);
+    setPartialWeighing(true);
+  };
+
   const finishWeighingSession = () => {
     if (!selectedLot) return;
     
     // Calculate total and average weights
     const validWeights = animalWeights.filter(w => w > 0);
+    const totalWeighed = validWeights.length;
+    
+    if (totalWeighed === 0) {
+      toast({
+        title: "No weights recorded",
+        description: "Please record at least one animal weight",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0);
-    const averageWeight = totalWeight / validWeights.length;
+    const averageWeight = totalWeight / totalWeighed;
+    
+    // For animals that weren't weighed, assign the average weight
+    const totalAnimals = selectedLot.numberOfAnimals;
+    const nonWeighedAnimals = totalAnimals - totalWeighed;
+    
+    // Total estimated weight includes measured animals + non-measured animals at average weight
+    const estimatedTotalWeight = totalWeight + (nonWeighedAnimals * averageWeight);
     
     // Create weight record
     addWeighingRecord({
       date: new Date(),
       lotId: selectedLotId,
-      numberOfAnimals: validWeights.length,
-      totalWeight,
-      averageWeight,
-      notes: `Manual weighing of ${validWeights.length} animals`
+      numberOfAnimals: totalAnimals,
+      totalWeight: estimatedTotalWeight,
+      averageWeight: estimatedTotalWeight / totalAnimals,
+      notes: `Manual weighing of ${totalWeighed} animals (${nonWeighedAnimals} estimated at average weight)`
     });
+    
+    let message = `Successfully recorded weights for ${totalWeighed} animals`;
+    if (nonWeighedAnimals > 0) {
+      message += `. ${nonWeighedAnimals} animals were estimated at the average weight (${averageWeight.toFixed(1)} kg)`;
+    }
     
     toast({
       title: "Weighing complete",
-      description: `Successfully recorded weights for ${validWeights.length} animals`,
+      description: message,
     });
     
     setShowSummary(true);
@@ -130,15 +163,19 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setCurrentBreed('nelore');
     setCurrentNotes('');
     setShowSummary(false);
+    setPartialWeighing(false);
+    setWeighedAnimalsCount(0);
   };
 
   // Show summary after weighing
   if (showSummary) {
     return (
       <WeighingSessionSummary 
-        weights={animalWeights}
+        weights={animalWeights.filter(w => w > 0)}
         date={new Date()}
         onNewSession={resetWeighing}
+        totalAnimals={selectedLot?.numberOfAnimals || 0}
+        isPartialWeighing={partialWeighing}
       />
     );
   }
@@ -209,7 +246,14 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
           </span>
         </div>
         <CardTitle className="mt-4">Record Weight</CardTitle>
-        <CardDescription>Recording weights for lot: {selectedLot?.name}</CardDescription>
+        <CardDescription>
+          Recording weights for lot: {selectedLot?.name}
+          {weighedAnimalsCount > 0 && (
+            <span className="block mt-1 text-sm">
+              {weighedAnimalsCount} animals weighed so far
+            </span>
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
@@ -259,21 +303,30 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
           />
         </div>
       </CardContent>
-      <CardFooter className="flex gap-2">
+      <CardFooter className="flex flex-col gap-2">
+        <div className="flex gap-2 w-full">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => skipAnimal()}
+          >
+            Skip Animal
+          </Button>
+          <Button 
+            className="flex-1"
+            onClick={recordCurrentAnimal}
+            disabled={!currentWeight || isNaN(parseFloat(currentWeight)) || parseFloat(currentWeight) <= 0}
+          >
+            <ArrowRight className="mr-2 h-4 w-4" />
+            Next Animal
+          </Button>
+        </div>
         <Button 
-          variant="outline" 
-          className="flex-1"
-          onClick={() => finishWeighingSession()}
+          variant="secondary" 
+          className="w-full"
+          onClick={finishWeighingSession}
         >
           End Session
-        </Button>
-        <Button 
-          className="flex-1"
-          onClick={recordCurrentAnimal}
-          disabled={!currentWeight || isNaN(parseFloat(currentWeight)) || parseFloat(currentWeight) <= 0}
-        >
-          <ArrowRight className="mr-2 h-4 w-4" />
-          Next Animal
         </Button>
       </CardFooter>
     </Card>
