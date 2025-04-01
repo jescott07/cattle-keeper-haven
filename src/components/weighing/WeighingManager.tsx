@@ -32,6 +32,13 @@ interface TransferCriterion {
   destinationLotId: string;
 }
 
+// Define the AnimalRecord type to include notes property
+interface AnimalRecord {
+  weight: number;
+  breed: BreedType;
+  notes?: string; // Make notes optional
+}
+
 const WeighingManager = () => {
   const { toast } = useToast();
   const addLot = useStore((state) => state.addLot);
@@ -71,18 +78,19 @@ const WeighingManager = () => {
   
   const handleCreateNewLot = (name: string) => {
     const newLotId = `lot-${Date.now()}`;
+    
+    // Fixed: Removed 'id' from the object passed to addLot as it's excluded in the type
     addLot({
-      id: newLotId,
       name,
       numberOfAnimals: 0, // Will be populated as animals are transferred
       source: "other",
       status: "active",
       purchaseDate: new Date(),
+      currentPastureId: "",
+      syncStatus: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
-      currentPastureId: "",
-      plannedTransfers: [],
-      syncStatus: 'pending'
+      plannedTransfers: []
     });
     
     toast({
@@ -305,6 +313,7 @@ const WeighingManager = () => {
                   index, 
                   record.weight, 
                   record.breed, 
+                  // Fixed: Use optional chaining to safely access notes property
                   record.notes
                 );
               }}
