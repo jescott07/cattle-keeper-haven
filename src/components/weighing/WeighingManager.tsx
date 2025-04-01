@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -383,20 +382,19 @@ const WeighingManager = () => {
             ) : (
               <div className="space-y-3">
                 {sortedCriteria.map((criterion, index) => {
-                  // Get the previous threshold value for the upper bound
                   const prevCriterion = index > 0 ? sortedCriteria[index - 1] : null;
                   
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-5">
                         <div className="flex items-center gap-1 text-sm">
-                          {index > 0 ? (
+                          {prevCriterion !== null && (
                             <>
                               <span className="text-muted-foreground">&lt;</span>
                               <span className="text-muted-foreground">{criterion.weightValue}</span>
                               <span className="text-muted-foreground mx-1">and</span>
                             </>
-                          ) : null}
+                          )}
                           <span>≥</span>
                           <Input
                             type="number"
@@ -408,7 +406,7 @@ const WeighingManager = () => {
                               handleCriterionChange(criterion.id, 'weightValue', value);
                             }}
                             className="w-20"
-                            key={`weight-input-${criterion.id}`} // Add key to ensure component independence
+                            key={`weight-input-${criterion.id}`}
                           />
                           <span>kg</span>
                         </div>
