@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -300,6 +301,9 @@ const WeighingManager = () => {
     );
   }
   
+  // Get sorted criteria for display
+  const sortedCriteria = [...transferCriteria].sort((a, b) => a.weightValue - b.weightValue);
+  
   return (
     <Card>
       <CardHeader>
@@ -379,11 +383,19 @@ const WeighingManager = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {transferCriteria.map((criterion, index) => {
+                {sortedCriteria.map((criterion, index) => {
+                  const previousThreshold = index > 0 ? sortedCriteria[index - 1].weightValue : 0;
+                  
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-4">
+                      <div className="col-span-5">
                         <div className="flex items-center gap-1 text-sm">
+                          {index > 0 && (
+                            <>
+                              <span className="text-muted-foreground">&lt; {criterion.weightValue}</span>
+                              <span className="text-muted-foreground mx-1">and</span>
+                            </>
+                          )}
                           <span>≥</span>
                           <Input
                             type="number"
@@ -402,7 +414,7 @@ const WeighingManager = () => {
                       </div>
                       
                       <div className="col-span-1 text-center">→</div>
-                      <div className="col-span-6">
+                      <div className="col-span-5">
                         <Select
                           value={criterion.destinationLotId}
                           onValueChange={(value) => handleCriterionChange(
