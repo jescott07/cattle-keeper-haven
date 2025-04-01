@@ -52,36 +52,25 @@ const WeighingManager = () => {
   const [animalDestinations, setAnimalDestinations] = useState<string[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [newLotName, setNewLotName] = useState<string>('');
+  const [isWeighing, setIsWeighing] = useState(false);
   
   const activeLots = lots.filter(lot => lot.status === 'active');
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
   
   const handleSelectLot = (value: string) => {
     if (value === 'new-lot') {
-      // User selected to create a new lot
       return;
     }
     
     setSelectedLotId(value);
-    
-    if (value) {
-      const lot = lots.find(l => l.id === value);
-      if (lot) {
-        setAnimalWeights(Array(lot.numberOfAnimals).fill(0));
-        setAnimalBreeds(Array(lot.numberOfAnimals).fill(lot.breed || 'nelore'));
-        setAnimalNotes(Array(lot.numberOfAnimals).fill(''));
-        setAnimalDestinations(Array(lot.numberOfAnimals).fill(''));
-      }
-    }
   };
   
   const handleCreateNewLot = (name: string) => {
     const newLotId = `lot-${Date.now()}`;
     
-    // Fixed: Removed both id and syncStatus as they're excluded in the type
     addLot({
       name,
-      numberOfAnimals: 0, // Will be populated as animals are transferred
+      numberOfAnimals: 0,
       source: "other",
       status: "active",
       purchaseDate: new Date(),
@@ -97,12 +86,10 @@ const WeighingManager = () => {
   };
 
   const handleAddCriterion = () => {
-    // Get the highest weight value from existing criteria
     const highestWeightValue = transferCriteria.length > 0 
       ? Math.max(...transferCriteria.map(c => c.weightValue))
       : 0;
       
-    // Default next weight is 100kg more than highest (or 200 if first)
     const defaultNextWeight = highestWeightValue + (highestWeightValue > 0 ? 100 : 200);
     
     setTransferCriteria([
@@ -131,7 +118,6 @@ const WeighingManager = () => {
       return c;
     });
     
-    // Sort the criteria by weight value (ascending)
     newCriteria.sort((a, b) => a.weightValue - b.weightValue);
     
     setTransferCriteria(newCriteria);
@@ -147,12 +133,13 @@ const WeighingManager = () => {
       return;
     }
 
-    // Proceed with the selected lot's number of animals
     const totalAnimals = selectedLot.numberOfAnimals;
     setAnimalWeights(Array(totalAnimals).fill(0));
     setAnimalBreeds(Array(totalAnimals).fill(selectedLot.breed || 'nelore'));
     setAnimalNotes(Array(totalAnimals).fill(''));
     setAnimalDestinations(Array(totalAnimals).fill(''));
+    
+    setIsWeighing(true);
   };
   
   const updateWeight = (index: number, weight: number, breed?: BreedType, notes?: string) => {
@@ -172,18 +159,15 @@ const WeighingManager = () => {
       setAnimalNotes(newNotes);
     }
     
-    // Determine destination lot based on transfer criteria
     if (weight > 0 && transferCriteria.length > 0) {
       const sortedCriteria = [...transferCriteria].sort((a, b) => a.weightValue - b.weightValue);
       
-      // Find the appropriate destination based on weight thresholds
       let destinationLotId = '';
       
       for (let i = 0; i < sortedCriteria.length; i++) {
         const criterion = sortedCriteria[i];
         const nextCriterion = sortedCriteria[i + 1];
         
-        // If this is the last criterion, or weight is less than next threshold
         if (i === sortedCriteria.length - 1 || weight <= nextCriterion.weightValue) {
           if (weight <= criterion.weightValue) {
             destinationLotId = criterion.destinationLotId;
@@ -192,7 +176,6 @@ const WeighingManager = () => {
         }
       }
       
-      // If weight is greater than all criteria thresholds
       if (!destinationLotId && sortedCriteria.length > 0) {
         destinationLotId = sortedCriteria[sortedCriteria.length - 1].destinationLotId;
       }
@@ -216,15 +199,12 @@ const WeighingManager = () => {
       return;
     }
     
-    // Average weight of actually weighed animals
     const avgWeight = validWeights.reduce((sum, w) => sum + w, 0) / validWeights.length;
     
-    // For each destination lot, track how many animals and total weight
     const destinationLots: Record<string, {count: number, totalWeight: number}> = {};
     
-    // Process animal records with destinations
     for (let i = 0; i < animalWeights.length; i++) {
-      const weight = animalWeights[i] > 0 ? animalWeights[i] : avgWeight; // Use measured weight or average
+      const weight = animalWeights[i] > 0 ? animalWeights[i] : avgWeight;
       const destinationId = animalDestinations[i] || '';
       
       if (!destinationLots[destinationId]) {
@@ -235,7 +215,6 @@ const WeighingManager = () => {
       destinationLots[destinationId].totalWeight += weight;
     }
     
-    // Record the weighing
     addWeighingRecord({
       date: new Date(),
       lotId: selectedLotId,
@@ -261,6 +240,7 @@ const WeighingManager = () => {
     setAnimalDestinations([]);
     setTransferCriteria([]);
     setShowSummary(false);
+    setIsWeighing(false);
   };
   
   if (showSummary) {
@@ -280,7 +260,7 @@ const WeighingManager = () => {
     );
   }
   
-  if (animalWeights.length > 0) {
+  if (isWeighing && animalWeights.length > 0) {
     const validWeights = animalWeights.filter(w => w > 0);
     
     return (
@@ -308,7 +288,6 @@ const WeighingManager = () => {
                   index, 
                   record.weight, 
                   record.breed, 
-                  // Fixed: Use type assertion since we know AnimalRecord has notes property
                   (record as AnimalRecord).notes
                 );
               }}
@@ -412,7 +391,6 @@ const WeighingManager = () => {
             ) : (
               <div className="space-y-3">
                 {transferCriteria.map((criterion, index) => {
-                  // Calculate the range display
                   let rangeDisplay = '';
                   if (index === 0) {
                     rangeDisplay = `≤ ${criterion.weightValue} kg`;
@@ -490,7 +468,6 @@ const WeighingManager = () => {
                         </Button>
                       </div>
                       
-                      {/* Weight threshold input */}
                       {index < transferCriteria.length - 1 ? (
                         <div className="col-span-12 flex gap-2 items-center mt-1">
                           <Label className="text-sm">Weight threshold:</Label>
