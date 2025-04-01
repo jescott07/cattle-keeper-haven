@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -301,7 +300,6 @@ const WeighingManager = () => {
     );
   }
   
-  // Get sorted criteria for display
   const sortedCriteria = [...transferCriteria].sort((a, b) => a.weightValue - b.weightValue);
   
   return (
@@ -384,7 +382,8 @@ const WeighingManager = () => {
             ) : (
               <div className="space-y-3">
                 {sortedCriteria.map((criterion, index) => {
-                  const previousThreshold = index > 0 ? sortedCriteria[index - 1].weightValue : 0;
+                  const previousValue = index > 0 ? sortedCriteria[index - 1].weightValue : null;
+                  const nextValue = index < sortedCriteria.length - 1 ? sortedCriteria[index + 1].weightValue : null;
                   
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
@@ -392,7 +391,8 @@ const WeighingManager = () => {
                         <div className="flex items-center gap-1 text-sm">
                           {index > 0 && (
                             <>
-                              <span className="text-muted-foreground">&lt; {criterion.weightValue}</span>
+                              <span className="text-muted-foreground">&lt;</span>
+                              <span className="text-muted-foreground">{criterion.weightValue}</span>
                               <span className="text-muted-foreground mx-1">and</span>
                             </>
                           )}
