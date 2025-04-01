@@ -382,19 +382,19 @@ const WeighingManager = () => {
             ) : (
               <div className="space-y-3">
                 {sortedCriteria.map((criterion, index) => {
-                  const prevCriterion = index > 0 ? sortedCriteria[index - 1] : null;
+                  const prevValue = index > 0 ? sortedCriteria[index - 1].weightValue : null;
                   
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-5">
                         <div className="flex items-center gap-1 text-sm">
-                          {prevCriterion !== null && (
+                          {prevValue !== null ? (
                             <>
                               <span className="text-muted-foreground">&lt;</span>
-                              <span className="text-muted-foreground">{criterion.weightValue}</span>
+                              <span className="text-muted-foreground">{prevValue}</span>
                               <span className="text-muted-foreground mx-1">and</span>
                             </>
-                          )}
+                          ) : null}
                           <span>≥</span>
                           <Input
                             type="number"
