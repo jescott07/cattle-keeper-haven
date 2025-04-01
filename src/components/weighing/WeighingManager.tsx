@@ -55,7 +55,6 @@ const WeighingManager = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [newLotName, setNewLotName] = useState<string>('');
   const [isWeighing, setIsWeighing] = useState(false);
-  const [newCriterionWeightValue, setNewCriterionWeightValue] = useState<number>(0);
   
   const activeLots = lots.filter(lot => lot.status === 'active');
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
@@ -93,12 +92,10 @@ const WeighingManager = () => {
       ...transferCriteria,
       {
         id: `criterion-${Date.now()}`,
-        weightValue: newCriterionWeightValue || 0,
+        weightValue: 0,
         destinationLotId: ''
       }
     ]);
-    
-    setNewCriterionWeightValue(0);
   };
   
   const handleRemoveCriterion = (id: string) => {
@@ -154,7 +151,7 @@ const WeighingManager = () => {
       setAnimalBreeds(newBreeds);
     }
     
-    if (notes) {
+    if (notes !== undefined) {
       const newNotes = [...animalNotes];
       newNotes[index] = notes || '';
       setAnimalNotes(newNotes);
@@ -368,27 +365,16 @@ const WeighingManager = () => {
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <Label>Transfer Criteria</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="Weight threshold (kg)"
-                value={newCriterionWeightValue || ''}
-                onChange={(e) => setNewCriterionWeightValue(parseFloat(e.target.value) || 0)}
-                className="w-44"
-              />
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={handleAddCriterion}
-                className="gap-1 whitespace-nowrap"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Threshold
-              </Button>
-            </div>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddCriterion}
+              className="gap-1 whitespace-nowrap"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Threshold
+            </Button>
           </div>
           
           <div className="bg-muted/40 p-4 rounded-md">
@@ -403,15 +389,6 @@ const WeighingManager = () => {
             ) : (
               <div className="space-y-3">
                 {transferCriteria.map((criterion, index) => {
-                  let rangeDisplay = '';
-                  if (index === 0) {
-                    rangeDisplay = `≤ ${criterion.weightValue} kg`;
-                  } else if (index === transferCriteria.length - 1) {
-                    rangeDisplay = `> ${transferCriteria[index-1].weightValue} kg`;
-                  } else {
-                    rangeDisplay = `> ${transferCriteria[index-1]?.weightValue || 0} kg and ≤ ${criterion.weightValue} kg`;
-                  }
-                  
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-3 text-sm">
@@ -435,24 +412,20 @@ const WeighingManager = () => {
                         ) : (
                           <div className="flex items-center gap-1 text-sm">
                             <span>{`> ${transferCriteria[index-1]?.weightValue || 0} kg`}</span>
-                            {index !== transferCriteria.length - 1 && (
-                              <>
-                                <span className="mx-1">and ≤</span>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.1"
-                                  value={criterion.weightValue || ''}
-                                  onChange={(e) => handleCriterionChange(
-                                    criterion.id, 
-                                    'weightValue', 
-                                    parseFloat(e.target.value) || 0
-                                  )}
-                                  className="w-20"
-                                />
-                                <span>kg</span>
-                              </>
-                            )}
+                            <span className="mx-1">and ≤</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              value={criterion.weightValue || ''}
+                              onChange={(e) => handleCriterionChange(
+                                criterion.id, 
+                                'weightValue', 
+                                parseFloat(e.target.value) || 0
+                              )}
+                              className="w-20"
+                            />
+                            <span>kg</span>
                           </div>
                         )}
                       </div>
