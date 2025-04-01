@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { addDays, format } from 'date-fns';
@@ -13,11 +12,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { TransferCriteria, TransferCriterion } from './TransferCriteria';
 import { AnimalWeighingRecord } from './AnimalWeighingRecord';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
 import { Info } from 'lucide-react';
+import { BreedType } from '@/lib/types';
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -32,7 +33,9 @@ const WeighingManager = () => {
   const [lotName, setLotName] = useState('');
   const lots = useStore(state => state.lots);
   const [transferCriteria, setTransferCriteria] = useState<TransferCriterion[]>([]);
-  
+  const [animalBreeds, setAnimalBreeds] = useState<BreedType[]>([]);
+  const [animalNotes, setAnimalNotes] = useState<string[]>([]);
+
   const createNewLot = () => {
     if (!lotName.trim()) {
       toast({
@@ -43,7 +46,6 @@ const WeighingManager = () => {
       return;
     }
     
-    // Calculate average weight for measured animals
     const validWeights = animalWeights.filter(w => w > 0);
     if (validWeights.length === 0) {
       toast({
@@ -76,7 +78,6 @@ const WeighingManager = () => {
   };
   
   const recordWeighing = () => {
-    // Calculate average weight for measured animals
     const validWeights = animalWeights.filter(w => w > 0);
     if (validWeights.length === 0) {
       toast({
@@ -90,7 +91,6 @@ const WeighingManager = () => {
     const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0);
     const avgWeight = totalWeight / validWeights.length;
     
-    // Calculate total estimated weight
     const nonWeighedAnimals = numberOfAnimals - validWeights.length;
     const estimatedAdditionalWeight = nonWeighedAnimals * avgWeight;
     const totalEstimatedWeight = totalWeight + estimatedAdditionalWeight;
@@ -125,21 +125,32 @@ const WeighingManager = () => {
       return;
     }
     
-    // Ask how many animals will actually be weighed
     setActualNumToWeigh(numberOfAnimals);
-    
-    // Initialize weights array based on how many will be weighed
     setAnimalWeights(Array(actualNumToWeigh).fill(0));
   };
   
-  const updateWeight = (index: number, weight: number) => {
+  const updateWeight = (index: number, weight: number, breed?: BreedType, notes?: string) => {
     const newWeights = [...animalWeights];
     newWeights[index] = weight;
     setAnimalWeights(newWeights);
+    
+    if (breed) {
+      const newBreeds = [...animalBreeds];
+      newBreeds[index] = breed;
+      setAnimalBreeds(newBreeds);
+    }
+    
+    if (notes) {
+      const newNotes = [...animalNotes];
+      newNotes[index] = notes;
+      setAnimalNotes(newNotes);
+    }
   };
   
   const resetWeighing = () => {
     setAnimalWeights([]);
+    setAnimalBreeds([]);
+    setAnimalNotes([]);
     setNumberOfAnimals(0);
     setActualNumToWeigh(0);
     setSelectedDestinationId('');
@@ -160,6 +171,8 @@ const WeighingManager = () => {
         onNewSession={resetWeighing}
         totalAnimals={numberOfAnimals}
         isPartialWeighing={animalWeights.filter(w => w > 0).length < numberOfAnimals}
+        animalBreeds={animalBreeds}
+        animalNotes={animalNotes}
       />
     );
   }
@@ -188,7 +201,12 @@ const WeighingManager = () => {
             <AnimalWeighingRecord
               key={index}
               onRecordSave={(record) => {
-                updateWeight(index, record.weight);
+                updateWeight(
+                  index, 
+                  record.weight, 
+                  record.breed, 
+                  record.notes
+                );
               }}
               originLotId=""
               sourceLotName={`Animal ${index + 1}`}

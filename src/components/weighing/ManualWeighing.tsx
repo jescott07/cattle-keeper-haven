@@ -42,7 +42,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
   const activeLots = lots.filter(lot => lot.status === 'active');
   
-  // Initialize arrays when lot is selected
   useEffect(() => {
     if (selectedLot) {
       const totalAnimals = selectedLot.numberOfAnimals;
@@ -58,7 +57,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     }
   }, [selectedLotId, selectedLot]);
 
-  // Check if session is complete
   useEffect(() => {
     if (selectedLot && currentAnimalIndex >= selectedLot.numberOfAnimals) {
       finishWeighingSession();
@@ -76,7 +74,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       return;
     }
 
-    // Record current animal
     const newWeights = [...animalWeights];
     const newBreeds = [...animalBreeds];
     const newNotes = [...animalNotes];
@@ -90,16 +87,13 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setAnimalNotes(newNotes);
     setWeighedAnimalsCount(weighedAnimalsCount + 1);
     
-    // Clear inputs for next animal
     setCurrentWeight('');
     setCurrentNotes('');
     
-    // Move to next animal
     setCurrentAnimalIndex(currentAnimalIndex + 1);
   };
 
   const skipAnimal = () => {
-    // Skip current animal (will use average weight at the end)
     setCurrentAnimalIndex(currentAnimalIndex + 1);
     setPartialWeighing(true);
   };
@@ -107,7 +101,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const finishWeighingSession = () => {
     if (!selectedLot) return;
     
-    // Calculate total and average weights
     const validWeights = animalWeights.filter(w => w > 0);
     const totalWeighed = validWeights.length;
     
@@ -123,14 +116,11 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0);
     const averageWeight = totalWeight / totalWeighed;
     
-    // For animals that weren't weighed, assign the average weight
     const totalAnimals = selectedLot.numberOfAnimals;
     const nonWeighedAnimals = totalAnimals - totalWeighed;
     
-    // Total estimated weight includes measured animals + non-measured animals at average weight
     const estimatedTotalWeight = totalWeight + (nonWeighedAnimals * averageWeight);
     
-    // Create weight record
     addWeighingRecord({
       date: new Date(),
       lotId: selectedLotId,
@@ -167,7 +157,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setWeighedAnimalsCount(0);
   };
 
-  // Show summary after weighing
   if (showSummary) {
     return (
       <WeighingSessionSummary 
@@ -176,11 +165,12 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
         onNewSession={resetWeighing}
         totalAnimals={selectedLot?.numberOfAnimals || 0}
         isPartialWeighing={partialWeighing}
+        animalBreeds={animalBreeds}
+        animalNotes={animalNotes}
       />
     );
   }
 
-  // Show lot selection if no lot selected yet
   if (!selectedLotId) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
@@ -228,7 +218,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     );
   }
 
-  // Animal weighing form
   return (
     <Card className="w-full max-w-2xl mx-auto animate-fade-in">
       <CardHeader>
