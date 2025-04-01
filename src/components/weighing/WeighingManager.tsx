@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -53,6 +54,7 @@ const WeighingManager = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [newLotName, setNewLotName] = useState<string>('');
   const [isWeighing, setIsWeighing] = useState(false);
+  const [newCriterionWeightValue, setNewCriterionWeightValue] = useState<number>(0);
   
   const activeLots = lots.filter(lot => lot.status === 'active');
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
@@ -86,20 +88,18 @@ const WeighingManager = () => {
   };
 
   const handleAddCriterion = () => {
-    const highestWeightValue = transferCriteria.length > 0 
-      ? Math.max(...transferCriteria.map(c => c.weightValue))
-      : 0;
-      
-    const defaultNextWeight = highestWeightValue + (highestWeightValue > 0 ? 100 : 200);
-    
+    // Default to 0 instead of predefined 200 or calculated value
     setTransferCriteria([
       ...transferCriteria,
       {
         id: `criterion-${Date.now()}`,
-        weightValue: defaultNextWeight,
+        weightValue: newCriterionWeightValue || 0,
         destinationLotId: ''
       }
     ]);
+    
+    // Reset the new criterion weight value field
+    setNewCriterionWeightValue(0);
   };
   
   const handleRemoveCriterion = (id: string) => {
@@ -118,7 +118,10 @@ const WeighingManager = () => {
       return c;
     });
     
-    newCriteria.sort((a, b) => a.weightValue - b.weightValue);
+    // Only sort if we're changing weight values
+    if (field === 'weightValue') {
+      newCriteria.sort((a, b) => a.weightValue - b.weightValue);
+    }
     
     setTransferCriteria(newCriteria);
   };
@@ -288,7 +291,7 @@ const WeighingManager = () => {
                   index, 
                   record.weight, 
                   record.breed, 
-                  (record as AnimalRecord).notes
+                  record.notes
                 );
               }}
               originLotId=""
@@ -367,16 +370,27 @@ const WeighingManager = () => {
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <Label>Transfer Criteria</Label>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
-              onClick={handleAddCriterion}
-              className="gap-1"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Weight Threshold
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="Weight threshold (kg)"
+                value={newCriterionWeightValue || ''}
+                onChange={(e) => setNewCriterionWeightValue(parseFloat(e.target.value) || 0)}
+                className="w-44"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={handleAddCriterion}
+                className="gap-1 whitespace-nowrap"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Threshold
+              </Button>
+            </div>
           </div>
           
           <div className="bg-muted/40 p-4 rounded-md">
