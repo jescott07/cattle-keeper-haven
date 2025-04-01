@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -32,11 +31,10 @@ interface TransferCriterion {
   destinationLotId: string;
 }
 
-// Define the AnimalRecord type to include notes property
 interface AnimalRecord {
   weight: number;
   breed: BreedType;
-  notes?: string; // Make notes optional
+  notes?: string;
 }
 
 const WeighingManager = () => {
@@ -88,7 +86,6 @@ const WeighingManager = () => {
   };
 
   const handleAddCriterion = () => {
-    // Default to 0 instead of predefined 200 or calculated value
     setTransferCriteria([
       ...transferCriteria,
       {
@@ -98,7 +95,6 @@ const WeighingManager = () => {
       }
     ]);
     
-    // Reset the new criterion weight value field
     setNewCriterionWeightValue(0);
   };
   
@@ -118,7 +114,6 @@ const WeighingManager = () => {
       return c;
     });
     
-    // Only sort if we're changing weight values
     if (field === 'weightValue') {
       newCriteria.sort((a, b) => a.weightValue - b.weightValue);
     }
