@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
   Card,
@@ -36,6 +35,9 @@ interface AnimalRecord {
   weight: number;
   breed: BreedType;
   notes?: string;
+  isEstimated: boolean;
+  isEditing: boolean;
+  destinationLotId?: string;
 }
 
 const WeighingManager = () => {
@@ -407,7 +409,7 @@ const WeighingManager = () => {
                   } else if (index === transferCriteria.length - 1) {
                     rangeDisplay = `> ${transferCriteria[index-1].weightValue} kg`;
                   } else {
-                    rangeDisplay = `> ${transferCriteria[index-1].weightValue} kg and ≤ ${criterion.weightValue} kg`;
+                    rangeDisplay = `> ${transferCriteria[index-1]?.weightValue || 0} kg and ≤ ${criterion.weightValue} kg`;
                   }
                   
                   return (
