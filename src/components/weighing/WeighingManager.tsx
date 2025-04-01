@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -16,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AnimalWeighingRecord } from './AnimalWeighingRecord';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
 import { Info, Plus, Trash } from 'lucide-react';
-import { BreedType, Lot } from '@/lib/types';
+import { BreedType } from '@/lib/types';
 import { 
   Select, 
   SelectContent, 
@@ -382,32 +383,32 @@ const WeighingManager = () => {
             ) : (
               <div className="space-y-3">
                 {sortedCriteria.map((criterion, index) => {
-                  const previousValue = index > 0 ? sortedCriteria[index - 1].weightValue : null;
-                  const nextValue = index < sortedCriteria.length - 1 ? sortedCriteria[index + 1].weightValue : null;
+                  // Get the previous threshold value for the upper bound
+                  const prevCriterion = index > 0 ? sortedCriteria[index - 1] : null;
                   
                   return (
                     <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-5">
                         <div className="flex items-center gap-1 text-sm">
-                          {index > 0 && (
+                          {index > 0 ? (
                             <>
                               <span className="text-muted-foreground">&lt;</span>
                               <span className="text-muted-foreground">{criterion.weightValue}</span>
                               <span className="text-muted-foreground mx-1">and</span>
                             </>
-                          )}
+                          ) : null}
                           <span>≥</span>
                           <Input
                             type="number"
                             min="0"
                             step="0.1"
-                            value={criterion.weightValue || ''}
-                            onChange={(e) => handleCriterionChange(
-                              criterion.id, 
-                              'weightValue', 
-                              parseFloat(e.target.value) || 0
-                            )}
+                            value={criterion.weightValue}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              handleCriterionChange(criterion.id, 'weightValue', value);
+                            }}
                             className="w-20"
+                            key={`weight-input-${criterion.id}`} // Add key to ensure component independence
                           />
                           <span>kg</span>
                         </div>
