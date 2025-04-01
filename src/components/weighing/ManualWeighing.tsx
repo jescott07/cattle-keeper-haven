@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Check, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -160,7 +161,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   if (showSummary) {
     return (
       <WeighingSessionSummary 
-        weights={animalWeights.filter(w => w > 0)}
+        weights={animalWeights}
         date={new Date()}
         onNewSession={resetWeighing}
         totalAnimals={selectedLot?.numberOfAnimals || 0}
