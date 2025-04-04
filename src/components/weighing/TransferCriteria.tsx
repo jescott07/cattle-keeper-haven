@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus, Trash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -48,16 +47,22 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
   ) => {
     const newCriteria = criteria.map(c => {
       if (c.id === id) {
-        // Ensure weightValue is converted to a number or remains an empty string
-        return { 
-          ...c, 
-          [field]: field === 'weightValue' 
-            ? (value === '' ? '' : Number(value)) 
-            : value 
-        };
+        // Trim leading zeros for weightValue
+        if (field === 'weightValue') {
+          const trimmedValue = typeof value === 'string' 
+            ? value.replace(/^0+/, '') || '' 
+            : value;
+          
+          return { 
+            ...c, 
+            [field]: trimmedValue
+          };
+        }
+        return { ...c, [field]: value };
       }
       return c;
     });
+    
     onChange(newCriteria);
   };
   
