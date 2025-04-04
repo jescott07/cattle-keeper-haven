@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Check, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -219,6 +218,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     );
   }
 
+  
   return (
     <Card className="w-full max-w-2xl mx-auto animate-fade-in">
       <CardHeader>
@@ -246,6 +246,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        
         <div className="space-y-2">
           <Label htmlFor="weight">Weight (kg)</Label>
           <Input
@@ -281,6 +282,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
             </SelectContent>
           </Select>
         </div>
+        
         
         <div className="space-y-2">
           <Label htmlFor="notes">Notes (Optional)</Label>

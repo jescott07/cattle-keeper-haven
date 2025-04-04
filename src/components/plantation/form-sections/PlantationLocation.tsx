@@ -44,8 +44,8 @@ export function PlantationLocation({ control }: PlantationLocationProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {/* Removed the empty string SelectItem and use null instead */}
-              <SelectItem value="none">None</SelectItem>
+              {/* Changed from "none" to "no-pasture" to make intent clearer */}
+              <SelectItem value="no-pasture">None</SelectItem>
               {pastures.map((pasture) => (
                 <SelectItem key={pasture.id} value={pasture.id}>
                   {pasture.name}

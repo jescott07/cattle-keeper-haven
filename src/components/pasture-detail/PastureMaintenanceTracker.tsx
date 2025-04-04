@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { format } from 'date-fns';
@@ -76,14 +75,12 @@ export function PastureMaintenanceTracker({ pastureId }: PastureMaintenanceTrack
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MaintenanceRecord | null>(null);
   
-  // New record form state
   const [title, setTitle] = useState('');
   const [type, setType] = useState<MaintenanceType>('fertilization');
   const [description, setDescription] = useState('');
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(new Date());
   const [cost, setCost] = useState<number | undefined>();
   
-  // Complete record form state
   const [completedDate, setCompletedDate] = useState<Date | undefined>(new Date());
   const [completionNotes, setCompletionNotes] = useState('');
   

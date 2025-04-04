@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Weight, Calendar, FileText, Check } from 'lucide-react';
@@ -89,7 +88,7 @@ export const WeighingForm = () => {
         numberOfAnimals: data.numberOfAnimals,
         totalWeight: data.totalWeight,
         averageWeight: data.totalWeight / data.numberOfAnimals,
-        destinationLotId: data.destinationLotId && data.destinationLotId !== 'no-transfer' ? data.destinationLotId : undefined,
+        destinationLotId: data.destinationLotId && data.destinationLotId !== 'no-transfer-needed' ? data.destinationLotId : undefined,
         notes: data.notes
       });
       
@@ -102,7 +101,7 @@ export const WeighingForm = () => {
       
       // If destination lot is selected and different from source lot,
       // handle the transfer logic here
-      if (data.destinationLotId && data.destinationLotId !== 'no-transfer' && data.destinationLotId !== data.lotId) {
+      if (data.destinationLotId && data.destinationLotId !== 'no-transfer-needed' && data.destinationLotId !== data.lotId) {
         // Update source lot - reduce the number of animals
         updateLot(data.lotId, {
           numberOfAnimals: selectedLot.numberOfAnimals - data.numberOfAnimals
@@ -270,7 +269,7 @@ export const WeighingForm = () => {
                 <SelectValue placeholder="Select destination lot (if transferring)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-transfer">No transfer</SelectItem>
+                <SelectItem value="no-transfer-needed">No transfer</SelectItem>
                 {lots.map((lot) => (
                   <SelectItem key={lot.id} value={lot.id}>
                     {lot.name} {lot.id === selectedLotId ? '(Current)' : ''}
