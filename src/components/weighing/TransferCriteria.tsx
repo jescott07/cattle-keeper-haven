@@ -47,11 +47,9 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
   ) => {
     const newCriteria = criteria.map(c => {
       if (c.id === id) {
-        // Trim leading zeros for weightValue
         if (field === 'weightValue') {
-          // Remove leading zeros, but keep a single zero if it's the only value
-          const trimmedValue = typeof value === 'string' 
-            ? value.replace(/^0+/, '') || '0'  // Use '0' if all zeros are removed
+          const trimmedValue = typeof value === 'string'
+            ? value.replace(/^0+/, '') || '0'  // Removes leading zeros, keeps single zero
             : value;
           
           return { 
