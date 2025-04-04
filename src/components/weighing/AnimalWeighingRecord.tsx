@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,11 +42,20 @@ export function AnimalWeighingRecord({
     if (!weight || transferCriteria.length === 0) return originLotId;
 
     for (const criterion of transferCriteria) {
-      if (
-        (criterion.condition === 'less-than-or-equal' && weight <= criterion.weightValue) ||
-        (criterion.condition === 'greater-than' && weight > criterion.weightValue)
-      ) {
-        return criterion.destinationLotId;
+      // Convert criterion.weightValue to number for comparison
+      const criterionWeightValue = 
+        typeof criterion.weightValue === 'string' 
+          ? Number(criterion.weightValue) 
+          : criterion.weightValue;
+      
+      // Only proceed with comparison if criterionWeightValue is a valid number
+      if (!isNaN(criterionWeightValue)) {
+        if (
+          (criterion.condition === 'less-than-or-equal' && weight <= criterionWeightValue) ||
+          (criterion.condition === 'greater-than' && weight > criterionWeightValue)
+        ) {
+          return criterion.destinationLotId;
+        }
       }
     }
     
