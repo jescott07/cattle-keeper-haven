@@ -13,7 +13,7 @@ export interface AnimalRecord {
   weight: number;
   weightAt30: number;
   breed: BreedType;
-  observations: string;
+  notes: string;
   originLotId: string;
   destinationLotId: string;
 }
@@ -35,7 +35,7 @@ export function AnimalWeighingRecord({
 }: AnimalWeighingRecordProps) {
   const [weight, setWeight] = useState<number | null>(null);
   const [breed, setBreed] = useState<BreedType>(defaultBreed);
-  const [observations, setObservations] = useState('');
+  const [notes, setNotes] = useState('');
 
   const calculateDestinationLot = (weight: number): string => {
     if (!weight || transferCriteria.length === 0) return originLotId;
@@ -71,14 +71,14 @@ export function AnimalWeighingRecord({
       weight,
       weightAt30: parseFloat((weight / 30).toFixed(2)),
       breed,
-      observations,
+      notes,
       originLotId,
       destinationLotId
     });
 
     // Reset form for next animal
     setWeight(null);
-    setObservations('');
+    setNotes('');
     // Keep the breed the same for consecutive animals
   };
 
@@ -126,11 +126,11 @@ export function AnimalWeighingRecord({
       </div>
       
       <div>
-        <Label htmlFor="observations">Observations</Label>
+        <Label htmlFor="notes">Notes</Label>
         <Textarea
-          id="observations"
-          value={observations}
-          onChange={(e) => setObservations(e.target.value)}
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           placeholder="Any additional notes"
         />
       </div>
