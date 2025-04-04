@@ -58,6 +58,7 @@ const WeighingManager = () => {
   const [newLotName, setNewLotName] = useState<string>('');
   const [isCreatingNewLot, setIsCreatingNewLot] = useState(false);
   const [isWeighing, setIsWeighing] = useState(false);
+  const [creatingDestinationLot, setCreatingDestinationLot] = useState<string | null>(null);
   
   const activeLots = lots.filter(lot => lot.status === 'active');
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
@@ -86,7 +87,6 @@ const WeighingManager = () => {
     const newLotId = `lot-${Date.now()}`;
     
     addLot({
-      id: newLotId,
       name: newLotName,
       numberOfAnimals: 0,
       source: "other",
@@ -290,6 +290,38 @@ const WeighingManager = () => {
         numberOfAnimals: animalWeights.length + 1
       });
     }
+  };
+  
+  const handleCreateDestinationLot = (criterionId: string) => {
+    if (!newLotName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for the new lot",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newLotId = `lot-${Date.now()}`;
+    
+    addLot({
+      name: newLotName,
+      numberOfAnimals: 0,
+      source: "other",
+      status: "active",
+      purchaseDate: new Date(),
+      currentPastureId: ""
+    });
+    
+    handleCriterionChange(criterionId, 'destinationLotId', newLotId);
+    
+    toast({
+      title: "Success",
+      description: `New lot "${newLotName}" created`
+    });
+    
+    setNewLotName('');
+    setCreatingDestinationLot(null);
   };
   
   if (showSummary) {
@@ -497,32 +529,66 @@ const WeighingManager = () => {
                       
                       <div className="col-span-1 text-center">→</div>
                       <div className="col-span-5">
-                        <Select
-                          value={criterion.destinationLotId}
-                          onValueChange={(value) => handleCriterionChange(
-                            criterion.id, 
-                            'destinationLotId', 
-                            value
-                          )}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Destination lot" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={selectedLotId}>(Current Lot)</SelectItem>
-                            {lots.filter(lot => lot.id !== selectedLotId).map(lot => (
-                              <SelectItem key={lot.id} value={lot.id}>
-                                {lot.name}
+                        {creatingDestinationLot === criterion.id ? (
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="New lot name"
+                              value={newLotName}
+                              onChange={(e) => setNewLotName(e.target.value)}
+                              autoFocus
+                            />
+                            <Button 
+                              size="sm"
+                              onClick={() => handleCreateDestinationLot(criterion.id)}
+                              disabled={!newLotName.trim()}
+                            >
+                              Create
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCreatingDestinationLot(null);
+                                setNewLotName('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Select
+                            value={criterion.destinationLotId}
+                            onValueChange={(value) => {
+                              if (value === 'create-new') {
+                                setCreatingDestinationLot(criterion.id);
+                              } else {
+                                handleCriterionChange(
+                                  criterion.id, 
+                                  'destinationLotId', 
+                                  value
+                                );
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Destination lot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={selectedLotId}>(Current Lot)</SelectItem>
+                              {lots.filter(lot => lot.id !== selectedLotId).map(lot => (
+                                <SelectItem key={lot.id} value={lot.id}>
+                                  {lot.name}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="create-new">
+                                <div className="flex items-center gap-1">
+                                  <Plus className="h-3.5 w-3.5" />
+                                  <span>Create new lot</span>
+                                </div>
                               </SelectItem>
-                            ))}
-                            <SelectItem value="create-new">
-                              <div className="flex items-center gap-1">
-                                <Plus className="h-3.5 w-3.5" />
-                                <span>Create new lot</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                       <div className="col-span-1">
                         <Button
@@ -534,42 +600,6 @@ const WeighingManager = () => {
                           <Trash className="h-4 w-4" />
                         </Button>
                       </div>
-                      
-                      {criterion.destinationLotId === 'create-new' && (
-                        <div className="col-span-12 mt-2 flex gap-2">
-                          <Input
-                            placeholder="New lot name"
-                            value={newLotName}
-                            onChange={(e) => setNewLotName(e.target.value)}
-                          />
-                          <Button 
-                            size="sm"
-                            onClick={() => {
-                              if (newLotName.trim()) {
-                                const newLotId = `lot-${Date.now()}`;
-                                addLot({
-                                  id: newLotId, 
-                                  name: newLotName, 
-                                  numberOfAnimals: 0, 
-                                  source: "other", 
-                                  status: "active",
-                                  purchaseDate: new Date(),
-                                  currentPastureId: ""
-                                });
-                                handleCriterionChange(criterion.id, 'destinationLotId', newLotId);
-                                setNewLotName('');
-                                toast({
-                                  title: "Success",
-                                  description: `New lot "${newLotName}" created`
-                                });
-                              }
-                            }}
-                            disabled={!newLotName.trim()}
-                          >
-                            Create
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
