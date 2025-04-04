@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 export interface TransferCriterion {
   id: string;
-  weightValue: number;
+  weightValue: number | string;  // Modified to accept both number and string
   condition: 'less-than-or-equal' | 'greater-than';
   destinationLotId: string;
 }
@@ -28,7 +28,7 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
       ...criteria,
       {
         id: `criterion-${Date.now()}`,
-        weightValue: '', // Changed from 0 to '' to start empty
+        weightValue: '', // Empty string as default
         condition: 'greater-than' as const,
         destinationLotId: ''
       }
@@ -98,7 +98,7 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
                   type="number"
                   min="0"
                   step="0.1"
-                  value={criterion.weightValue || ''}
+                  value={criterion.weightValue}
                   onChange={(e) => handleCriterionChange(
                     criterion.id, 
                     'weightValue', 
