@@ -28,7 +28,7 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
       ...criteria,
       {
         id: `criterion-${Date.now()}`,
-        weightValue: 0,
+        weightValue: '', // Changed from 0 to '' to start empty
         condition: 'greater-than' as const,
         destinationLotId: ''
       }
@@ -48,7 +48,13 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
   ) => {
     const newCriteria = criteria.map(c => {
       if (c.id === id) {
-        return { ...c, [field]: value };
+        // Ensure weightValue is converted to a number or remains an empty string
+        return { 
+          ...c, 
+          [field]: field === 'weightValue' 
+            ? (value === '' ? '' : Number(value)) 
+            : value 
+        };
       }
       return c;
     });
@@ -96,7 +102,7 @@ export function TransferCriteria({ criteria, onChange, availableLots, onCreateLo
                   onChange={(e) => handleCriterionChange(
                     criterion.id, 
                     'weightValue', 
-                    parseFloat(e.target.value) || 0
+                    e.target.value
                   )}
                   placeholder="Weight"
                 />
