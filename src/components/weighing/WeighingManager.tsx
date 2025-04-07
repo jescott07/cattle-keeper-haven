@@ -113,7 +113,7 @@ const WeighingManager = () => {
     const newLotId = `lot-${Date.now()}`;
     
     addLot({
-      id: newLotId,
+      // Remove the explicit id property as it's already handled by the store
       name: lotName,
       numberOfAnimals: 0,
       source: "other",
