@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
   Card,
@@ -25,15 +26,6 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { TransferCriterion } from './TransferCriteria';
-
-interface AnimalRecord {
-  weight: number;
-  breed: BreedType;
-  notes?: string;
-  isEstimated: boolean;
-  isEditing: boolean;
-  destinationLotId?: string;
-}
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -105,6 +97,7 @@ const WeighingManager = () => {
       {
         id: `criterion-${Date.now()}`,
         weightValue: 0,
+        condition: 'greater-than' as const,
         destinationLotId: ''
       }
     ]);
@@ -127,7 +120,12 @@ const WeighingManager = () => {
     });
     
     if (field === 'weightValue') {
-      newCriteria.sort((a, b) => a.weightValue - b.weightValue);
+      // Sort criteria by weight value (need to convert to number for comparison)
+      newCriteria.sort((a, b) => {
+        const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString() || '0');
+        const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString() || '0');
+        return aValue - bValue;
+      });
     }
     
     setTransferCriteria(newCriteria);
@@ -152,6 +150,63 @@ const WeighingManager = () => {
     setIsWeighing(true);
   };
   
+  // This function determines which destination lot to use based on weight
+  const getDestinationLotForWeight = (weight: number): string => {
+    if (weight <= 0 || transferCriteria.length === 0) return '';
+    
+    const sortedCriteria = [...transferCriteria].sort((a, b) => {
+      const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString() || '0');
+      const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString() || '0');
+      return aValue - bValue;
+    });
+    
+    let destinationLotId = '';
+    
+    for (const criterion of sortedCriteria) {
+      const criterionWeight = typeof criterion.weightValue === 'number' 
+        ? criterion.weightValue 
+        : parseFloat(criterion.weightValue.toString() || '0');
+        
+      // For 'greater-than' condition, set the destination if weight is greater than the criterion
+      if (criterion.condition === 'greater-than' && weight > criterionWeight) {
+        destinationLotId = criterion.destinationLotId;
+      }
+      // For 'less-than-or-equal' condition, set the destination if weight is less than or equal to the criterion
+      else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
+        destinationLotId = criterion.destinationLotId;
+        break; // Stop at the first matching less-than-or-equal criterion
+      }
+    }
+    
+    return destinationLotId;
+  };
+  
+  // Function to find matching criterion for a weight
+  const findMatchingCriterionForWeight = (weight: number): TransferCriterion | null => {
+    if (weight <= 0 || transferCriteria.length === 0) return null;
+    
+    const sortedCriteria = [...transferCriteria].sort((a, b) => {
+      const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString() || '0');
+      const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString() || '0');
+      return aValue - bValue;
+    });
+    
+    for (const criterion of sortedCriteria) {
+      const criterionWeight = typeof criterion.weightValue === 'number' 
+        ? criterion.weightValue 
+        : parseFloat(criterion.weightValue.toString() || '0');
+        
+      if (criterion.condition === 'greater-than' && weight > criterionWeight) {
+        return criterion;
+      } else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
+        return criterion;
+        // Break not needed here since we're returning
+      }
+    }
+    
+    return null;
+  };
+  
   const updateWeight = (weight: number, breed: BreedType, notes: string) => {
     let newWeights = [...animalWeights];
     newWeights[currentAnimalIndex] = weight;
@@ -165,35 +220,12 @@ const WeighingManager = () => {
     newNotes[currentAnimalIndex] = notes;
     setAnimalNotes(newNotes);
     
-    if (weight > 0 && transferCriteria.length > 0) {
-      const sortedCriteria = [...transferCriteria].sort((a, b) => {
-        const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString());
-        const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString());
-        return aValue - bValue;
-      });
-      
-      let destinationLotId = '';
-      
-      for (const criterion of sortedCriteria) {
-        const criterionWeight = typeof criterion.weightValue === 'number' 
-          ? criterion.weightValue 
-          : parseFloat(criterion.weightValue.toString());
-          
-        // For 'greater-than' condition, set the destination if weight is greater than the criterion
-        if (criterion.condition === 'greater-than' && weight > criterionWeight) {
-          destinationLotId = criterion.destinationLotId;
-        }
-        // For 'less-than-or-equal' condition, set the destination if weight is less than or equal to the criterion
-        else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
-          destinationLotId = criterion.destinationLotId;
-          break; // Stop at the first matching less-than-or-equal criterion
-        }
-      }
-      
-      let newDestinations = [...animalDestinations];
-      newDestinations[currentAnimalIndex] = destinationLotId;
-      setAnimalDestinations(newDestinations);
-    }
+    // Automatically determine destination lot based on weight criteria
+    const destinationLotId = getDestinationLotForWeight(weight);
+    
+    let newDestinations = [...animalDestinations];
+    newDestinations[currentAnimalIndex] = destinationLotId;
+    setAnimalDestinations(newDestinations);
   };
   
   const updateLot = useStore(state => state.updateLot);
@@ -350,6 +382,17 @@ const WeighingManager = () => {
     setCreatingDestinationLot(null);
   };
   
+  // Immediate update of destination when weight changes (for UI display)
+  useEffect(() => {
+    if (isWeighing && animalWeights[currentAnimalIndex] > 0) {
+      const destinationLotId = getDestinationLotForWeight(animalWeights[currentAnimalIndex]);
+      
+      let newDestinations = [...animalDestinations];
+      newDestinations[currentAnimalIndex] = destinationLotId;
+      setAnimalDestinations(newDestinations);
+    }
+  }, [animalWeights, currentAnimalIndex, transferCriteria]);
+  
   if (showSummary) {
     return (
       <WeighingSessionSummary 
@@ -375,28 +418,9 @@ const WeighingManager = () => {
     const currentDestination = animalDestinations[currentAnimalIndex] || '';
     
     // Find the matching criterion for the current weight
-    let matchingCriterion = null;
-    if (currentWeight > 0 && transferCriteria.length > 0) {
-      const sortedCriteria = [...transferCriteria].sort((a, b) => {
-        const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString());
-        const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString());
-        return aValue - bValue;
-      });
-      
-      for (const criterion of sortedCriteria) {
-        const criterionWeight = typeof criterion.weightValue === 'number' 
-          ? criterion.weightValue 
-          : parseFloat(criterion.weightValue.toString());
-          
-        if (criterion.condition === 'greater-than' && currentWeight > criterionWeight) {
-          matchingCriterion = criterion;
-        } else if (criterion.condition === 'less-than-or-equal' && currentWeight <= criterionWeight) {
-          matchingCriterion = criterion;
-          break;
-        }
-      }
-    }
+    const matchingCriterion = findMatchingCriterionForWeight(currentWeight);
     
+    // Get destination lot information
     const destinationLot = currentDestination 
       ? lots.find(lot => lot.id === currentDestination) 
       : null;
@@ -433,11 +457,6 @@ const WeighingManager = () => {
               value={currentWeight || ''}
               onChange={(e) => {
                 const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                let newWeights = [...animalWeights];
-                newWeights[currentAnimalIndex] = value;
-                setAnimalWeights(newWeights);
-                
-                // Determine destination based on weight
                 updateWeight(value, currentBreed, currentNotes);
               }}
             />
@@ -478,21 +497,31 @@ const WeighingManager = () => {
             />
           </div>
           
-          {matchingCriterion && (
+          {currentWeight > 0 && (
             <div className="border p-3 rounded-md bg-muted/30">
               <Label>Transfer Destination</Label>
-              <div className="flex items-center mt-1 gap-2">
-                <div className="h-3 w-3 rounded-full bg-primary"></div>
-                <div className="font-medium">
-                  {destinationLot ? destinationLot.name : 'Unknown Lot'}
+              {destinationLot ? (
+                <>
+                  <div className="flex items-center mt-1 gap-2">
+                    <div className="h-3 w-3 rounded-full bg-primary"></div>
+                    <div className="font-medium">
+                      {destinationLot.name}
+                    </div>
+                  </div>
+                  {matchingCriterion && (
+                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <Info className="h-3 w-3" />
+                      {matchingCriterion.condition === 'greater-than' 
+                        ? `Weight > ${matchingCriterion.weightValue}kg`
+                        : `Weight ≤ ${matchingCriterion.weightValue}kg`}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground mt-1">
+                  Animal will remain in current lot
                 </div>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Info className="h-3 w-3" />
-                {matchingCriterion.condition === 'greater-than' 
-                  ? `Weight > ${matchingCriterion.weightValue}kg`
-                  : `Weight ≤ ${matchingCriterion.weightValue}kg`}
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -501,19 +530,28 @@ const WeighingManager = () => {
           <div className="grid grid-cols-2 gap-3">
             <Button 
               variant="outline" 
-              onClick={skipAnimal}
+              onClick={previousAnimal}
+              disabled={currentAnimalIndex === 0}
             >
-              Skip Animal
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Previous
             </Button>
             <Button 
               onClick={nextAnimal}
               disabled={currentWeight <= 0}
               className="flex items-center justify-center"
             >
-              Next Animal
+              Next
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
+          <Button 
+            onClick={skipAnimal}
+            variant="ghost"
+            className="w-full"
+          >
+            Skip Animal
+          </Button>
           <Button 
             onClick={finishWeighing} 
             variant="secondary"
