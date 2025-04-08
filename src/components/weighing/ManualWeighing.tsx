@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Check, ArrowRight, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -70,13 +69,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       setSkippedAnimals([]);
     }
   }, [selectedLotId, selectedLot]);
-
-  // Separate useEffect to handle session completion to avoid infinite loops
-  useEffect(() => {
-    if (selectedLot && currentAnimalIndex >= selectedLot.numberOfAnimals && animalWeights.some(w => w > 0)) {
-      finishWeighingSession();
-    }
-  }, [currentAnimalIndex, selectedLot]);
 
   const handleLotChange = (value: string) => {
     if (value === 'create-new') {
@@ -181,7 +173,14 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setCurrentWeight('');
     setCurrentNotes('');
     
-    setCurrentAnimalIndex(currentAnimalIndex + 1);
+    // Fixed: Increment the animal index first, then check if we should finish the session
+    const nextAnimalIndex = currentAnimalIndex + 1;
+    setCurrentAnimalIndex(nextAnimalIndex);
+    
+    // Check if we've reached the end of the lot and should finish the session
+    if (selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && newWeights.some(w => w > 0)) {
+      finishWeighingSession();
+    }
   };
 
   const skipAnimal = () => {
@@ -214,7 +213,15 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setPartialWeighing(true);
     setCurrentWeight('');
     setCurrentNotes('');
-    setCurrentAnimalIndex(currentAnimalIndex + 1);
+    
+    // Fixed: Increment the animal index first, then check if we should finish the session
+    const nextAnimalIndex = currentAnimalIndex + 1;
+    setCurrentAnimalIndex(nextAnimalIndex);
+    
+    // Check if we've reached the end of the lot and should finish the session
+    if (selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && animalWeights.some(w => w > 0)) {
+      finishWeighingSession();
+    }
   };
 
   const finishWeighingSession = () => {
