@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { Check, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ArrowRight, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -14,9 +15,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { BreedType } from '@/lib/types';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ManualWeighingProps {
   onBack: () => void;
@@ -25,9 +33,12 @@ interface ManualWeighingProps {
 export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const { toast } = useToast();
   const lots = useStore(state => state.lots);
+  const addLot = useStore(state => state.addLot);
   const addWeighingRecord = useStore(state => state.addWeighingRecord);
   
   const [selectedLotId, setSelectedLotId] = useState<string>('');
+  const [newLotName, setNewLotName] = useState<string>('');
+  const [isCreatingNewLot, setIsCreatingNewLot] = useState<boolean>(false);
   const [animalWeights, setAnimalWeights] = useState<number[]>([]);
   const [animalBreeds, setAnimalBreeds] = useState<BreedType[]>([]);
   const [animalNotes, setAnimalNotes] = useState<string[]>([]);
@@ -63,6 +74,56 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     }
   }, [currentAnimalIndex, selectedLot]);
 
+  const handleLotChange = (value: string) => {
+    if (value === 'create-new') {
+      setIsCreatingNewLot(true);
+      setSelectedLotId('');
+    } else {
+      setSelectedLotId(value);
+      setIsCreatingNewLot(false);
+    }
+  };
+
+  const createNewLot = () => {
+    if (!newLotName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid lot name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newLotId = uuidv4();
+    
+    addLot({
+      id: newLotId,
+      name: newLotName.trim(),
+      numberOfAnimals: 0,
+      status: 'active',
+      currentPastureId: null,
+      initialWeight: 0,
+      currentWeight: 0,
+      breed: 'nelore',
+      acquisitionDate: new Date(),
+      createdAt: new Date()
+    });
+
+    setSelectedLotId(newLotId);
+    setNewLotName('');
+    setIsCreatingNewLot(false);
+    setAnimalWeights([]);
+    setAnimalBreeds([]);
+    setAnimalNotes([]);
+    setCurrentAnimalIndex(0);
+    setWeighedAnimalsCount(0);
+    
+    toast({
+      title: "Success",
+      description: `Lot "${newLotName.trim()}" created. You can now start weighing animals.`,
+    });
+  };
+
   const recordCurrentAnimal = () => {
     const weight = parseFloat(currentWeight);
     if (isNaN(weight) || weight <= 0) {
@@ -74,13 +135,28 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       return;
     }
 
-    const newWeights = [...animalWeights];
-    const newBreeds = [...animalBreeds];
-    const newNotes = [...animalNotes];
+    let newWeights = [...animalWeights];
+    let newBreeds = [...animalBreeds];
+    let newNotes = [...animalNotes];
     
-    newWeights[currentAnimalIndex] = weight;
-    newBreeds[currentAnimalIndex] = currentBreed;
-    newNotes[currentAnimalIndex] = currentNotes;
+    // If this is a new lot and we're adding animals beyond initial array size
+    if (selectedLot && currentAnimalIndex >= selectedLot.numberOfAnimals) {
+      newWeights.push(weight);
+      newBreeds.push(currentBreed);
+      newNotes.push(currentNotes);
+
+      // Update the lot with increased animal count
+      useStore.getState().updateLot({
+        ...selectedLot,
+        numberOfAnimals: selectedLot.numberOfAnimals + 1,
+        currentWeight: (selectedLot.currentWeight || 0) + weight
+      });
+    } else {
+      // Normal case for existing lots
+      newWeights[currentAnimalIndex] = weight;
+      newBreeds[currentAnimalIndex] = currentBreed;
+      newNotes[currentAnimalIndex] = currentNotes;
+    }
     
     setAnimalWeights(newWeights);
     setAnimalBreeds(newBreeds);
@@ -116,7 +192,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0);
     const averageWeight = totalWeight / totalWeighed;
     
-    const totalAnimals = selectedLot.numberOfAnimals;
+    const totalAnimals = Math.max(selectedLot.numberOfAnimals, totalWeighed);
     const nonWeighedAnimals = totalAnimals - totalWeighed;
     
     const estimatedTotalWeight = totalWeight + (nonWeighedAnimals * averageWeight);
@@ -128,6 +204,13 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       totalWeight: estimatedTotalWeight,
       averageWeight: estimatedTotalWeight / totalAnimals,
       notes: `Manual weighing of ${totalWeighed} animals (${nonWeighedAnimals} estimated at average weight)`
+    });
+    
+    // Update the lot with the new weight
+    useStore.getState().updateLot({
+      ...selectedLot,
+      numberOfAnimals: totalAnimals,
+      currentWeight: estimatedTotalWeight
     });
     
     let message = `Successfully recorded weights for ${totalWeighed} animals`;
@@ -171,7 +254,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     );
   }
 
-  if (!selectedLotId) {
+  if (!selectedLotId && !isCreatingNewLot) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
@@ -186,14 +269,14 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
             </Button>
           </div>
           <CardTitle className="mt-4">Select Lot to Weigh</CardTitle>
-          <CardDescription>Choose a lot of animals to start weighing</CardDescription>
+          <CardDescription>Choose a lot of animals to start weighing or create a new one</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="lotId">Lot</Label>
-            <Select onValueChange={setSelectedLotId}>
+            <Select onValueChange={handleLotChange}>
               <SelectTrigger id="lotId">
-                <SelectValue placeholder="Select a lot" />
+                <SelectValue placeholder="Select a lot or create new" />
               </SelectTrigger>
               <SelectContent>
                 {activeLots.map((lot) => (
@@ -201,6 +284,12 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
                     {lot.name} ({lot.numberOfAnimals} animals)
                   </SelectItem>
                 ))}
+                <SelectItem value="create-new">
+                  <div className="flex items-center">
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Create new lot
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -218,6 +307,47 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     );
   }
 
+  if (isCreatingNewLot) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setIsCreatingNewLot(false)}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Back to Lot Selection
+            </Button>
+          </div>
+          <CardTitle className="mt-4">Create New Lot</CardTitle>
+          <CardDescription>Enter details for the new lot</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="newLotName">Lot Name</Label>
+            <Input
+              id="newLotName"
+              value={newLotName}
+              onChange={(e) => setNewLotName(e.target.value)}
+              placeholder="Enter name for the new lot"
+              autoFocus
+            />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={createNewLot}
+            disabled={!newLotName.trim()}
+            className="w-full"
+          >
+            Create Lot & Start Weighing
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
   
   return (
     <Card className="w-full max-w-2xl mx-auto animate-fade-in">
@@ -232,7 +362,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
             Back to Lot Selection
           </Button>
           <span className="text-sm text-muted-foreground">
-            Animal {currentAnimalIndex + 1} of {selectedLot?.numberOfAnimals}
+            Animal {currentAnimalIndex + 1} of {selectedLot?.numberOfAnimals || weighedAnimalsCount + 1}
           </span>
         </div>
         <CardTitle className="mt-4">Record Weight</CardTitle>
