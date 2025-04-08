@@ -49,6 +49,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const [partialWeighing, setPartialWeighing] = useState(false);
   const [weighedAnimalsCount, setWeighedAnimalsCount] = useState(0);
   const [skippedAnimals, setSkippedAnimals] = useState<number[]>([]);
+  const [isNewLot, setIsNewLot] = useState(false);
   
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
   const activeLots = lots.filter(lot => lot.status === 'active');
@@ -66,6 +67,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       setWeighedAnimalsCount(0);
       setPartialWeighing(false);
       setSkippedAnimals([]);
+      setIsNewLot(totalAnimals === 0);
     }
   }, [selectedLotId, selectedLot]);
 
@@ -103,6 +105,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       const newLot = lots.find(lot => lot.name === newLotName.trim());
       if (newLot) {
         setSelectedLotId(newLot.id);
+        setIsNewLot(true);
       }
     }, 100);
     
@@ -136,26 +139,26 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     let newBreeds = [...animalBreeds];
     let newNotes = [...animalNotes];
     
-    if (selectedLot && currentAnimalIndex >= animalWeights.length) {
-      newWeights.push(weight);
-      newBreeds.push(currentBreed);
-      newNotes.push(currentNotes);
+    if (selectedLot) {
+      if (isNewLot || currentAnimalIndex >= animalWeights.length) {
+        newWeights.push(weight);
+        newBreeds.push(currentBreed);
+        newNotes.push(currentNotes);
 
-      if (selectedLot.numberOfAnimals <= currentAnimalIndex) {
         useStore.getState().updateLot(selectedLot.id, {
-          numberOfAnimals: currentAnimalIndex + 1
+          numberOfAnimals: isNewLot ? newWeights.length : currentAnimalIndex + 1
         });
+      } else {
+        if (currentAnimalIndex >= newWeights.length) {
+          newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
+          newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
+          newNotes = [...newNotes, ...Array(currentAnimalIndex - newNotes.length + 1).fill('')];
+        }
+        
+        newWeights[currentAnimalIndex] = weight;
+        newBreeds[currentAnimalIndex] = currentBreed;
+        newNotes[currentAnimalIndex] = currentNotes;
       }
-    } else {
-      if (currentAnimalIndex >= newWeights.length) {
-        newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
-        newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
-        newNotes = [...newNotes, ...Array(currentAnimalIndex - newNotes.length + 1).fill('')];
-      }
-      
-      newWeights[currentAnimalIndex] = weight;
-      newBreeds[currentAnimalIndex] = currentBreed;
-      newNotes[currentAnimalIndex] = currentNotes;
     }
     
     setAnimalWeights(newWeights);
@@ -169,7 +172,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const nextAnimalIndex = currentAnimalIndex + 1;
     setCurrentAnimalIndex(nextAnimalIndex);
     
-    if (selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && newWeights.some(w => w > 0)) {
+    if (!isNewLot && selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && newWeights.some(w => w > 0)) {
       finishWeighingSession();
     }
   };
@@ -182,22 +185,31 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     let newBreeds = [...animalBreeds];
     let newNotes = [...animalNotes];
     
-    if (currentAnimalIndex >= newWeights.length) {
+    if (isNewLot) {
+      newWeights.push(0);
+      newBreeds.push(currentBreed);
+      newNotes.push(currentNotes);
+      
+      if (selectedLot) {
+        useStore.getState().updateLot(selectedLot.id, {
+          numberOfAnimals: newWeights.length
+        });
+      }
+    } else if (currentAnimalIndex >= newWeights.length) {
       newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
       newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
       newNotes = [...newNotes, ...Array(currentAnimalIndex - newNotes.length + 1).fill('')];
       
-      setAnimalWeights(newWeights);
-      setAnimalBreeds(newBreeds);
-      setAnimalNotes(newNotes);
+      if (selectedLot && selectedLot.numberOfAnimals <= currentAnimalIndex) {
+        useStore.getState().updateLot(selectedLot.id, {
+          numberOfAnimals: currentAnimalIndex + 1
+        });
+      }
     }
     
-    if (selectedLot && selectedLot.numberOfAnimals <= currentAnimalIndex) {
-      useStore.getState().updateLot(selectedLot.id, {
-        numberOfAnimals: currentAnimalIndex + 1
-      });
-    }
-    
+    setAnimalWeights(newWeights);
+    setAnimalBreeds(newBreeds);
+    setAnimalNotes(newNotes);
     setPartialWeighing(true);
     setCurrentWeight('');
     setCurrentNotes('');
@@ -205,7 +217,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const nextAnimalIndex = currentAnimalIndex + 1;
     setCurrentAnimalIndex(nextAnimalIndex);
     
-    if (selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && animalWeights.some(w => w > 0)) {
+    if (!isNewLot && selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && animalWeights.some(w => w > 0)) {
       finishWeighingSession();
     }
   };
@@ -213,7 +225,11 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const finishWeighingSession = () => {
     if (!selectedLot) return;
     
-    const validWeights = animalWeights.filter(w => w > 0);
+    const validAnimalRecords = isNewLot 
+      ? animalWeights.filter((_, index) => index < animalWeights.length)
+      : animalWeights;
+      
+    const validWeights = validAnimalRecords.filter(w => w > 0);
     const totalWeighed = validWeights.length;
     
     if (totalWeighed === 0 && skippedAnimals.length === 0) {
@@ -228,11 +244,9 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0);
     const averageWeight = totalWeighed > 0 ? totalWeight / totalWeighed : 0;
     
-    const totalAnimals = Math.max(
-      selectedLot.numberOfAnimals, 
-      animalWeights.length,
-      currentAnimalIndex
-    );
+    const totalAnimals = isNewLot 
+      ? validAnimalRecords.length
+      : Math.max(selectedLot.numberOfAnimals, animalWeights.length, currentAnimalIndex);
     
     const nonWeighedAnimals = totalAnimals - totalWeighed;
     const estimatedTotalWeight = totalWeight + (nonWeighedAnimals * averageWeight);
@@ -283,6 +297,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setPartialWeighing(false);
     setWeighedAnimalsCount(0);
     setSkippedAnimals([]);
+    setIsNewLot(false);
   };
 
   if (showSummary) {
@@ -407,7 +422,11 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
             Back to Lot Selection
           </Button>
           <span className="text-sm text-muted-foreground">
-            Animal {currentAnimalIndex + 1} of {selectedLot?.numberOfAnimals || weighedAnimalsCount + skippedAnimals.length + 1}
+            {isNewLot ? (
+              `Animal ${currentAnimalIndex + 1}`
+            ) : (
+              `Animal ${currentAnimalIndex + 1} of ${selectedLot?.numberOfAnimals || weighedAnimalsCount + skippedAnimals.length + 1}`
+            )}
           </span>
         </div>
         <CardTitle className="mt-4">Record Weight</CardTitle>
@@ -416,6 +435,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
           {weighedAnimalsCount > 0 && (
             <span className="block mt-1 text-sm">
               {weighedAnimalsCount} animals weighed, {skippedAnimals.length} skipped
+              {isNewLot && <span> - continue adding as many animals as needed</span>}
             </span>
           )}
         </CardDescription>
@@ -458,7 +478,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
           </Select>
         </div>
         
-        
         <div className="space-y-2">
           <Label htmlFor="notes">Notes (Optional)</Label>
           <Textarea
@@ -493,7 +512,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
           className="w-full"
           onClick={finishWeighingSession}
         >
-          End Session
+          {isNewLot ? "Finish Adding Animals" : "End Session"}
         </Button>
       </CardFooter>
     </Card>

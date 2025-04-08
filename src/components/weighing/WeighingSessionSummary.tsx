@@ -68,11 +68,11 @@ export function WeighingSessionSummary({
 }: WeighingSessionSummaryProps) {
   // Initialize animal records with proper estimated flag
   const initialAnimalRecords: AnimalRecord[] = weights.map((weight, index) => {
-    // An animal is estimated if its weight is 0 or less
-    const isEstimated = weight <= 0;
+    // An animal is estimated if its weight is 0
+    const isEstimated = weight === 0;
     return {
       index,
-      weight: weight,
+      weight: isEstimated ? 0 : weight, // Keep 0 for estimated animals
       isEstimated,
       breed: animalBreeds[index] || 'nelore',
       notes: animalNotes[index] || '',
@@ -83,7 +83,7 @@ export function WeighingSessionSummary({
 
   const [animalRecords, setAnimalRecords] = useState<AnimalRecord[]>(initialAnimalRecords);
 
-  // Calculate statistics AFTER animal records are initialized
+  // Only include animals with actual weights (not estimated)
   const weighedRecords = animalRecords.filter(record => !record.isEstimated);
   const weighedCount = weighedRecords.length;
   const estimatedCount = animalRecords.length - weighedCount;
@@ -299,10 +299,16 @@ export function WeighingSessionSummary({
                         </div>
                       ) : (
                         <span>
-                          {animal.weight.toFixed(1)}
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({(animal.weight / 30).toFixed(2)} @)
-                          </span>
+                          {animal.isEstimated ? (
+                            <span className="text-muted-foreground">Estimated</span>
+                          ) : (
+                            <>
+                              {animal.weight.toFixed(1)}
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({(animal.weight / 30).toFixed(2)} @)
+                              </span>
+                            </>
+                          )}
                         </span>
                       )}
                     </TableCell>
@@ -332,7 +338,7 @@ export function WeighingSessionSummary({
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {!animal.isEditing && (
+                      {!animal.isEditing && !animal.isEstimated && (
                         <Button
                           variant="ghost"
                           size="icon"
