@@ -598,3 +598,4 @@ const WeighingManager = () => {
 };
 
 export default WeighingManager;
+
