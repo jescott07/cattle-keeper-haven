@@ -25,7 +25,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { TransferCriterion } from './TransferCriteria';
+import { TransferCriteria, TransferCriterion } from './TransferCriteria';
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -91,44 +91,37 @@ const WeighingManager = () => {
     setIsCreatingNewLot(false);
   };
 
-  const handleAddCriterion = () => {
-    setTransferCriteria([
-      ...transferCriteria,
-      {
-        id: `criterion-${Date.now()}`,
-        weightValue: 0,
-        condition: 'greater-than' as const,
-        destinationLotId: ''
-      }
-    ]);
+  const handleCriteriaChange = (newCriteria: TransferCriterion[]) => {
+    setTransferCriteria(newCriteria);
   };
   
-  const handleRemoveCriterion = (id: string) => {
-    setTransferCriteria(transferCriteria.filter(c => c.id !== id));
-  };
-  
-  const handleCriterionChange = (
-    id: string, 
-    field: keyof TransferCriterion, 
-    value: string | number
-  ) => {
-    const newCriteria = transferCriteria.map(c => {
-      if (c.id === id) {
-        return { ...c, [field]: value };
-      }
-      return c;
-    });
-    
-    if (field === 'weightValue') {
-      // Sort criteria by weight value (need to convert to number for comparison)
-      newCriteria.sort((a, b) => {
-        const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString() || '0');
-        const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString() || '0');
-        return aValue - bValue;
+  const handleCreateDestinationLot = (lotName: string) => {
+    if (!lotName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for the new lot",
+        variant: "destructive",
       });
+      return;
     }
     
-    setTransferCriteria(newCriteria);
+    const newLotId = `lot-${Date.now()}`;
+    
+    addLot({
+      name: lotName,
+      numberOfAnimals: 0,
+      source: "other",
+      status: "active",
+      purchaseDate: new Date(),
+      currentPastureId: ""
+    });
+    
+    toast({
+      title: "Success",
+      description: `New lot "${lotName}" created`
+    });
+    
+    return newLotId;
   };
   
   const handleStartWeighing = () => {
@@ -350,38 +343,6 @@ const WeighingManager = () => {
     setCurrentAnimalIndex(0);
   };
   
-  const handleCreateDestinationLot = (criterionId: string) => {
-    if (!newLotName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a name for the new lot",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const newLotId = `lot-${Date.now()}`;
-    
-    addLot({
-      name: newLotName,
-      numberOfAnimals: 0,
-      source: "other",
-      status: "active",
-      purchaseDate: new Date(),
-      currentPastureId: ""
-    });
-    
-    handleCriterionChange(criterionId, 'destinationLotId', newLotId);
-    
-    toast({
-      title: "Success",
-      description: `New lot "${newLotName}" created`
-    });
-    
-    setNewLotName('');
-    setCreatingDestinationLot(null);
-  };
-  
   // Immediate update of destination when weight changes (for UI display)
   useEffect(() => {
     if (isWeighing && animalWeights[currentAnimalIndex] > 0) {
@@ -565,8 +526,6 @@ const WeighingManager = () => {
     );
   }
   
-  const sortedCriteria = [...transferCriteria].sort((a, b) => a.weightValue - b.weightValue);
-  
   return (
     <Card>
       <CardHeader>
@@ -619,114 +578,12 @@ const WeighingManager = () => {
           )}
         </div>
         
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Label>Transfer Criteria (Optional)</Label>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
-              onClick={handleAddCriterion}
-            >
-              Add Rule
-            </Button>
-          </div>
-          
-          {sortedCriteria.length > 0 ? (
-            <div className="space-y-4">
-              {sortedCriteria.map((criterion) => (
-                <div key={criterion.id} className="grid grid-cols-12 gap-2 items-end border p-3 rounded-md relative">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-2 h-6 w-6"
-                    onClick={() => handleRemoveCriterion(criterion.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="col-span-5">
-                    <Label htmlFor={`weight-${criterion.id}`}>Weight Threshold</Label>
-                    <Input 
-                      id={`weight-${criterion.id}`}
-                      type="number"
-                      min="0"
-                      placeholder="e.g., 300"
-                      value={criterion.weightValue}
-                      onChange={(e) => handleCriterionChange(
-                        criterion.id, 
-                        'weightValue', 
-                        parseFloat(e.target.value) || 0
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="col-span-7">
-                    <Label htmlFor={`destination-${criterion.id}`}>Destination Lot</Label>
-                    {creatingDestinationLot === criterion.id ? (
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="New lot name"
-                          value={newLotName}
-                          onChange={(e) => setNewLotName(e.target.value)}
-                          autoFocus
-                        />
-                        <Button 
-                          size="sm"
-                          onClick={() => handleCreateDestinationLot(criterion.id)}
-                          disabled={!newLotName.trim()}
-                        >
-                          Add
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setCreatingDestinationLot(null);
-                            setNewLotName('');
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <Select 
-                        value={criterion.destinationLotId} 
-                        onValueChange={(value) => {
-                          if (value === "new-destination-lot") {
-                            setCreatingDestinationLot(criterion.id);
-                            setNewLotName('');
-                          } else {
-                            handleCriterionChange(criterion.id, 'destinationLotId', value);
-                          }
-                        }}
-                      >
-                        <SelectTrigger id={`destination-${criterion.id}`}>
-                          <SelectValue placeholder="Select destination lot" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="new-destination-lot">Create new lot</SelectItem>
-                          {lots.map((lot) => (
-                            <SelectItem key={lot.id} value={lot.id}>
-                              {lot.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-4 border border-dashed rounded-md">
-              <p className="text-muted-foreground">
-                No transfer criteria defined. Add a rule to automatically sort animals by weight.
-              </p>
-            </div>
-          )}
-        </div>
+        <TransferCriteria 
+          criteria={transferCriteria}
+          onChange={handleCriteriaChange}
+          availableLots={lots}
+          onCreateLot={handleCreateDestinationLot}
+        />
         
         <Button 
           onClick={handleStartWeighing}
