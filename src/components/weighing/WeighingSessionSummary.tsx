@@ -66,13 +66,30 @@ export function WeighingSessionSummary({
   transferCriteria = [],
   lots = []
 }: WeighingSessionSummaryProps) {
-  // Calculate statistics - properly identify weighed vs estimated animals
-  const validWeights = weights.filter(w => w > 0);
-  const weighedCount = validWeights.length;
-  const estimatedCount = totalAnimals - weighedCount;
-  const totalWeight = validWeights.reduce((sum, w) => sum + w, 0);
+  // Initialize animal records with proper estimated flag
+  const initialAnimalRecords: AnimalRecord[] = weights.map((weight, index) => {
+    // An animal is estimated if its weight is 0 or less
+    const isEstimated = weight <= 0;
+    return {
+      index,
+      weight: weight,
+      isEstimated,
+      breed: animalBreeds[index] || 'nelore',
+      notes: animalNotes[index] || '',
+      isEditing: false,
+      destinationLotId: animalDestinations[index] || ''
+    };
+  });
+
+  const [animalRecords, setAnimalRecords] = useState<AnimalRecord[]>(initialAnimalRecords);
+
+  // Calculate statistics AFTER animal records are initialized
+  const weighedRecords = animalRecords.filter(record => !record.isEstimated);
+  const weighedCount = weighedRecords.length;
+  const estimatedCount = animalRecords.length - weighedCount;
+  
+  const totalWeight = weighedRecords.reduce((sum, record) => sum + record.weight, 0);
   const averageWeight = weighedCount > 0 ? totalWeight / weighedCount : 0;
-  const estimatedTotalWeight = totalWeight + (estimatedCount * averageWeight);
   
   // Calculate per-breed statistics
   const breedStats: Record<string, {
@@ -81,16 +98,14 @@ export function WeighingSessionSummary({
     averageWeight: number
   }> = {};
   
-  // Only include animals with actual weights
-  for (let i = 0; i < weights.length; i++) {
-    if (weights[i] > 0) {
-      const breed = animalBreeds[i] || 'nelore';
-      if (!breedStats[breed]) {
-        breedStats[breed] = { count: 0, totalWeight: 0, averageWeight: 0 };
-      }
-      breedStats[breed].count++;
-      breedStats[breed].totalWeight += weights[i];
+  // Only include animals with actual weights (not estimated)
+  for (const record of weighedRecords) {
+    const breed = record.breed || 'nelore';
+    if (!breedStats[breed]) {
+      breedStats[breed] = { count: 0, totalWeight: 0, averageWeight: 0 };
     }
+    breedStats[breed].count++;
+    breedStats[breed].totalWeight += record.weight;
   }
   
   Object.keys(breedStats).forEach(breed => {
@@ -105,42 +120,21 @@ export function WeighingSessionSummary({
   }> = {};
   
   if (animalDestinations && animalDestinations.length > 0) {
-    for (let i = 0; i < weights.length; i++) {
-      if (weights[i] > 0) { // Only count animals with actual weights
-        const destinationId = animalDestinations[i] || '';
-        
-        if (!destinationStats[destinationId]) {
-          destinationStats[destinationId] = { count: 0, totalWeight: 0, averageWeight: 0 };
-        }
-        
-        destinationStats[destinationId].count++;
-        destinationStats[destinationId].totalWeight += weights[i];
+    for (const record of weighedRecords) {
+      const destinationId = record.destinationLotId || '';
+      
+      if (!destinationStats[destinationId]) {
+        destinationStats[destinationId] = { count: 0, totalWeight: 0, averageWeight: 0 };
       }
+      
+      destinationStats[destinationId].count++;
+      destinationStats[destinationId].totalWeight += record.weight;
     }
     
     Object.keys(destinationStats).forEach(dest => {
       destinationStats[dest].averageWeight = destinationStats[dest].totalWeight / destinationStats[dest].count;
     });
   }
-  
-  // Initialize animal records for the table with proper estimated flag
-  const initialAnimalRecords: AnimalRecord[] = [];
-  for (let i = 0; i < weights.length; i++) {
-    const weight = weights[i];
-    const isEstimated = weight <= 0;
-    
-    initialAnimalRecords.push({
-      index: i,
-      weight: isEstimated ? averageWeight : weight,
-      isEstimated: isEstimated,
-      breed: animalBreeds[i] || 'nelore',
-      notes: animalNotes[i] || '',
-      isEditing: false,
-      destinationLotId: animalDestinations[i] || ''
-    });
-  }
-  
-  const [animalRecords, setAnimalRecords] = useState<AnimalRecord[]>(initialAnimalRecords);
   
   const handleEditWeight = (index: number) => {
     setAnimalRecords(records => 
@@ -151,31 +145,14 @@ export function WeighingSessionSummary({
   };
   
   const handleSaveWeight = (index: number, newWeight: number) => {
+    if (newWeight <= 0) return; // Don't save invalid weights
+    
     // Update the specific animal's weight and mark as not estimated
     setAnimalRecords(records => 
       records.map((record, i) => 
         i === index ? { ...record, weight: newWeight, isEstimated: false, isEditing: false } : record
       )
     );
-    
-    // Recalculate average for estimated weights
-    const newRecords = [...animalRecords];
-    newRecords[index].weight = newWeight;
-    newRecords[index].isEstimated = false;
-    newRecords[index].isEditing = false;
-    
-    // Calculate new average based on actual weighed animals
-    const newValidWeights = newRecords.filter(r => !r.isEstimated).map(r => r.weight);
-    const newAverage = newValidWeights.length > 0 
-      ? newValidWeights.reduce((sum, w) => sum + w, 0) / newValidWeights.length 
-      : 0;
-    
-    // Update all estimated weights with new average
-    const finalRecords = newRecords.map(record => 
-      record.isEstimated ? { ...record, weight: newAverage } : record
-    );
-    
-    setAnimalRecords(finalRecords);
   };
   
   const getDestinationLotName = (lotId: string) => {
@@ -194,7 +171,7 @@ export function WeighingSessionSummary({
           </Badge>
         </CardTitle>
         <CardDescription>
-          {weighedCount} animals weighed ({weighedCount > 0 ? (weighedCount / totalAnimals * 100).toFixed(1) : "0.0"}% of total)
+          {weighedCount} animals weighed ({weighedCount > 0 ? (weighedCount / animalRecords.length * 100).toFixed(1) : "0.0"}% of total)
         </CardDescription>
       </CardHeader>
       
@@ -206,7 +183,7 @@ export function WeighingSessionSummary({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <p className="text-sm text-muted-foreground">Total Animals</p>
-              <p className="text-lg font-semibold">{totalAnimals}</p>
+              <p className="text-lg font-semibold">{animalRecords.length}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Weighed</p>
