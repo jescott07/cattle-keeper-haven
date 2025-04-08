@@ -125,7 +125,9 @@ const Index = () => {
                           </div>
                         </div>
                         <div>
-                          <div className="font-medium text-right">{weighing.averageWeight.toFixed(1)} kg avg</div>
+                          <div className="font-medium text-right">
+                            {weighing.averageWeight != null ? weighing.averageWeight.toFixed(1) : '0.0'} kg avg
+                          </div>
                           <div className="text-sm text-muted-foreground text-right">
                             {weighing.numberOfAnimals} animals
                           </div>
@@ -170,7 +172,7 @@ const Index = () => {
                           {item.quantity} {item.unit}
                         </div>
                         <div className="text-sm text-muted-foreground text-right">
-                          ${(item.quantity * item.costPerUnit).toFixed(2)} value
+                          ${(item.quantity * (item.costPerUnit || 0)).toFixed(2)} value
                         </div>
                       </div>
                     </div>

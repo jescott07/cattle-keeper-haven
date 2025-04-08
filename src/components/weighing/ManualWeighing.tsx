@@ -97,16 +97,14 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const newLotId = uuidv4();
     
     addLot({
-      id: newLotId,
       name: newLotName.trim(),
       numberOfAnimals: 0,
       status: 'active',
       currentPastureId: null,
-      initialWeight: 0,
-      currentWeight: 0,
+      source: 'other',
+      purchaseDate: new Date(),
       breed: 'nelore',
-      acquisitionDate: new Date(),
-      createdAt: new Date()
+      plannedTransfers: []
     });
 
     setSelectedLotId(newLotId);
@@ -146,10 +144,8 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       newNotes.push(currentNotes);
 
       // Update the lot with increased animal count
-      useStore.getState().updateLot({
-        ...selectedLot,
-        numberOfAnimals: selectedLot.numberOfAnimals + 1,
-        currentWeight: (selectedLot.currentWeight || 0) + weight
+      useStore.getState().updateLot(selectedLot.id, {
+        numberOfAnimals: selectedLot.numberOfAnimals + 1
       });
     } else {
       // Normal case for existing lots
@@ -207,10 +203,8 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     });
     
     // Update the lot with the new weight
-    useStore.getState().updateLot({
-      ...selectedLot,
-      numberOfAnimals: totalAnimals,
-      currentWeight: estimatedTotalWeight
+    useStore.getState().updateLot(selectedLot.id, {
+      numberOfAnimals: totalAnimals
     });
     
     let message = `Successfully recorded weights for ${totalWeighed} animals`;
