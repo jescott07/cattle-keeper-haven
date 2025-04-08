@@ -28,6 +28,12 @@ import { TransferCriteria, TransferCriterion as ImportedTransferCriterion } from
 
 type TransferCriterion = ImportedTransferCriterion;
 
+type ManagerTransferCriterion = {
+  id: string;
+  weightValue: number;
+  destinationLotId: string;
+};
+
 const WeighingManager = () => {
   const { toast } = useToast();
   const addLot = useStore((state) => state.addLot);
@@ -35,7 +41,7 @@ const WeighingManager = () => {
   const lots = useStore(state => state.lots);
   
   const [selectedLotId, setSelectedLotId] = useState<string>('');
-  const [transferCriteria, setTransferCriteria] = useState<TransferCriterion[]>([]);
+  const [transferCriteria, setTransferCriteria] = useState<ManagerTransferCriterion[]>([]);
   const [animalWeights, setAnimalWeights] = useState<number[]>([]);
   const [animalBreeds, setAnimalBreeds] = useState<BreedType[]>([]);
   const [animalNotes, setAnimalNotes] = useState<string[]>([]);
@@ -93,7 +99,12 @@ const WeighingManager = () => {
   };
 
   const handleCriteriaChange = (newCriteria: TransferCriterion[]) => {
-    setTransferCriteria(newCriteria);
+    setTransferCriteria(newCriteria.map(criterion => ({
+      ...criterion,
+      weightValue: typeof criterion.weightValue === 'string' 
+        ? parseFloat(criterion.weightValue) 
+        : criterion.weightValue
+    })) as ManagerTransferCriterion[]);
   };
   
   const handleCreateDestinationLot = (lotName: string) => {

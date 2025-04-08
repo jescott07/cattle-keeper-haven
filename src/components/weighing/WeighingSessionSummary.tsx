@@ -65,7 +65,7 @@ export function WeighingSessionSummary({
   transferCriteria = [],
   lots = []
 }: WeighingSessionSummaryProps) {
-  // Calculate statistics
+  // Calculate statistics - FIX: properly identify weighed vs estimated animals
   const validWeights = weights.filter(w => w > 0);
   const weighedCount = validWeights.length;
   const estimatedCount = totalAnimals - weighedCount;
@@ -80,13 +80,16 @@ export function WeighingSessionSummary({
     averageWeight: number
   }> = {};
   
-  for (let i = 0; i < validWeights.length; i++) {
-    const breed = animalBreeds[i] || 'nelore';
-    if (!breedStats[breed]) {
-      breedStats[breed] = { count: 0, totalWeight: 0, averageWeight: 0 };
+  for (let i = 0; i < weights.length; i++) {
+    // Only include animals with actual weights
+    if (weights[i] > 0) {
+      const breed = animalBreeds[i] || 'nelore';
+      if (!breedStats[breed]) {
+        breedStats[breed] = { count: 0, totalWeight: 0, averageWeight: 0 };
+      }
+      breedStats[breed].count++;
+      breedStats[breed].totalWeight += weights[i];
     }
-    breedStats[breed].count++;
-    breedStats[breed].totalWeight += validWeights[i];
   }
   
   Object.keys(breedStats).forEach(breed => {
@@ -118,9 +121,10 @@ export function WeighingSessionSummary({
     });
   }
   
-  // Initialize animal records for the table
+  // Initialize animal records for the table with proper estimated flag
   const initialAnimalRecords: AnimalRecord[] = [];
   for (let i = 0; i < totalAnimals; i++) {
+    // An animal is considered weighed if it has a positive weight value in the weights array
     const isRecordedWeight = i < weights.length && weights[i] > 0;
     
     initialAnimalRecords.push({
@@ -145,20 +149,24 @@ export function WeighingSessionSummary({
   };
   
   const handleSaveWeight = (index: number, newWeight: number) => {
+    // Update the specific animal's weight and mark as not estimated
     setAnimalRecords(records => 
       records.map((record, i) => 
         i === index ? { ...record, weight: newWeight, isEstimated: false, isEditing: false } : record
       )
     );
     
-    // Recalculate average and update estimated weights
+    // Recalculate average for estimated weights
     const newRecords = [...animalRecords];
     newRecords[index].weight = newWeight;
     newRecords[index].isEstimated = false;
     newRecords[index].isEditing = false;
     
+    // Calculate new average based on actual weighed animals
     const newValidWeights = newRecords.filter(r => !r.isEstimated).map(r => r.weight);
-    const newAverage = newValidWeights.reduce((sum, w) => sum + w, 0) / newValidWeights.length;
+    const newAverage = newValidWeights.length > 0 
+      ? newValidWeights.reduce((sum, w) => sum + w, 0) / newValidWeights.length 
+      : 0;
     
     // Update all estimated weights with new average
     const finalRecords = newRecords.map(record => 
@@ -184,7 +192,7 @@ export function WeighingSessionSummary({
           </Badge>
         </CardTitle>
         <CardDescription>
-          {weighedCount} animals weighed ({(weighedCount / totalAnimals * 100).toFixed(1)}% of total)
+          {weighedCount} animals weighed ({weighedCount > 0 ? (weighedCount / totalAnimals * 100).toFixed(1) : "0.0"}% of total)
         </CardDescription>
       </CardHeader>
       
@@ -208,21 +216,25 @@ export function WeighingSessionSummary({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Average Weight</p>
-              <p className="text-lg font-semibold">{averageWeight.toFixed(1)} kg</p>
+              <p className="text-lg font-semibold">{averageWeight > 0 ? averageWeight.toFixed(1) : "0.0"} kg</p>
             </div>
           </div>
           
           <div className="border-t border-border pt-2 mt-2">
             <p className="text-sm text-muted-foreground mb-2">Average Weight by Breed</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {Object.entries(breedStats).map(([breed, stats]) => (
-                <div key={breed} className="flex justify-between">
-                  <span className="capitalize">{breed.replace('-', ' ')}</span>
-                  <span>
-                    {stats.averageWeight.toFixed(1)} kg ({stats.count} animals)
-                  </span>
-                </div>
-              ))}
+              {Object.entries(breedStats).length > 0 ? (
+                Object.entries(breedStats).map(([breed, stats]) => (
+                  <div key={breed} className="flex justify-between">
+                    <span className="capitalize">{breed.replace('-', ' ')}</span>
+                    <span>
+                      {stats.averageWeight.toFixed(1)} kg ({stats.count} animals)
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div>No breed statistics available</div>
+              )}
             </div>
           </div>
           
@@ -235,7 +247,7 @@ export function WeighingSessionSummary({
                   <div key={destId} className="flex justify-between">
                     <span>{getDestinationLotName(destId)}</span>
                     <span>
-                      {stats.count} animals ({stats.averageWeight.toFixed(1)} kg avg)
+                      {stats.count} animals ({stats.averageWeight > 0 ? stats.averageWeight.toFixed(1) : "0.0"} kg avg)
                     </span>
                   </div>
                 ))}
@@ -295,7 +307,7 @@ export function WeighingSessionSummary({
                             variant="ghost"
                             onClick={() => {
                               const input = document.querySelector(
-                                `input[type="number"][value="${animal.weight}"]`
+                                `input[type="number"][defaultValue="${animal.weight}"]`
                               ) as HTMLInputElement;
                               const value = parseFloat(input.value);
                               if (!isNaN(value) && value > 0) {

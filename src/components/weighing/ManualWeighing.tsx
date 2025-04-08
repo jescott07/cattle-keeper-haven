@@ -56,7 +56,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   useEffect(() => {
     if (selectedLot) {
       const totalAnimals = selectedLot.numberOfAnimals;
-      // Initialize arrays with proper length based on the lot's animal count
       setAnimalWeights(Array(totalAnimals).fill(0));
       setAnimalBreeds(Array(totalAnimals).fill(selectedLot.breed || 'nelore'));
       setAnimalNotes(Array(totalAnimals).fill(''));
@@ -90,7 +89,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       return;
     }
     
-    // Remove the manual ID assignment as the store will handle it
     addLot({
       name: newLotName.trim(),
       numberOfAnimals: 0,
@@ -101,7 +99,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       breed: 'nelore'
     });
 
-    // Find the newly created lot by name
     setTimeout(() => {
       const newLot = lots.find(lot => lot.name === newLotName.trim());
       if (newLot) {
@@ -139,22 +136,18 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     let newBreeds = [...animalBreeds];
     let newNotes = [...animalNotes];
     
-    // If this is a new lot and we're adding animals beyond initial array size
     if (selectedLot && currentAnimalIndex >= animalWeights.length) {
       newWeights.push(weight);
       newBreeds.push(currentBreed);
       newNotes.push(currentNotes);
 
-      // Update the lot with increased animal count if needed
       if (selectedLot.numberOfAnimals <= currentAnimalIndex) {
         useStore.getState().updateLot(selectedLot.id, {
           numberOfAnimals: currentAnimalIndex + 1
         });
       }
     } else {
-      // Normal case for existing lots or within array bounds
       if (currentAnimalIndex >= newWeights.length) {
-        // Extend arrays if needed
         newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
         newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
         newNotes = [...newNotes, ...Array(currentAnimalIndex - newNotes.length + 1).fill('')];
@@ -173,11 +166,9 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setCurrentWeight('');
     setCurrentNotes('');
     
-    // Fixed: Increment the animal index first, then check if we should finish the session
     const nextAnimalIndex = currentAnimalIndex + 1;
     setCurrentAnimalIndex(nextAnimalIndex);
     
-    // Check if we've reached the end of the lot and should finish the session
     if (selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && newWeights.some(w => w > 0)) {
       finishWeighingSession();
     }
@@ -187,12 +178,10 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     let newSkippedAnimals = [...skippedAnimals, currentAnimalIndex];
     setSkippedAnimals(newSkippedAnimals);
     
-    // Make sure we're tracking this animal in our arrays even though it's skipped
     let newWeights = [...animalWeights];
     let newBreeds = [...animalBreeds];
     let newNotes = [...animalNotes];
     
-    // If current index is beyond array bounds, extend arrays
     if (currentAnimalIndex >= newWeights.length) {
       newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
       newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
@@ -203,7 +192,6 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       setAnimalNotes(newNotes);
     }
     
-    // If this is a new lot or we need to increase animal count
     if (selectedLot && selectedLot.numberOfAnimals <= currentAnimalIndex) {
       useStore.getState().updateLot(selectedLot.id, {
         numberOfAnimals: currentAnimalIndex + 1
@@ -214,11 +202,9 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setCurrentWeight('');
     setCurrentNotes('');
     
-    // Fixed: Increment the animal index first, then check if we should finish the session
     const nextAnimalIndex = currentAnimalIndex + 1;
     setCurrentAnimalIndex(nextAnimalIndex);
     
-    // Check if we've reached the end of the lot and should finish the session
     if (selectedLot && nextAnimalIndex >= selectedLot.numberOfAnimals && animalWeights.some(w => w > 0)) {
       finishWeighingSession();
     }
@@ -260,11 +246,16 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       notes: `Manual weighing of ${totalWeighed} animals (${nonWeighedAnimals} estimated at average weight)`
     });
     
-    // Update the lot with the new weight and animal count
-    useStore.getState().updateLot(selectedLot.id, {
-      numberOfAnimals: totalAnimals,
-      averageWeight: averageWeight > 0 ? averageWeight : undefined
-    });
+    if (averageWeight > 0) {
+      useStore.getState().updateLot(selectedLot.id, {
+        numberOfAnimals: totalAnimals,
+        averageWeight: averageWeight
+      });
+    } else {
+      useStore.getState().updateLot(selectedLot.id, {
+        numberOfAnimals: totalAnimals
+      });
+    }
     
     let message = `Successfully recorded weights for ${totalWeighed} animals`;
     if (nonWeighedAnimals > 0) {
