@@ -97,11 +97,9 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       });
       return;
     }
-
-    const newLotId = uuidv4();
     
+    // Remove the manual ID assignment as the store will handle it
     addLot({
-      id: newLotId,
       name: newLotName.trim(),
       numberOfAnimals: 0,
       status: 'active',
@@ -111,7 +109,14 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       breed: 'nelore'
     });
 
-    setSelectedLotId(newLotId);
+    // Find the newly created lot by name
+    setTimeout(() => {
+      const newLot = lots.find(lot => lot.name === newLotName.trim());
+      if (newLot) {
+        setSelectedLotId(newLot.id);
+      }
+    }, 100);
+    
     setNewLotName('');
     setIsCreatingNewLot(false);
     setAnimalWeights([]);

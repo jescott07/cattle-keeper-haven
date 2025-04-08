@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -25,10 +24,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { TransferCriteria, TransferCriterion } from './TransferCriteria';
+import { TransferCriteria, TransferCriterion as ImportedTransferCriterion } from './TransferCriteria';
 
-// We no longer need this since we're importing directly from TransferCriteria
-// type TransferCriterion = ImportedTransferCriterion;
+type TransferCriterion = ImportedTransferCriterion;
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -210,7 +208,6 @@ const WeighingManager = () => {
     newNotes[currentAnimalIndex] = notes;
     setAnimalNotes(newNotes);
     
-    // Only calculate destination when updating weight directly, not in a useEffect
     if (weight > 0) {
       const destinationLotId = getDestinationLotForWeight(weight);
       
@@ -334,18 +331,6 @@ const WeighingManager = () => {
     setIsCreatingNewLot(false);
     setCurrentAnimalIndex(0);
   };
-  
-  // Remove this useEffect that's causing the infinite loop
-  // Instead we'll handle destination updates directly when the weight is updated
-  /* useEffect(() => {
-    if (isWeighing && animalWeights[currentAnimalIndex] > 0) {
-      const destinationLotId = getDestinationLotForWeight(animalWeights[currentAnimalIndex]);
-      
-      let newDestinations = [...animalDestinations];
-      newDestinations[currentAnimalIndex] = destinationLotId;
-      setAnimalDestinations(newDestinations);
-    }
-  }, [animalWeights, currentAnimalIndex, transferCriteria]); */
   
   if (showSummary) {
     return (
