@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -24,9 +25,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { TransferCriteria, TransferCriterion as ImportedTransferCriterion } from './TransferCriteria';
+import { TransferCriteria, TransferCriterion } from './TransferCriteria';
 
-type TransferCriterion = ImportedTransferCriterion;
+// We no longer need this since we're importing directly from TransferCriteria
+// type TransferCriterion = ImportedTransferCriterion;
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -208,11 +210,14 @@ const WeighingManager = () => {
     newNotes[currentAnimalIndex] = notes;
     setAnimalNotes(newNotes);
     
-    const destinationLotId = getDestinationLotForWeight(weight);
-    
-    let newDestinations = [...animalDestinations];
-    newDestinations[currentAnimalIndex] = destinationLotId;
-    setAnimalDestinations(newDestinations);
+    // Only calculate destination when updating weight directly, not in a useEffect
+    if (weight > 0) {
+      const destinationLotId = getDestinationLotForWeight(weight);
+      
+      let newDestinations = [...animalDestinations];
+      newDestinations[currentAnimalIndex] = destinationLotId;
+      setAnimalDestinations(newDestinations);
+    }
   };
   
   const updateLot = useStore(state => state.updateLot);
@@ -330,7 +335,9 @@ const WeighingManager = () => {
     setCurrentAnimalIndex(0);
   };
   
-  useEffect(() => {
+  // Remove this useEffect that's causing the infinite loop
+  // Instead we'll handle destination updates directly when the weight is updated
+  /* useEffect(() => {
     if (isWeighing && animalWeights[currentAnimalIndex] > 0) {
       const destinationLotId = getDestinationLotForWeight(animalWeights[currentAnimalIndex]);
       
@@ -338,7 +345,7 @@ const WeighingManager = () => {
       newDestinations[currentAnimalIndex] = destinationLotId;
       setAnimalDestinations(newDestinations);
     }
-  }, [animalWeights, currentAnimalIndex, transferCriteria]);
+  }, [animalWeights, currentAnimalIndex, transferCriteria]); */
   
   if (showSummary) {
     return (

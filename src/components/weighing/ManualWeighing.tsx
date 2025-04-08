@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Check, ArrowRight, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -56,6 +57,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   useEffect(() => {
     if (selectedLot) {
       const totalAnimals = selectedLot.numberOfAnimals;
+      // Initialize arrays with proper length based on the lot's animal count
       setAnimalWeights(Array(totalAnimals).fill(0));
       setAnimalBreeds(Array(totalAnimals).fill(selectedLot.breed || 'nelore'));
       setAnimalNotes(Array(totalAnimals).fill(''));
@@ -69,8 +71,9 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     }
   }, [selectedLotId, selectedLot]);
 
+  // Separate useEffect to handle session completion to avoid infinite loops
   useEffect(() => {
-    if (selectedLot && currentAnimalIndex >= selectedLot.numberOfAnimals) {
+    if (selectedLot && currentAnimalIndex >= selectedLot.numberOfAnimals && animalWeights.some(w => w > 0)) {
       finishWeighingSession();
     }
   }, [currentAnimalIndex, selectedLot]);
@@ -98,6 +101,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const newLotId = uuidv4();
     
     addLot({
+      id: newLotId,
       name: newLotName.trim(),
       numberOfAnimals: 0,
       status: 'active',
@@ -139,17 +143,26 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     let newNotes = [...animalNotes];
     
     // If this is a new lot and we're adding animals beyond initial array size
-    if (selectedLot && currentAnimalIndex >= selectedLot.numberOfAnimals) {
+    if (selectedLot && currentAnimalIndex >= animalWeights.length) {
       newWeights.push(weight);
       newBreeds.push(currentBreed);
       newNotes.push(currentNotes);
 
-      // Update the lot with increased animal count
-      useStore.getState().updateLot(selectedLot.id, {
-        numberOfAnimals: selectedLot.numberOfAnimals + 1
-      });
+      // Update the lot with increased animal count if needed
+      if (selectedLot.numberOfAnimals <= currentAnimalIndex) {
+        useStore.getState().updateLot(selectedLot.id, {
+          numberOfAnimals: currentAnimalIndex + 1
+        });
+      }
     } else {
-      // Normal case for existing lots
+      // Normal case for existing lots or within array bounds
+      if (currentAnimalIndex >= newWeights.length) {
+        // Extend arrays if needed
+        newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
+        newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
+        newNotes = [...newNotes, ...Array(currentAnimalIndex - newNotes.length + 1).fill('')];
+      }
+      
       newWeights[currentAnimalIndex] = weight;
       newBreeds[currentAnimalIndex] = currentBreed;
       newNotes[currentAnimalIndex] = currentNotes;
@@ -170,22 +183,32 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     let newSkippedAnimals = [...skippedAnimals, currentAnimalIndex];
     setSkippedAnimals(newSkippedAnimals);
     
-    // If this is a new lot, we need to increase its animal count
-    if (selectedLot) {
-      // If we're at the end of the array, add a new empty slot
-      if (currentAnimalIndex >= animalWeights.length) {
-        setAnimalWeights([...animalWeights, 0]);
-        setAnimalBreeds([...animalBreeds, currentBreed]);
-        setAnimalNotes([...animalNotes, '']);
-        
-        // Increase the lot's animal count
-        useStore.getState().updateLot(selectedLot.id, {
-          numberOfAnimals: selectedLot.numberOfAnimals + 1
-        });
-      }
+    // Make sure we're tracking this animal in our arrays even though it's skipped
+    let newWeights = [...animalWeights];
+    let newBreeds = [...animalBreeds];
+    let newNotes = [...animalNotes];
+    
+    // If current index is beyond array bounds, extend arrays
+    if (currentAnimalIndex >= newWeights.length) {
+      newWeights = [...newWeights, ...Array(currentAnimalIndex - newWeights.length + 1).fill(0)];
+      newBreeds = [...newBreeds, ...Array(currentAnimalIndex - newBreeds.length + 1).fill(currentBreed)];
+      newNotes = [...newNotes, ...Array(currentAnimalIndex - newNotes.length + 1).fill('')];
+      
+      setAnimalWeights(newWeights);
+      setAnimalBreeds(newBreeds);
+      setAnimalNotes(newNotes);
+    }
+    
+    // If this is a new lot or we need to increase animal count
+    if (selectedLot && selectedLot.numberOfAnimals <= currentAnimalIndex) {
+      useStore.getState().updateLot(selectedLot.id, {
+        numberOfAnimals: currentAnimalIndex + 1
+      });
     }
     
     setPartialWeighing(true);
+    setCurrentWeight('');
+    setCurrentNotes('');
     setCurrentAnimalIndex(currentAnimalIndex + 1);
   };
 
@@ -225,9 +248,10 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       notes: `Manual weighing of ${totalWeighed} animals (${nonWeighedAnimals} estimated at average weight)`
     });
     
-    // Update the lot with the new weight
+    // Update the lot with the new weight and animal count
     useStore.getState().updateLot(selectedLot.id, {
-      numberOfAnimals: totalAnimals
+      numberOfAnimals: totalAnimals,
+      averageWeight: averageWeight > 0 ? averageWeight : undefined
     });
     
     let message = `Successfully recorded weights for ${totalWeighed} animals`;
