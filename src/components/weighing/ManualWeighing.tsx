@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { Check, ArrowRight, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -49,6 +48,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   const [showSummary, setShowSummary] = useState(false);
   const [partialWeighing, setPartialWeighing] = useState(false);
   const [weighedAnimalsCount, setWeighedAnimalsCount] = useState(0);
+  const [skippedAnimals, setSkippedAnimals] = useState<number[]>([]);
   
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
   const activeLots = lots.filter(lot => lot.status === 'active');
@@ -65,6 +65,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       setCurrentAnimalIndex(0);
       setWeighedAnimalsCount(0);
       setPartialWeighing(false);
+      setSkippedAnimals([]);
     }
   }, [selectedLotId, selectedLot]);
 
@@ -103,8 +104,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       currentPastureId: null,
       source: 'other',
       purchaseDate: new Date(),
-      breed: 'nelore',
-      plannedTransfers: []
+      breed: 'nelore'
     });
 
     setSelectedLotId(newLotId);
@@ -115,6 +115,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setAnimalNotes([]);
     setCurrentAnimalIndex(0);
     setWeighedAnimalsCount(0);
+    setSkippedAnimals([]);
     
     toast({
       title: "Success",
@@ -166,8 +167,26 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
   };
 
   const skipAnimal = () => {
-    setCurrentAnimalIndex(currentAnimalIndex + 1);
+    let newSkippedAnimals = [...skippedAnimals, currentAnimalIndex];
+    setSkippedAnimals(newSkippedAnimals);
+    
+    // If this is a new lot, we need to increase its animal count
+    if (selectedLot) {
+      // If we're at the end of the array, add a new empty slot
+      if (currentAnimalIndex >= animalWeights.length) {
+        setAnimalWeights([...animalWeights, 0]);
+        setAnimalBreeds([...animalBreeds, currentBreed]);
+        setAnimalNotes([...animalNotes, '']);
+        
+        // Increase the lot's animal count
+        useStore.getState().updateLot(selectedLot.id, {
+          numberOfAnimals: selectedLot.numberOfAnimals + 1
+        });
+      }
+    }
+    
     setPartialWeighing(true);
+    setCurrentAnimalIndex(currentAnimalIndex + 1);
   };
 
   const finishWeighingSession = () => {
@@ -176,21 +195,25 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     const validWeights = animalWeights.filter(w => w > 0);
     const totalWeighed = validWeights.length;
     
-    if (totalWeighed === 0) {
+    if (totalWeighed === 0 && skippedAnimals.length === 0) {
       toast({
         title: "No weights recorded",
-        description: "Please record at least one animal weight",
+        description: "Please record at least one animal weight or skip some animals",
         variant: "destructive",
       });
       return;
     }
     
     const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0);
-    const averageWeight = totalWeight / totalWeighed;
+    const averageWeight = totalWeighed > 0 ? totalWeight / totalWeighed : 0;
     
-    const totalAnimals = Math.max(selectedLot.numberOfAnimals, totalWeighed);
+    const totalAnimals = Math.max(
+      selectedLot.numberOfAnimals, 
+      animalWeights.length,
+      currentAnimalIndex
+    );
+    
     const nonWeighedAnimals = totalAnimals - totalWeighed;
-    
     const estimatedTotalWeight = totalWeight + (nonWeighedAnimals * averageWeight);
     
     addWeighingRecord({
@@ -198,7 +221,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
       lotId: selectedLotId,
       numberOfAnimals: totalAnimals,
       totalWeight: estimatedTotalWeight,
-      averageWeight: estimatedTotalWeight / totalAnimals,
+      averageWeight: totalAnimals > 0 ? estimatedTotalWeight / totalAnimals : 0,
       notes: `Manual weighing of ${totalWeighed} animals (${nonWeighedAnimals} estimated at average weight)`
     });
     
@@ -209,7 +232,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     
     let message = `Successfully recorded weights for ${totalWeighed} animals`;
     if (nonWeighedAnimals > 0) {
-      message += `. ${nonWeighedAnimals} animals were estimated at the average weight (${averageWeight.toFixed(1)} kg)`;
+      message += `. ${nonWeighedAnimals} animals were estimated at the average weight (${averageWeight > 0 ? averageWeight.toFixed(1) : '0'} kg)`;
     }
     
     toast({
@@ -232,6 +255,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
     setShowSummary(false);
     setPartialWeighing(false);
     setWeighedAnimalsCount(0);
+    setSkippedAnimals([]);
   };
 
   if (showSummary) {
@@ -356,7 +380,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
             Back to Lot Selection
           </Button>
           <span className="text-sm text-muted-foreground">
-            Animal {currentAnimalIndex + 1} of {selectedLot?.numberOfAnimals || weighedAnimalsCount + 1}
+            Animal {currentAnimalIndex + 1} of {selectedLot?.numberOfAnimals || weighedAnimalsCount + skippedAnimals.length + 1}
           </span>
         </div>
         <CardTitle className="mt-4">Record Weight</CardTitle>
@@ -364,7 +388,7 @@ export function ManualWeighing({ onBack }: ManualWeighingProps) {
           Recording weights for lot: {selectedLot?.name}
           {weighedAnimalsCount > 0 && (
             <span className="block mt-1 text-sm">
-              {weighedAnimalsCount} animals weighed so far
+              {weighedAnimalsCount} animals weighed, {skippedAnimals.length} skipped
             </span>
           )}
         </CardDescription>

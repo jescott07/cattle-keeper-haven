@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -25,7 +24,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { TransferCriteria, TransferCriterion } from './TransferCriteria';
+import { TransferCriteria, TransferCriterion as ImportedTransferCriterion } from './TransferCriteria';
+
+type TransferCriterion = ImportedTransferCriterion;
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -143,7 +144,6 @@ const WeighingManager = () => {
     setIsWeighing(true);
   };
   
-  // This function determines which destination lot to use based on weight
   const getDestinationLotForWeight = (weight: number): string => {
     if (weight <= 0 || transferCriteria.length === 0) return '';
     
@@ -160,21 +160,17 @@ const WeighingManager = () => {
         ? criterion.weightValue 
         : parseFloat(criterion.weightValue.toString() || '0');
         
-      // For 'greater-than' condition, set the destination if weight is greater than the criterion
       if (criterion.condition === 'greater-than' && weight > criterionWeight) {
         destinationLotId = criterion.destinationLotId;
-      }
-      // For 'less-than-or-equal' condition, set the destination if weight is less than or equal to the criterion
-      else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
+      } else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
         destinationLotId = criterion.destinationLotId;
-        break; // Stop at the first matching less-than-or-equal criterion
+        break;
       }
     }
     
     return destinationLotId;
   };
   
-  // Function to find matching criterion for a weight
   const findMatchingCriterionForWeight = (weight: number): TransferCriterion | null => {
     if (weight <= 0 || transferCriteria.length === 0) return null;
     
@@ -193,7 +189,6 @@ const WeighingManager = () => {
         return criterion;
       } else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
         return criterion;
-        // Break not needed here since we're returning
       }
     }
     
@@ -213,7 +208,6 @@ const WeighingManager = () => {
     newNotes[currentAnimalIndex] = notes;
     setAnimalNotes(newNotes);
     
-    // Automatically determine destination lot based on weight criteria
     const destinationLotId = getDestinationLotForWeight(weight);
     
     let newDestinations = [...animalDestinations];
@@ -224,7 +218,6 @@ const WeighingManager = () => {
   const updateLot = useStore(state => state.updateLot);
   
   const nextAnimal = () => {
-    // Save current animal
     if (animalWeights[currentAnimalIndex] <= 0) {
       toast({
         title: "Error",
@@ -234,9 +227,7 @@ const WeighingManager = () => {
       return;
     }
     
-    // Move to next animal (create a new one if needed)
     if (currentAnimalIndex === animalWeights.length - 1) {
-      // Add a new animal
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
@@ -254,10 +245,8 @@ const WeighingManager = () => {
   
   const skipAnimal = () => {
     if (currentAnimalIndex < animalWeights.length - 1) {
-      // Move to next existing animal
       setCurrentAnimalIndex(currentAnimalIndex + 1);
     } else {
-      // Add a new animal
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
@@ -269,7 +258,6 @@ const WeighingManager = () => {
   const finishWeighing = () => {
     if (!selectedLot) return;
     
-    // Filter out skipped animals (weight <= 0)
     const validAnimalIndices = animalWeights.map((w, idx) => w > 0 ? idx : -1).filter(idx => idx !== -1);
     
     if (validAnimalIndices.length === 0) {
@@ -321,7 +309,6 @@ const WeighingManager = () => {
       averageWeight: avgWeight
     });
     
-    // Clean up animal data to include only valid entries
     setAnimalWeights(validWeights);
     setAnimalBreeds(validBreeds);
     setAnimalNotes(validNotes);
@@ -343,7 +330,6 @@ const WeighingManager = () => {
     setCurrentAnimalIndex(0);
   };
   
-  // Immediate update of destination when weight changes (for UI display)
   useEffect(() => {
     if (isWeighing && animalWeights[currentAnimalIndex] > 0) {
       const destinationLotId = getDestinationLotForWeight(animalWeights[currentAnimalIndex]);
@@ -378,10 +364,8 @@ const WeighingManager = () => {
     const currentNotes = animalNotes[currentAnimalIndex] || '';
     const currentDestination = animalDestinations[currentAnimalIndex] || '';
     
-    // Find the matching criterion for the current weight
     const matchingCriterion = findMatchingCriterionForWeight(currentWeight);
     
-    // Get destination lot information
     const destinationLot = currentDestination 
       ? lots.find(lot => lot.id === currentDestination) 
       : null;
@@ -598,4 +582,3 @@ const WeighingManager = () => {
 };
 
 export default WeighingManager;
-
