@@ -24,15 +24,14 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { TransferCriteria, TransferCriterion as ImportedTransferCriterion } from './TransferCriteria';
+import { TransferCriteria, TransferCriterion } from './TransferCriteria';
 
-type TransferCriterion = ImportedTransferCriterion;
-
-type ManagerTransferCriterion = {
+interface ManagerTransferCriterion {
   id: string;
   weightValue: number;
   destinationLotId: string;
-};
+  condition: 'greater-than' | 'less-than-or-equal';
+}
 
 const WeighingManager = () => {
   const { toast } = useToast();
@@ -100,11 +99,13 @@ const WeighingManager = () => {
 
   const handleCriteriaChange = (newCriteria: TransferCriterion[]) => {
     setTransferCriteria(newCriteria.map(criterion => ({
-      ...criterion,
+      id: criterion.id,
       weightValue: typeof criterion.weightValue === 'string' 
         ? parseFloat(criterion.weightValue) 
-        : criterion.weightValue
-    })) as ManagerTransferCriterion[]);
+        : criterion.weightValue,
+      destinationLotId: criterion.destinationLotId,
+      condition: criterion.condition
+    })));
   };
   
   const handleCreateDestinationLot = (lotName: string) => {
@@ -159,21 +160,15 @@ const WeighingManager = () => {
     if (weight <= 0 || transferCriteria.length === 0) return '';
     
     const sortedCriteria = [...transferCriteria].sort((a, b) => {
-      const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString() || '0');
-      const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString() || '0');
-      return aValue - bValue;
+      return a.weightValue - b.weightValue;
     });
     
     let destinationLotId = '';
     
     for (const criterion of sortedCriteria) {
-      const criterionWeight = typeof criterion.weightValue === 'number' 
-        ? criterion.weightValue 
-        : parseFloat(criterion.weightValue.toString() || '0');
-        
-      if (criterion.condition === 'greater-than' && weight > criterionWeight) {
+      if (criterion.condition === 'greater-than' && weight > criterion.weightValue) {
         destinationLotId = criterion.destinationLotId;
-      } else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
+      } else if (criterion.condition === 'less-than-or-equal' && weight <= criterion.weightValue) {
         destinationLotId = criterion.destinationLotId;
         break;
       }
@@ -182,23 +177,17 @@ const WeighingManager = () => {
     return destinationLotId;
   };
   
-  const findMatchingCriterionForWeight = (weight: number): TransferCriterion | null => {
+  const findMatchingCriterionForWeight = (weight: number): ManagerTransferCriterion | null => {
     if (weight <= 0 || transferCriteria.length === 0) return null;
     
     const sortedCriteria = [...transferCriteria].sort((a, b) => {
-      const aValue = typeof a.weightValue === 'number' ? a.weightValue : parseFloat(a.weightValue.toString() || '0');
-      const bValue = typeof b.weightValue === 'number' ? b.weightValue : parseFloat(b.weightValue.toString() || '0');
-      return aValue - bValue;
+      return a.weightValue - b.weightValue;
     });
     
     for (const criterion of sortedCriteria) {
-      const criterionWeight = typeof criterion.weightValue === 'number' 
-        ? criterion.weightValue 
-        : parseFloat(criterion.weightValue.toString() || '0');
-        
-      if (criterion.condition === 'greater-than' && weight > criterionWeight) {
+      if (criterion.condition === 'greater-than' && weight > criterion.weightValue) {
         return criterion;
-      } else if (criterion.condition === 'less-than-or-equal' && weight <= criterionWeight) {
+      } else if (criterion.condition === 'less-than-or-equal' && weight <= criterion.weightValue) {
         return criterion;
       }
     }

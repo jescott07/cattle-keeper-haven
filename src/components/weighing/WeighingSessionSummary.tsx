@@ -28,6 +28,7 @@ interface TransferCriterion {
   id: string;
   weightValue: number;
   destinationLotId: string;
+  condition: 'greater-than' | 'less-than-or-equal';
 }
 
 interface WeighingSessionSummaryProps {
@@ -65,7 +66,7 @@ export function WeighingSessionSummary({
   transferCriteria = [],
   lots = []
 }: WeighingSessionSummaryProps) {
-  // Calculate statistics - FIX: properly identify weighed vs estimated animals
+  // Calculate statistics - properly identify weighed vs estimated animals
   const validWeights = weights.filter(w => w > 0);
   const weighedCount = validWeights.length;
   const estimatedCount = totalAnimals - weighedCount;
@@ -80,8 +81,8 @@ export function WeighingSessionSummary({
     averageWeight: number
   }> = {};
   
+  // Only include animals with actual weights
   for (let i = 0; i < weights.length; i++) {
-    // Only include animals with actual weights
     if (weights[i] > 0) {
       const breed = animalBreeds[i] || 'nelore';
       if (!breedStats[breed]) {
@@ -105,15 +106,16 @@ export function WeighingSessionSummary({
   
   if (animalDestinations && animalDestinations.length > 0) {
     for (let i = 0; i < weights.length; i++) {
-      const destinationId = animalDestinations[i] || '';
-      const weight = weights[i] > 0 ? weights[i] : averageWeight; // Use actual or average weight
-      
-      if (!destinationStats[destinationId]) {
-        destinationStats[destinationId] = { count: 0, totalWeight: 0, averageWeight: 0 };
+      if (weights[i] > 0) { // Only count animals with actual weights
+        const destinationId = animalDestinations[i] || '';
+        
+        if (!destinationStats[destinationId]) {
+          destinationStats[destinationId] = { count: 0, totalWeight: 0, averageWeight: 0 };
+        }
+        
+        destinationStats[destinationId].count++;
+        destinationStats[destinationId].totalWeight += weights[i];
       }
-      
-      destinationStats[destinationId].count++;
-      destinationStats[destinationId].totalWeight += weight;
     }
     
     Object.keys(destinationStats).forEach(dest => {
@@ -123,14 +125,14 @@ export function WeighingSessionSummary({
   
   // Initialize animal records for the table with proper estimated flag
   const initialAnimalRecords: AnimalRecord[] = [];
-  for (let i = 0; i < totalAnimals; i++) {
-    // An animal is considered weighed if it has a positive weight value in the weights array
-    const isRecordedWeight = i < weights.length && weights[i] > 0;
+  for (let i = 0; i < weights.length; i++) {
+    const weight = weights[i];
+    const isEstimated = weight <= 0;
     
     initialAnimalRecords.push({
       index: i,
-      weight: isRecordedWeight ? weights[i] : averageWeight,
-      isEstimated: !isRecordedWeight,
+      weight: isEstimated ? averageWeight : weight,
+      isEstimated: isEstimated,
       breed: animalBreeds[i] || 'nelore',
       notes: animalNotes[i] || '',
       isEditing: false,
