@@ -244,19 +244,18 @@ const WeighingManager = () => {
       return;
     }
     
-    if (isNewLot || currentAnimalIndex === animalWeights.length - 1) {
+    if (isNewLot) {
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
       setAnimalDestinations([...animalDestinations, '']);
+      setCurrentAnimalIndex(currentAnimalIndex + 1);
+      return;
     }
     
-    if (!isNewLot && currentAnimalIndex === animalWeights.length - 1) {
-      const allAnimalsWeighed = animalWeights.every(weight => weight > 0);
-      if (allAnimalsWeighed) {
-        finishWeighing();
-        return;
-      }
+    if (currentAnimalIndex === animalWeights.length - 1) {
+      finishWeighing();
+      return;
     }
     
     setCurrentAnimalIndex(currentAnimalIndex + 1);
