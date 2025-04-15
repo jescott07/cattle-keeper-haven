@@ -7,7 +7,7 @@ import AddHealthRecordForm from '@/components/animal-health/AddHealthRecordForm'
 import HealthRecordsList from '@/components/animal-health/HealthRecordsList';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pill, FilePlus, Filter, Syringe } from 'lucide-react';
+import { FilePlus, Syringe } from 'lucide-react';
 
 const AnimalHealth = () => {
   const [showForm, setShowForm] = useState(false);
@@ -18,9 +18,10 @@ const AnimalHealth = () => {
   };
 
   return (
-    <>
-      <div className="container mx-auto px-4 py-6">
-        <Navbar />
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <main className="container mx-auto px-4 py-6">
         <div className="mb-8">
           <PageHeader
             heading="Controle de Sanidade Animal"
@@ -70,8 +71,8 @@ const AnimalHealth = () => {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 };
 
