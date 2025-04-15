@@ -287,20 +287,10 @@ const WeighingManager = () => {
     if (!selectedLot) return;
     
     let validAnimalIndices;
-    let validWeights;
-    let validBreeds;
-    let validNotes;
-    let validDestinations;
     
-    if (isNewLot) {
-      validAnimalIndices = animalWeights
-        .map((w, idx) => w > 0 ? idx : -1)
-        .filter(idx => idx !== -1);
-    } else {
-      validAnimalIndices = animalWeights
-        .map((w, idx) => w > 0 ? idx : -1)
-        .filter(idx => idx !== -1);
-    }
+    validAnimalIndices = animalWeights
+      .map((w, idx) => w > 0 ? idx : -1)
+      .filter(idx => idx !== -1);
     
     if (validAnimalIndices.length === 0) {
       toast({
@@ -311,10 +301,10 @@ const WeighingManager = () => {
       return;
     }
     
-    validWeights = validAnimalIndices.map(idx => animalWeights[idx]);
-    validBreeds = validAnimalIndices.map(idx => animalBreeds[idx]);
-    validNotes = validAnimalIndices.map(idx => animalNotes[idx]);
-    validDestinations = validAnimalIndices.map(idx => animalDestinations[idx]);
+    const validWeights = validAnimalIndices.map(idx => animalWeights[idx]);
+    const validBreeds = validAnimalIndices.map(idx => animalBreeds[idx]);
+    const validNotes = validAnimalIndices.map(idx => animalNotes[idx]);
+    const validDestinations = validAnimalIndices.map(idx => animalDestinations[idx]);
     
     const avgWeight = validWeights.reduce((sum, w) => sum + w, 0) / validWeights.length;
     
