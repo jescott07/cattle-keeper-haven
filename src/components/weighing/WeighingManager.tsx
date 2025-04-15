@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -81,7 +80,6 @@ const WeighingManager = () => {
     const newLotId = `lot-${Date.now()}`;
     
     addLot({
-      id: newLotId,
       name: newLotName,
       numberOfAnimals: 0,
       source: "other",
@@ -104,7 +102,7 @@ const WeighingManager = () => {
     setTransferCriteria(newCriteria.map(criterion => ({
       id: criterion.id,
       weightValue: typeof criterion.weightValue === 'string' 
-        ? parseFloat(criterion.weightValue) || 0 // Convert to number and handle NaN
+        ? parseFloat(criterion.weightValue) || 0
         : criterion.weightValue,
       destinationLotId: criterion.destinationLotId,
       condition: criterion.condition
@@ -124,7 +122,6 @@ const WeighingManager = () => {
     const newLotId = `lot-${Date.now()}`;
     
     addLot({
-      id: newLotId,
       name: lotName,
       numberOfAnimals: 0,
       source: "other",
@@ -151,18 +148,15 @@ const WeighingManager = () => {
       return;
     }
 
-    // Check if this is a new lot (0 animals) or existing lot (>=1 animals)
     const isNewEmptyLot = selectedLot.numberOfAnimals === 0;
     setIsNewLot(isNewEmptyLot);
 
     if (isNewEmptyLot) {
-      // For new lots, start with one empty record
       setAnimalWeights([0]);
       setAnimalBreeds([selectedLot?.breed || 'nelore']);
       setAnimalNotes(['']);
       setAnimalDestinations(['']);
     } else {
-      // For existing lots, create an array with the number of animals in the lot
       const weights = Array(selectedLot.numberOfAnimals).fill(0);
       const breeds = Array(selectedLot.numberOfAnimals).fill(selectedLot?.breed || 'nelore');
       const notes = Array(selectedLot.numberOfAnimals).fill('');
@@ -251,7 +245,6 @@ const WeighingManager = () => {
       return;
     }
     
-    // For new lots, always add a new animal record when going to the next
     if (isNewLot || currentAnimalIndex === animalWeights.length - 1) {
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
@@ -259,9 +252,7 @@ const WeighingManager = () => {
       setAnimalDestinations([...animalDestinations, '']);
     }
     
-    // Check if we're at the last animal for existing lots
     if (!isNewLot && currentAnimalIndex === animalWeights.length - 1) {
-      // For existing lots, if we're on the last animal, finish the weighing automatically
       const allAnimalsWeighed = animalWeights.every(weight => weight > 0);
       if (allAnimalsWeighed) {
         finishWeighing();
@@ -279,20 +270,16 @@ const WeighingManager = () => {
   };
   
   const skipAnimal = () => {
-    // Add the animal with an estimated weight (0)
     if (isNewLot) {
-      // For new lots, always add a new animal when skipping
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
       setAnimalDestinations([...animalDestinations, '']);
       setCurrentAnimalIndex(currentAnimalIndex + 1);
     } else {
-      // For existing lots, just move to the next animal if possible
       if (currentAnimalIndex < animalWeights.length - 1) {
         setCurrentAnimalIndex(currentAnimalIndex + 1);
       } else {
-        // Check if all animals have been processed
         finishWeighing();
       }
     }
@@ -347,7 +334,6 @@ const WeighingManager = () => {
       description: `Weighing record created for ${validWeights.length} animals`
     });
     
-    // Update the lot with the new animal count if it was a new lot
     const newAnimalCount = isNewLot ? animalWeights.length : selectedLot.numberOfAnimals;
     
     updateLot(selectedLotId, {
@@ -355,7 +341,6 @@ const WeighingManager = () => {
       averageWeight: avgWeight
     });
     
-    // For the summary, include all animals (weighed and estimated)
     setShowSummary(true);
   };
   
@@ -616,4 +601,3 @@ const WeighingManager = () => {
 };
 
 export default WeighingManager;
-

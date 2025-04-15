@@ -58,13 +58,22 @@ export function TransferCriteria({
             };
           }
           
-          const trimmedValue = typeof value === 'string' 
-            ? value.replace(/^0+/, '') || '0' // Removes leading zeros, keeps single zero
-            : value;
+          // If it's a string and not empty, handle potential leading zeros
+          if (typeof value === 'string') {
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+              // For non-zero values, remove leading zeros but preserve decimal part
+              const trimmedValue = value.replace(/^0+(?=\d)/, '');
+              return {
+                ...c,
+                [field]: trimmedValue
+              };
+            }
+          }
             
           return {
             ...c,
-            [field]: trimmedValue
+            [field]: value
           };
         }
         return {
