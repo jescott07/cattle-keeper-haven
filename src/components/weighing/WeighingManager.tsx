@@ -166,7 +166,7 @@ const WeighingManager = () => {
     
     toast({
       title: "Success",
-      description: `New lot "${lotName}" created`
+      description: `New lot \"${lotName}\" created`
     });
     
     return newLotId;
@@ -925,4 +925,3 @@ const WeighingManager = () => {
           disabled={!selectedLotId}
         >
           Iniciar Sessão de Pesagem
-        </
