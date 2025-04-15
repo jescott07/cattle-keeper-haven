@@ -286,9 +286,7 @@ const WeighingManager = () => {
   const finishWeighing = () => {
     if (!selectedLot) return;
     
-    let validAnimalIndices;
-    
-    validAnimalIndices = animalWeights
+    const validAnimalIndices = animalWeights
       .map((w, idx) => w > 0 ? idx : -1)
       .filter(idx => idx !== -1);
     
@@ -365,7 +363,7 @@ const WeighingManager = () => {
       });
     } else {
       const transferredAnimalsCount = Object.entries(destinationLots)
-        .filter(([key, _]) => key !== selectedLotId && key !== '')
+        .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
         .reduce((sum, [data]) => sum + data.count, 0);
         
       const newAnimalCount = selectedLot.numberOfAnimals - transferredAnimalsCount;
@@ -373,7 +371,7 @@ const WeighingManager = () => {
       if (transferredAnimalsCount > 0) {
         const remainingWeight = (selectedLot.averageWeight || 0) * selectedLot.numberOfAnimals - 
           Object.entries(destinationLots)
-            .filter(([key, _]) => key !== selectedLotId && key !== '')
+            .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
             .reduce((sum, [data]) => sum + data.totalWeight, 0);
             
         const newAvgWeight = newAnimalCount > 0 ? remainingWeight / newAnimalCount : 0;
@@ -389,6 +387,11 @@ const WeighingManager = () => {
       title: "Success",
       description: `Weighing record created for ${validWeights.length} animals`
     });
+    
+    setAnimalWeights(validWeights);
+    setAnimalBreeds(validBreeds);
+    setAnimalNotes(validNotes);
+    setAnimalDestinations(validDestinations);
     
     setShowSummary(true);
   };
