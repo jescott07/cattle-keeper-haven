@@ -16,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { WeighingSessionSummary } from './WeighingSessionSummary';
-import { ArrowLeft, ArrowRight, Info, Plus, Trash } from 'lucide-react';
-import { BreedType } from '@/lib/types';
+import { ArrowLeft, ArrowRight, Info, Plus, Trash, Syringe, Check } from 'lucide-react';
+import { BreedType, HealthRecordType, ApplicationRoute } from '@/lib/types';
 import { 
   Select, 
   SelectContent, 
@@ -26,6 +26,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { TransferCriteria, TransferCriterion } from './TransferCriteria';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ManagerTransferCriterion {
   id: string;
@@ -39,12 +41,28 @@ interface DestinationLotData {
   totalWeight: number;
 }
 
+interface HealthRecord {
+  enabled: boolean;
+  type: HealthRecordType;
+  title: string;
+  description: string;
+  applicationRoute?: ApplicationRoute;
+  medicationId?: string;
+  dosage?: number;
+  dosageUnit?: string;
+  technician?: string;
+  notes?: string;
+}
+
 const WeighingManager = () => {
   const { toast } = useToast();
   const addLot = useStore((state) => state.addLot);
   const addWeighingRecord = useStore((state) => state.addWeighingRecord);
+  const addHealthRecord = useStore((state) => state.addHealthRecord);
   const updateLot = useStore((state) => state.updateLot);
   const lots = useStore(state => state.lots);
+  const inventoryItems = useStore(state => state.inventoryItems || []);
+  const medicationItems = inventoryItems.filter(item => item.type === 'medication');
   
   const [selectedLotId, setSelectedLotId] = useState<string>('');
   const [transferCriteria, setTransferCriteria] = useState<ManagerTransferCriterion[]>([]);
@@ -52,6 +70,7 @@ const WeighingManager = () => {
   const [animalBreeds, setAnimalBreeds] = useState<BreedType[]>([]);
   const [animalNotes, setAnimalNotes] = useState<string[]>([]);
   const [animalDestinations, setAnimalDestinations] = useState<string[]>([]);
+  const [animalHealthRecords, setAnimalHealthRecords] = useState<boolean[]>([]);
   const [currentAnimalIndex, setCurrentAnimalIndex] = useState<number>(0);
   const [showSummary, setShowSummary] = useState(false);
   const [newLotName, setNewLotName] = useState<string>('');
@@ -59,6 +78,15 @@ const WeighingManager = () => {
   const [isWeighing, setIsWeighing] = useState(false);
   const [creatingDestinationLot, setCreatingDestinationLot] = useState<string | null>(null);
   const [isNewLot, setIsNewLot] = useState(false);
+  
+  // Health record configuration
+  const [healthRecordConfig, setHealthRecordConfig] = useState<HealthRecord>({
+    enabled: false,
+    type: 'vaccination',
+    title: '',
+    description: '',
+    applicationRoute: 'injection',
+  });
   
   const activeLots = lots.filter(lot => lot.status === 'active');
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
@@ -148,8 +176,8 @@ const WeighingManager = () => {
   const handleStartWeighing = () => {
     if (!selectedLot) {
       toast({
-        title: "Error",
-        description: "Please select a lot to weigh",
+        title: "Erro",
+        description: "Por favor, selecione um lote para pesar",
         variant: "destructive",
       });
       return;
@@ -163,16 +191,19 @@ const WeighingManager = () => {
       setAnimalBreeds([selectedLot?.breed || 'nelore']);
       setAnimalNotes(['']);
       setAnimalDestinations(['']);
+      setAnimalHealthRecords([false]);
     } else {
       const weights = Array(selectedLot.numberOfAnimals).fill(0);
       const breeds = Array(selectedLot.numberOfAnimals).fill(selectedLot?.breed || 'nelore');
       const notes = Array(selectedLot.numberOfAnimals).fill('');
       const destinations = Array(selectedLot.numberOfAnimals).fill('');
+      const healthRecords = Array(selectedLot.numberOfAnimals).fill(false);
       
       setAnimalWeights(weights);
       setAnimalBreeds(breeds);
       setAnimalNotes(notes);
       setAnimalDestinations(destinations);
+      setAnimalHealthRecords(healthRecords);
     }
     
     setCurrentAnimalIndex(0);
@@ -239,12 +270,18 @@ const WeighingManager = () => {
       setAnimalDestinations(newDestinations);
     }
   };
+
+  const toggleHealthRecord = () => {
+    let newHealthRecords = [...animalHealthRecords];
+    newHealthRecords[currentAnimalIndex] = !newHealthRecords[currentAnimalIndex];
+    setAnimalHealthRecords(newHealthRecords);
+  };
   
   const nextAnimal = () => {
     if (animalWeights[currentAnimalIndex] <= 0) {
       toast({
-        title: "Error",
-        description: "Please enter a valid weight before proceeding",
+        title: "Erro",
+        description: "Por favor, insira um peso válido antes de continuar",
         variant: "destructive",
       });
       return;
@@ -255,6 +292,7 @@ const WeighingManager = () => {
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
       setAnimalDestinations([...animalDestinations, '']);
+      setAnimalHealthRecords([...animalHealthRecords, false]);
       setCurrentAnimalIndex(currentAnimalIndex + 1);
       return;
     }
@@ -279,6 +317,7 @@ const WeighingManager = () => {
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
       setAnimalDestinations([...animalDestinations, '']);
+      setAnimalHealthRecords([...animalHealthRecords, false]);
       setCurrentAnimalIndex(currentAnimalIndex + 1);
     } else {
       if (currentAnimalIndex < animalWeights.length - 1) {
@@ -298,8 +337,8 @@ const WeighingManager = () => {
     
     if (validAnimalIndices.length === 0) {
       toast({
-        title: "Error",
-        description: "No weights recorded",
+        title: "Erro",
+        description: "Nenhum peso registrado",
         variant: "destructive",
       });
       return;
@@ -309,6 +348,7 @@ const WeighingManager = () => {
     const validBreeds = validAnimalIndices.map(idx => animalBreeds[idx]);
     const validNotes = validAnimalIndices.map(idx => animalNotes[idx]);
     const validDestinations = validAnimalIndices.map(idx => animalDestinations[idx]);
+    const validHealthRecords = validAnimalIndices.map(idx => animalHealthRecords[idx]);
     
     const avgWeight = validWeights.reduce((sum, w) => sum + w, 0) / validWeights.length;
     
@@ -326,15 +366,49 @@ const WeighingManager = () => {
       destinationLots[destinationId].totalWeight += weight;
     }
     
+    // Create weighing record
     addWeighingRecord({
       date: new Date(),
       lotId: selectedLotId,
       numberOfAnimals: validWeights.length,
       totalWeight: validWeights.reduce((sum, w) => sum + w, 0),
       averageWeight: avgWeight,
-      notes: `Weighed ${validWeights.length} animals. Transfers recorded to ${Object.keys(destinationLots).filter(id => id && id !== selectedLotId).length} destination lots.`
+      notes: `Pesados ${validWeights.length} animais. Transferências registradas para ${Object.keys(destinationLots).filter(id => id && id !== selectedLotId).length} lotes de destino.`
     });
     
+    // Create health records for animals marked during weighing
+    if (healthRecordConfig.enabled && validHealthRecords.some(record => record)) {
+      const animalsWithHealthRecord = validHealthRecords.filter(Boolean).length;
+      
+      if (animalsWithHealthRecord > 0) {
+        addHealthRecord({
+          lotId: selectedLotId,
+          date: new Date(),
+          type: healthRecordConfig.type,
+          title: healthRecordConfig.title || `${healthRecordConfig.type === 'vaccination' ? 'Vacinação' : 'Medicação'} durante pesagem`,
+          description: healthRecordConfig.description,
+          applicationRoute: healthRecordConfig.applicationRoute,
+          medicationId: healthRecordConfig.medicationId,
+          dosage: healthRecordConfig.dosage,
+          dosageUnit: healthRecordConfig.dosageUnit,
+          appliedToAll: false,
+          numberOfAnimals: animalsWithHealthRecord,
+          technician: healthRecordConfig.technician,
+          notes: healthRecordConfig.notes || `Registro de saúde durante sessão de pesagem em ${new Date().toLocaleDateString()}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          syncStatus: 'pending',
+          id: `health-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        });
+        
+        toast({
+          title: "Sucesso",
+          description: `Registro de saúde criado para ${animalsWithHealthRecord} animais`
+        });
+      }
+    }
+    
+    // Update lot information based on transfers
     Object.entries(destinationLots).forEach(([destLotId, data]) => {
       if (destLotId && destLotId !== selectedLotId) {
         addWeighingRecord({
@@ -344,7 +418,7 @@ const WeighingManager = () => {
           numberOfAnimals: data.count,
           totalWeight: data.totalWeight,
           averageWeight: data.totalWeight / data.count,
-          notes: `Received ${data.count} animals from lot ${selectedLot?.name}`
+          notes: `Recebidos ${data.count} animais do lote ${selectedLot?.name}`
         });
         
         const destLot = lots.find(lot => lot.id === destLotId);
@@ -390,8 +464,8 @@ const WeighingManager = () => {
     }
     
     toast({
-      title: "Success",
-      description: `Weighing record created for ${validWeights.length} animals`
+      title: "Sucesso",
+      description: `Registro de pesagem criado para ${validWeights.length} animais`
     });
     
     setAnimalWeights(validWeights);
@@ -408,12 +482,20 @@ const WeighingManager = () => {
     setAnimalBreeds([]);
     setAnimalNotes([]);
     setAnimalDestinations([]);
+    setAnimalHealthRecords([]);
     setTransferCriteria([]);
     setShowSummary(false);
     setIsWeighing(false);
     setIsCreatingNewLot(false);
     setCurrentAnimalIndex(0);
     setIsNewLot(false);
+    setHealthRecordConfig({
+      enabled: false,
+      type: 'vaccination',
+      title: '',
+      description: '',
+      applicationRoute: 'injection',
+    });
   };
   
   if (showSummary) {
@@ -439,6 +521,7 @@ const WeighingManager = () => {
     const currentBreed = animalBreeds[currentAnimalIndex] || selectedLot?.breed || 'nelore';
     const currentNotes = animalNotes[currentAnimalIndex] || '';
     const currentDestination = animalDestinations[currentAnimalIndex] || '';
+    const currentHealthRecord = animalHealthRecords[currentAnimalIndex] || false;
     
     const matchingCriterion = findMatchingCriterionForWeight(currentWeight);
     
@@ -455,27 +538,27 @@ const WeighingManager = () => {
               className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Lot Selection
+              Voltar à Seleção de Lote
             </button>
             <Badge variant="outline">
-              Animal {currentAnimalIndex + 1} of {isNewLot ? "∞" : animalWeights.length}
+              Animal {currentAnimalIndex + 1} de {isNewLot ? "∞" : animalWeights.length}
             </Badge>
           </div>
-          <h1 className="text-2xl font-bold">Record Weight</h1>
+          <h1 className="text-2xl font-bold">Registrar Peso</h1>
           <p className="text-muted-foreground">
-            Recording weights for lot: {selectedLot?.name}
-            {isNewLot && " (New lot - session will continue until manually ended)"}
+            Registrando pesos para lote: {selectedLot?.name}
+            {isNewLot && " (Novo lote - sessão continuará até ser encerrada manualmente)"}
           </p>
         </div>
         
         <div className="p-4 space-y-4">
           <div>
-            <Label htmlFor="weight">Weight (kg)</Label>
+            <Label htmlFor="weight">Peso (kg)</Label>
             <Input
               id="weight"
               type="number"
               min="0"
-              placeholder="Enter weight"
+              placeholder="Digite o peso"
               value={currentWeight || ''}
               onChange={(e) => {
                 const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
@@ -485,7 +568,7 @@ const WeighingManager = () => {
           </div>
           
           <div>
-            <Label htmlFor="breed">Breed</Label>
+            <Label htmlFor="breed">Raça</Label>
             <Select 
               value={currentBreed}
               onValueChange={(value) => {
@@ -495,7 +578,7 @@ const WeighingManager = () => {
               }}
             >
               <SelectTrigger id="breed">
-                <SelectValue placeholder="Select breed" />
+                <SelectValue placeholder="Selecione a raça" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="nelore">Nelore</SelectItem>
@@ -506,10 +589,10 @@ const WeighingManager = () => {
           </div>
           
           <div>
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="notes">Observações (Opcional)</Label>
             <Textarea
               id="notes"
-              placeholder="Any additional notes for this animal"
+              placeholder="Quaisquer observações adicionais para este animal"
               value={currentNotes}
               onChange={(e) => {
                 let newNotes = [...animalNotes];
@@ -521,7 +604,7 @@ const WeighingManager = () => {
           
           {currentWeight > 0 && (
             <div className="border p-3 rounded-md bg-muted/30">
-              <Label>Transfer Destination</Label>
+              <Label>Destino da Transferência</Label>
               {destinationLot ? (
                 <>
                   <div className="flex items-center mt-1 gap-2">
@@ -534,15 +617,38 @@ const WeighingManager = () => {
                     <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <Info className="h-3 w-3" />
                       {matchingCriterion.condition === 'greater-than' 
-                        ? `Weight > ${matchingCriterion.weightValue}kg`
-                        : `Weight ≤ ${matchingCriterion.weightValue}kg`}
+                        ? `Peso > ${matchingCriterion.weightValue}kg`
+                        : `Peso ≤ ${matchingCriterion.weightValue}kg`}
                     </div>
                   )}
                 </>
               ) : (
                 <div className="text-sm text-muted-foreground mt-1">
-                  Animal will remain in current lot
+                  Animal permanecerá no lote atual
                 </div>
+              )}
+            </div>
+          )}
+          
+          {healthRecordConfig.enabled && (
+            <div className="border p-3 rounded-md bg-muted/30">
+              <div className="flex items-center space-x-2 mb-2">
+                <Checkbox 
+                  id="health-record" 
+                  checked={currentHealthRecord}
+                  onCheckedChange={toggleHealthRecord}
+                />
+                <Label htmlFor="health-record" className="flex items-center gap-1 cursor-pointer">
+                  <Syringe className="h-4 w-4 text-primary" />
+                  {healthRecordConfig.type === 'vaccination' ? 'Vacinar' : 'Medicar'} este animal
+                </Label>
+              </div>
+              
+              {currentHealthRecord && (
+                <p className="text-xs text-muted-foreground">
+                  {healthRecordConfig.title || `${healthRecordConfig.type === 'vaccination' ? 'Vacinação' : 'Medicação'} a ser aplicada`}
+                  {healthRecordConfig.medicationId && ` - ID: ${healthRecordConfig.medicationId}`}
+                </p>
               )}
             </div>
           )}
@@ -556,14 +662,14 @@ const WeighingManager = () => {
               disabled={currentAnimalIndex === 0}
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
-              Previous
+              Anterior
             </Button>
             <Button 
               onClick={nextAnimal}
               disabled={currentWeight <= 0}
               className="flex items-center justify-center"
             >
-              Next
+              Próximo
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -572,7 +678,7 @@ const WeighingManager = () => {
             variant="ghost"
             className="w-full"
           >
-            Skip Animal
+            Pular Animal
           </Button>
           <Button 
             onClick={finishWeighing} 
@@ -580,7 +686,7 @@ const WeighingManager = () => {
             className="w-full"
             disabled={validWeights.length === 0}
           >
-            End Session
+            Finalizar Sessão
           </Button>
         </div>
       </div>
@@ -590,18 +696,18 @@ const WeighingManager = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>New Weighing Session</CardTitle>
+        <CardTitle>Nova Sessão de Pesagem</CardTitle>
         <CardDescription>
-          Weigh and transfer animals to new lots based on weight criteria
+          Pese e transfira animais para novos lotes com base em critérios de peso
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="lotId">Select Lot to Weigh</Label>
+          <Label htmlFor="lotId">Selecione o Lote para Pesar</Label>
           {isCreatingNewLot ? (
             <div className="flex gap-2">
               <Input
-                placeholder="New lot name"
+                placeholder="Nome do novo lote"
                 value={newLotName}
                 onChange={(e) => setNewLotName(e.target.value)}
                 autoFocus
@@ -610,7 +716,7 @@ const WeighingManager = () => {
                 onClick={handleCreateNewLot}
                 disabled={!newLotName.trim()}
               >
-                Create
+                Criar
               </Button>
               <Button 
                 variant="outline"
@@ -619,19 +725,19 @@ const WeighingManager = () => {
                   setNewLotName('');
                 }}
               >
-                Cancel
+                Cancelar
               </Button>
             </div>
           ) : (
             <Select onValueChange={handleSelectLot} value={selectedLotId}>
               <SelectTrigger id="lotId">
-                <SelectValue placeholder="Select a lot" />
+                <SelectValue placeholder="Selecione um lote" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new-lot">Create new lot</SelectItem>
+                <SelectItem value="new-lot">Criar novo lote</SelectItem>
                 {activeLots.map((lot) => (
                   <SelectItem key={lot.id} value={lot.id}>
-                    {lot.name} ({lot.numberOfAnimals} animals)
+                    {lot.name} ({lot.numberOfAnimals} animais)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -646,12 +752,180 @@ const WeighingManager = () => {
           onCreateLot={handleCreateDestinationLot}
         />
         
+        <div className="border rounded-md p-4 space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="enable-health-record" 
+              checked={healthRecordConfig.enabled}
+              onCheckedChange={(checked) => {
+                setHealthRecordConfig({
+                  ...healthRecordConfig,
+                  enabled: checked === true
+                });
+              }}
+            />
+            <Label 
+              htmlFor="enable-health-record" 
+              className="font-medium cursor-pointer flex items-center gap-2"
+            >
+              <Syringe className="h-5 w-5 text-primary" />
+              Registrar saúde durante pesagem
+            </Label>
+          </div>
+          
+          {healthRecordConfig.enabled && (
+            <div className="space-y-4 pl-6 mt-2 animate-fade-in">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="health-type">Tipo</Label>
+                  <Select 
+                    value={healthRecordConfig.type}
+                    onValueChange={(value) => setHealthRecordConfig({
+                      ...healthRecordConfig,
+                      type: value as HealthRecordType
+                    })}
+                  >
+                    <SelectTrigger id="health-type">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vaccination">Vacinação</SelectItem>
+                      <SelectItem value="medication">Medicação</SelectItem>
+                      <SelectItem value="examination">Exame</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="application-route">Via de Aplicação</Label>
+                  <Select 
+                    value={healthRecordConfig.applicationRoute}
+                    onValueChange={(value) => setHealthRecordConfig({
+                      ...healthRecordConfig,
+                      applicationRoute: value as ApplicationRoute
+                    })}
+                  >
+                    <SelectTrigger id="application-route">
+                      <SelectValue placeholder="Selecione a via" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="oral">Oral</SelectItem>
+                      <SelectItem value="injection">Injeção</SelectItem>
+                      <SelectItem value="topical">Tópica</SelectItem>
+                      <SelectItem value="intravenous">Intravenosa</SelectItem>
+                      <SelectItem value="other">Outra</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="health-title">Título</Label>
+                <Input 
+                  id="health-title"
+                  placeholder={`${healthRecordConfig.type === 'vaccination' ? 'Vacinação' : 'Medicação'} durante pesagem`}
+                  value={healthRecordConfig.title}
+                  onChange={(e) => setHealthRecordConfig({
+                    ...healthRecordConfig,
+                    title: e.target.value
+                  })}
+                />
+              </div>
+              
+              {(healthRecordConfig.type === 'vaccination' || healthRecordConfig.type === 'medication') && (
+                <div className="space-y-2">
+                  <Label htmlFor="medication">Medicamento</Label>
+                  <Select 
+                    value={healthRecordConfig.medicationId}
+                    onValueChange={(value) => setHealthRecordConfig({
+                      ...healthRecordConfig,
+                      medicationId: value
+                    })}
+                  >
+                    <SelectTrigger id="medication">
+                      <SelectValue placeholder="Selecione um medicamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {medicationItems.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          Nenhum medicamento cadastrado
+                        </SelectItem>
+                      ) : medicationItems.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="dosage">Dosagem</Label>
+                  <Input 
+                    id="dosage"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="Quantidade"
+                    value={healthRecordConfig.dosage || ''}
+                    onChange={(e) => setHealthRecordConfig({
+                      ...healthRecordConfig,
+                      dosage: e.target.value ? parseFloat(e.target.value) : undefined
+                    })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="dosage-unit">Unidade</Label>
+                  <Input 
+                    id="dosage-unit"
+                    placeholder="ml, mg, etc."
+                    value={healthRecordConfig.dosageUnit || ''}
+                    onChange={(e) => setHealthRecordConfig({
+                      ...healthRecordConfig,
+                      dosageUnit: e.target.value
+                    })}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="technician">Responsável/Técnico</Label>
+                <Input 
+                  id="technician"
+                  placeholder="Nome do responsável"
+                  value={healthRecordConfig.technician || ''}
+                  onChange={(e) => setHealthRecordConfig({
+                    ...healthRecordConfig,
+                    technician: e.target.value
+                  })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="health-notes">Observações</Label>
+                <Textarea 
+                  id="health-notes"
+                  placeholder="Observações adicionais"
+                  value={healthRecordConfig.notes || ''}
+                  onChange={(e) => setHealthRecordConfig({
+                    ...healthRecordConfig,
+                    notes: e.target.value
+                  })}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        
         <Button 
           onClick={handleStartWeighing}
           className="w-full mt-4"
           disabled={!selectedLotId}
         >
-          Start Weighing Session
+          Iniciar Sessão de Pesagem
         </Button>
       </CardContent>
     </Card>
