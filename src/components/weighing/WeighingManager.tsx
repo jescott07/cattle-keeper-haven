@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -61,8 +60,8 @@ const WeighingManager = () => {
   const addHealthRecord = useStore((state) => state.addHealthRecord);
   const updateLot = useStore((state) => state.updateLot);
   const lots = useStore(state => state.lots);
-  const inventoryItems = useStore(state => state.inventoryItems || []);
-  const medicationItems = inventoryItems.filter(item => item.type === 'medication');
+  const inventory = useStore(state => state.inventory || []);
+  const medicationItems = inventory.filter(item => item.type === 'medication');
   
   const [selectedLotId, setSelectedLotId] = useState<string>('');
   const [transferCriteria, setTransferCriteria] = useState<ManagerTransferCriterion[]>([]);
@@ -926,10 +925,4 @@ const WeighingManager = () => {
           disabled={!selectedLotId}
         >
           Iniciar Sessão de Pesagem
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default WeighingManager;
+        </
