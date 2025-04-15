@@ -233,8 +233,6 @@ const WeighingManager = () => {
     }
   };
   
-  const updateLot = useStore(state => state.updateLot);
-  
   const nextAnimal = () => {
     if (animalWeights[currentAnimalIndex] <= 0) {
       toast({
@@ -329,16 +327,58 @@ const WeighingManager = () => {
       notes: `Weighed ${validWeights.length} animals. Transfers recorded to ${Object.keys(destinationLots).length} destination lots.`
     });
     
+    Object.entries(destinationLots).forEach(([destLotId, data]) => {
+      if (destLotId && destLotId !== selectedLotId) {
+        addWeighingRecord({
+          date: new Date(),
+          lotId: destLotId,
+          destinationLotId: selectedLotId,
+          numberOfAnimals: data.count,
+          totalWeight: data.totalWeight,
+          averageWeight: data.totalWeight / data.count,
+          notes: `Received ${data.count} animals from lot ${selectedLot?.name}`
+        });
+        
+        const destLot = lots.find(lot => lot.id === destLotId);
+        if (destLot) {
+          const currentCount = destLot.numberOfAnimals || 0;
+          const currentTotalWeight = (destLot.averageWeight || 0) * currentCount;
+          const newTotalWeight = currentTotalWeight + data.totalWeight;
+          const newCount = currentCount + data.count;
+          
+          updateLot(destLotId, {
+            numberOfAnimals: newCount,
+            averageWeight: newTotalWeight / newCount
+          });
+        }
+        
+        if (selectedLot && !isNewLot) {
+          const remainingAnimals = selectedLot.numberOfAnimals - data.count;
+          if (remainingAnimals > 0) {
+            const remainingWeight = (selectedLot.averageWeight || 0) * selectedLot.numberOfAnimals - data.totalWeight;
+            updateLot(selectedLotId, {
+              numberOfAnimals: remainingAnimals,
+              averageWeight: remainingWeight / remainingAnimals
+            });
+          }
+        }
+      }
+    });
+    
     toast({
       title: "Success",
       description: `Weighing record created for ${validWeights.length} animals`
     });
     
-    const newAnimalCount = isNewLot ? animalWeights.length : selectedLot.numberOfAnimals;
+    const newAnimalCount = isNewLot 
+      ? validWeights.length
+      : (selectedLot.numberOfAnimals - Object.values(destinationLots)
+          .filter((_, key) => key !== selectedLotId && key !== '')
+          .reduce((sum, data) => sum + data.count, 0));
     
     updateLot(selectedLotId, {
-      numberOfAnimals: newAnimalCount,
-      averageWeight: avgWeight
+      numberOfAnimals: Math.max(0, newAnimalCount),
+      averageWeight: newAnimalCount > 0 ? avgWeight : 0
     });
     
     setShowSummary(true);
