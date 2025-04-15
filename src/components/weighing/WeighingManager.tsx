@@ -37,6 +37,7 @@ const WeighingManager = () => {
   const { toast } = useToast();
   const addLot = useStore((state) => state.addLot);
   const addWeighingRecord = useStore((state) => state.addWeighingRecord);
+  const updateLot = useStore((state) => state.updateLot);
   const lots = useStore(state => state.lots);
   
   const [selectedLotId, setSelectedLotId] = useState<string>('');
@@ -370,11 +371,14 @@ const WeighingManager = () => {
       description: `Weighing record created for ${validWeights.length} animals`
     });
     
+    // Fix the type comparison issue - we need to check if the keys are different from selectedLotId and empty string
+    const transferredAnimalsCount = Object.entries(destinationLots)
+      .filter(([key, _]) => key !== selectedLotId && key !== '')
+      .reduce((sum, [_, data]) => sum + data.count, 0);
+      
     const newAnimalCount = isNewLot 
       ? validWeights.length
-      : (selectedLot.numberOfAnimals - Object.values(destinationLots)
-          .filter((_, key) => key !== selectedLotId && key !== '')
-          .reduce((sum, data) => sum + data.count, 0));
+      : (selectedLot.numberOfAnimals - transferredAnimalsCount);
     
     updateLot(selectedLotId, {
       numberOfAnimals: Math.max(0, newAnimalCount),
