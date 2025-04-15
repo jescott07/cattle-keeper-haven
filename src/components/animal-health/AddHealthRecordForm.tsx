@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -107,6 +106,7 @@ const AddHealthRecordForm: React.FC<AddHealthRecordFormProps> = ({ onComplete })
     onComplete();
   };
 
+  
   const getApplicationRouteLabel = (route: ApplicationRoute) => {
     switch (route) {
       case 'oral': return 'Via Oral';
