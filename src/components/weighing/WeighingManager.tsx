@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -51,6 +52,7 @@ const WeighingManager = () => {
   const [isCreatingNewLot, setIsCreatingNewLot] = useState(false);
   const [isWeighing, setIsWeighing] = useState(false);
   const [creatingDestinationLot, setCreatingDestinationLot] = useState<string | null>(null);
+  const [isNewLot, setIsNewLot] = useState(false);
   
   const activeLots = lots.filter(lot => lot.status === 'active');
   const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
@@ -79,6 +81,7 @@ const WeighingManager = () => {
     const newLotId = `lot-${Date.now()}`;
     
     addLot({
+      id: newLotId,
       name: newLotName,
       numberOfAnimals: 0,
       source: "other",
@@ -101,7 +104,7 @@ const WeighingManager = () => {
     setTransferCriteria(newCriteria.map(criterion => ({
       id: criterion.id,
       weightValue: typeof criterion.weightValue === 'string' 
-        ? parseFloat(criterion.weightValue) 
+        ? parseFloat(criterion.weightValue) || 0 // Convert to number and handle NaN
         : criterion.weightValue,
       destinationLotId: criterion.destinationLotId,
       condition: criterion.condition
@@ -121,6 +124,7 @@ const WeighingManager = () => {
     const newLotId = `lot-${Date.now()}`;
     
     addLot({
+      id: newLotId,
       name: lotName,
       numberOfAnimals: 0,
       source: "other",
@@ -147,12 +151,30 @@ const WeighingManager = () => {
       return;
     }
 
-    setAnimalWeights([0]);
-    setAnimalBreeds([selectedLot?.breed || 'nelore']);
-    setAnimalNotes(['']);
-    setAnimalDestinations(['']);
-    setCurrentAnimalIndex(0);
+    // Check if this is a new lot (0 animals) or existing lot (>=1 animals)
+    const isNewEmptyLot = selectedLot.numberOfAnimals === 0;
+    setIsNewLot(isNewEmptyLot);
+
+    if (isNewEmptyLot) {
+      // For new lots, start with one empty record
+      setAnimalWeights([0]);
+      setAnimalBreeds([selectedLot?.breed || 'nelore']);
+      setAnimalNotes(['']);
+      setAnimalDestinations(['']);
+    } else {
+      // For existing lots, create an array with the number of animals in the lot
+      const weights = Array(selectedLot.numberOfAnimals).fill(0);
+      const breeds = Array(selectedLot.numberOfAnimals).fill(selectedLot?.breed || 'nelore');
+      const notes = Array(selectedLot.numberOfAnimals).fill('');
+      const destinations = Array(selectedLot.numberOfAnimals).fill('');
+      
+      setAnimalWeights(weights);
+      setAnimalBreeds(breeds);
+      setAnimalNotes(notes);
+      setAnimalDestinations(destinations);
+    }
     
+    setCurrentAnimalIndex(0);
     setIsWeighing(true);
   };
   
@@ -229,11 +251,22 @@ const WeighingManager = () => {
       return;
     }
     
-    if (currentAnimalIndex === animalWeights.length - 1) {
+    // For new lots, always add a new animal record when going to the next
+    if (isNewLot || currentAnimalIndex === animalWeights.length - 1) {
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
       setAnimalDestinations([...animalDestinations, '']);
+    }
+    
+    // Check if we're at the last animal for existing lots
+    if (!isNewLot && currentAnimalIndex === animalWeights.length - 1) {
+      // For existing lots, if we're on the last animal, finish the weighing automatically
+      const allAnimalsWeighed = animalWeights.every(weight => weight > 0);
+      if (allAnimalsWeighed) {
+        finishWeighing();
+        return;
+      }
     }
     
     setCurrentAnimalIndex(currentAnimalIndex + 1);
@@ -246,14 +279,22 @@ const WeighingManager = () => {
   };
   
   const skipAnimal = () => {
-    if (currentAnimalIndex < animalWeights.length - 1) {
-      setCurrentAnimalIndex(currentAnimalIndex + 1);
-    } else {
+    // Add the animal with an estimated weight (0)
+    if (isNewLot) {
+      // For new lots, always add a new animal when skipping
       setAnimalWeights([...animalWeights, 0]);
       setAnimalBreeds([...animalBreeds, selectedLot?.breed || 'nelore']);
       setAnimalNotes([...animalNotes, '']);
       setAnimalDestinations([...animalDestinations, '']);
       setCurrentAnimalIndex(currentAnimalIndex + 1);
+    } else {
+      // For existing lots, just move to the next animal if possible
+      if (currentAnimalIndex < animalWeights.length - 1) {
+        setCurrentAnimalIndex(currentAnimalIndex + 1);
+      } else {
+        // Check if all animals have been processed
+        finishWeighing();
+      }
     }
   };
   
@@ -306,16 +347,15 @@ const WeighingManager = () => {
       description: `Weighing record created for ${validWeights.length} animals`
     });
     
+    // Update the lot with the new animal count if it was a new lot
+    const newAnimalCount = isNewLot ? animalWeights.length : selectedLot.numberOfAnimals;
+    
     updateLot(selectedLotId, {
-      numberOfAnimals: validWeights.length,
+      numberOfAnimals: newAnimalCount,
       averageWeight: avgWeight
     });
     
-    setAnimalWeights(validWeights);
-    setAnimalBreeds(validBreeds);
-    setAnimalNotes(validNotes);
-    setAnimalDestinations(validDestinations);
-    
+    // For the summary, include all animals (weighed and estimated)
     setShowSummary(true);
   };
   
@@ -330,6 +370,7 @@ const WeighingManager = () => {
     setIsWeighing(false);
     setIsCreatingNewLot(false);
     setCurrentAnimalIndex(0);
+    setIsNewLot(false);
   };
   
   if (showSummary) {
@@ -374,12 +415,13 @@ const WeighingManager = () => {
               Back to Lot Selection
             </button>
             <Badge variant="outline">
-              Animal {currentAnimalIndex + 1} of {animalWeights.length}
+              Animal {currentAnimalIndex + 1} of {isNewLot ? "∞" : animalWeights.length}
             </Badge>
           </div>
           <h1 className="text-2xl font-bold">Record Weight</h1>
           <p className="text-muted-foreground">
             Recording weights for lot: {selectedLot?.name}
+            {isNewLot && " (New lot - session will continue until manually ended)"}
           </p>
         </div>
         
@@ -574,3 +616,4 @@ const WeighingManager = () => {
 };
 
 export default WeighingManager;
+

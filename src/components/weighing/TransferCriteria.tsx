@@ -1,15 +1,18 @@
+
 import { useState } from 'react';
 import { Plus, Trash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+
 export interface TransferCriterion {
   id: string;
   weightValue: number | string; // Modified to accept both number and string
   condition: 'less-than-or-equal' | 'greater-than';
   destinationLotId: string;
 }
+
 interface TransferCriteriaProps {
   criteria: TransferCriterion[];
   onChange: (criteria: TransferCriterion[]) => void;
@@ -19,6 +22,7 @@ interface TransferCriteriaProps {
   }[];
   onCreateLot: (lotName: string) => void;
 }
+
 export function TransferCriteria({
   criteria,
   onChange,
@@ -26,26 +30,38 @@ export function TransferCriteria({
   onCreateLot
 }: TransferCriteriaProps) {
   const [newLotName, setNewLotName] = useState('');
+
   const handleAddCriterion = () => {
     const newCriteria = [...criteria, {
       id: `criterion-${Date.now()}`,
       weightValue: '',
-      // Empty string as default
       condition: 'greater-than' as const,
       destinationLotId: ''
     }];
     onChange(newCriteria);
   };
+
   const handleRemoveCriterion = (id: string) => {
     const newCriteria = criteria.filter(c => c.id !== id);
     onChange(newCriteria);
   };
+
   const handleCriterionChange = (id: string, field: keyof TransferCriterion, value: string | number) => {
     const newCriteria = criteria.map(c => {
       if (c.id === id) {
         if (field === 'weightValue') {
-          const trimmedValue = typeof value === 'string' ? value.replace(/^0+/, '') || '0' // Removes leading zeros, keeps single zero
-          : value;
+          // Handle empty string case to avoid NaN
+          if (typeof value === 'string' && value === '') {
+            return {
+              ...c,
+              [field]: ''
+            };
+          }
+          
+          const trimmedValue = typeof value === 'string' 
+            ? value.replace(/^0+/, '') || '0' // Removes leading zeros, keeps single zero
+            : value;
+            
           return {
             ...c,
             [field]: trimmedValue
@@ -60,12 +76,14 @@ export function TransferCriteria({
     });
     onChange(newCriteria);
   };
+
   const handleCreateLot = () => {
     if (newLotName.trim()) {
       onCreateLot(newLotName.trim());
       setNewLotName('');
     }
   };
+
   return <div className="space-y-4">
       <div className="flex justify-between items-center">
         <Label>Transfer Criteria</Label>
@@ -81,7 +99,14 @@ export function TransferCriteria({
           {criteria.map(criterion => <div key={criterion.id} className="grid grid-cols-12 gap-2 items-center">
               <div className="col-span-1 text-center">If</div>
               <div className="col-span-3">
-                <Input type="number" min="0" step="0.1" value={criterion.weightValue} onChange={e => handleCriterionChange(criterion.id, 'weightValue', e.target.value)} placeholder="Weight" />
+                <Input 
+                  type="number" 
+                  min="0" 
+                  step="0.1" 
+                  value={criterion.weightValue === 0 ? '0' : criterion.weightValue} 
+                  onChange={e => handleCriterionChange(criterion.id, 'weightValue', e.target.value)} 
+                  placeholder="Weight" 
+                />
               </div>
               <div className="col-span-3">
                 <Select value={criterion.condition} onValueChange={value => handleCriterionChange(criterion.id, 'condition', value as 'less-than-or-equal' | 'greater-than')}>
@@ -114,7 +139,5 @@ export function TransferCriteria({
               </div>
             </div>)}
         </div>}
-      
-      
     </div>;
 }
