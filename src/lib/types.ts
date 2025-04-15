@@ -266,6 +266,29 @@ export interface ProductivityRecord extends SyncableModel {
   images?: string[]; // URLs or file paths to images
 }
 
+// ANIMAL HEALTH CONTROL TYPES
+export type HealthRecordType = 'vaccination' | 'medication' | 'examination' | 'surgery' | 'other';
+export type ApplicationRoute = 'oral' | 'injection' | 'topical' | 'intravenous' | 'other';
+export type HealthStatus = 'healthy' | 'sick' | 'recovering' | 'critical' | 'unknown';
+
+export interface AnimalHealthRecord extends SyncableModel {
+  lotId: string;
+  date: Date;
+  type: HealthRecordType;
+  title: string;
+  description?: string;
+  applicationRoute?: ApplicationRoute;
+  medicationId?: string; // Reference to inventory item
+  dosage?: number;
+  dosageUnit?: string;
+  appliedToAll: boolean;
+  numberOfAnimals: number;
+  technician?: string;
+  notes?: string;
+  followUpDate?: Date;
+  followUpCompleted?: boolean;
+}
+
 // MAINTENANCE TYPES
 export type MaintenanceType = 'fertilization' | 'weed-control' | 'fence-repair' | 'water-system' | 'planting' | 'harvesting' | 'other';
 export type MaintenanceStatus = 'scheduled' | 'completed' | 'canceled';

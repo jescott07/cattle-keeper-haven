@@ -14,6 +14,7 @@ import PastureDetail from "./pages/PastureDetail";
 import Weighing from "./pages/Weighing";
 import Plantations from "./pages/Plantations";
 import PlantationDetail from "./pages/PlantationDetail";
+import AnimalHealth from "./pages/AnimalHealth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/weighing" element={<Weighing />} />
           <Route path="/plantations" element={<Plantations />} />
           <Route path="/plantations/:plantationId" element={<PlantationDetail />} />
+          <Route path="/animal-health" element={<AnimalHealth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

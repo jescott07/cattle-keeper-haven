@@ -10,7 +10,8 @@ import {
   Menu, 
   X,
   Database,
-  Sprout
+  Sprout,
+  Syringe
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useSyncService } from '@/lib/syncService';
@@ -28,7 +29,8 @@ const Navbar = () => {
     { path: '/inventory', label: 'Inventory', icon: <PackagePlus className="h-5 w-5" /> },
     { path: '/pastures', label: 'Pastures', icon: <MapPin className="h-5 w-5" /> },
     { path: '/plantations', label: 'Plantations', icon: <Sprout className="h-5 w-5" /> },
-    { path: '/weighing', label: 'Weighing', icon: <Weight className="h-5 w-5" /> }
+    { path: '/weighing', label: 'Weighing', icon: <Weight className="h-5 w-5" /> },
+    { path: '/animal-health', label: 'Animal Health', icon: <Syringe className="h-5 w-5" /> }
   ];
 
   const toggleMenu = () => setIsOpen(!isOpen);
