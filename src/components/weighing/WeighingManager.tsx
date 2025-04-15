@@ -774,6 +774,7 @@ const WeighingManager = () => {
           
           {healthRecordConfig.enabled && (
             <div className="space-y-4 pl-6 mt-2 animate-fade-in">
+              
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="health-type">Tipo</Label>
