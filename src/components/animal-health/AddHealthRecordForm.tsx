@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -84,14 +85,15 @@ const AddHealthRecordForm: React.FC<AddHealthRecordFormProps> = ({ onComplete })
   const selectedLot = lots.find(lot => lot.id === watchLotId);
 
   const onSubmit = (data: HealthRecordFormValues) => {
+    const now = new Date();
     const newHealthRecord = {
       id: uuidv4(),
       ...data,
       numberOfAnimals: data.appliedToAll ? 
         (selectedLot?.numberOfAnimals || 0) : 
         (data.numberOfAnimals || 0),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
       syncStatus: 'pending' as const,
       followUpCompleted: false,
     };
@@ -105,7 +107,6 @@ const AddHealthRecordForm: React.FC<AddHealthRecordFormProps> = ({ onComplete })
     
     onComplete();
   };
-
   
   const getApplicationRouteLabel = (route: ApplicationRoute) => {
     switch (route) {

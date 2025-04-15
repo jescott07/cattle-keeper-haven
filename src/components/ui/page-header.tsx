@@ -6,12 +6,14 @@ interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   heading: string;
   subheading?: string;
   actions?: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 export function PageHeader({
   heading,
   subheading,
   actions,
+  icon,
   className,
   ...props
 }: PageHeaderProps) {
@@ -24,6 +26,7 @@ export function PageHeader({
       {...props}
     >
       <div className="space-y-1">
+        {icon && <div className="mb-2">{icon}</div>}
         <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
         {subheading && (
           <p className="text-muted-foreground">{subheading}</p>
