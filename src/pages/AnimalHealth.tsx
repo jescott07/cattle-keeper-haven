@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet';
 import { useStore } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 import { PageHeader } from '@/components/ui/page-header';
@@ -8,7 +7,7 @@ import AddHealthRecordForm from '@/components/animal-health/AddHealthRecordForm'
 import HealthRecordsList from '@/components/animal-health/HealthRecordsList';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pill, FilePlus, Filter } from 'lucide-react';
+import { Pill, FilePlus, Filter, Syringe } from 'lucide-react';
 
 const AnimalHealth = () => {
   const [showForm, setShowForm] = useState(false);
@@ -20,15 +19,13 @@ const AnimalHealth = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Controle de Sanidade Animal | Cattle Keeper</title>
-      </Helmet>
-      <Navbar />
       <div className="container mx-auto px-4 py-6">
+        <Navbar />
         <div className="mb-8">
           <PageHeader
             heading="Controle de Sanidade Animal"
             subheading="Registre e acompanhe vacinações, medicações e outros procedimentos de saúde"
+            icon={<Syringe className="h-8 w-8 text-primary" />}
             className="mb-4"
           />
 

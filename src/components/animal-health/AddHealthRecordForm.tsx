@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,16 +85,38 @@ const AddHealthRecordForm: React.FC<AddHealthRecordFormProps> = ({ onComplete })
 
   const onSubmit = (data: HealthRecordFormValues) => {
     const now = new Date();
+    
+    if (!data.lotId || !data.type || !data.title || !data.date) {
+      toast({
+        title: "Erro no formulário",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const newHealthRecord = {
       id: uuidv4(),
-      ...data,
+      lotId: data.lotId,
+      date: data.date,
+      type: data.type,
+      title: data.title,
+      description: data.description || "",
+      applicationRoute: data.applicationRoute,
+      medicationId: data.medicationId,
+      dosage: data.dosage,
+      dosageUnit: data.dosageUnit,
+      appliedToAll: data.appliedToAll,
       numberOfAnimals: data.appliedToAll ? 
         (selectedLot?.numberOfAnimals || 0) : 
         (data.numberOfAnimals || 0),
+      technician: data.technician || "",
+      notes: data.notes || "",
+      followUpDate: data.followUpDate,
+      followUpCompleted: false,
       createdAt: now,
       updatedAt: now,
-      syncStatus: 'pending' as const,
-      followUpCompleted: false,
+      syncStatus: 'pending' as const
     };
 
     addHealthRecord(newHealthRecord);
