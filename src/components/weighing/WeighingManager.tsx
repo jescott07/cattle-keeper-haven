@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -31,6 +32,11 @@ interface ManagerTransferCriterion {
   weightValue: number;
   destinationLotId: string;
   condition: 'greater-than' | 'less-than-or-equal';
+}
+
+interface DestinationLotData {
+  count: number;
+  totalWeight: number;
 }
 
 const WeighingManager = () => {
@@ -306,7 +312,7 @@ const WeighingManager = () => {
     
     const avgWeight = validWeights.reduce((sum, w) => sum + w, 0) / validWeights.length;
     
-    const destinationLots: Record<string, {count: number, totalWeight: number}> = {};
+    const destinationLots: Record<string, DestinationLotData> = {};
     
     for (let i = 0; i < validWeights.length; i++) {
       const weight = validWeights[i];
@@ -364,7 +370,7 @@ const WeighingManager = () => {
     } else {
       const transferredAnimalsCount = Object.entries(destinationLots)
         .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-        .reduce((sum, [data]) => sum + data.count, 0);
+        .reduce((sum, [_, data]) => sum + data.count, 0);
         
       const newAnimalCount = selectedLot.numberOfAnimals - transferredAnimalsCount;
       
@@ -372,7 +378,7 @@ const WeighingManager = () => {
         const remainingWeight = (selectedLot.averageWeight || 0) * selectedLot.numberOfAnimals - 
           Object.entries(destinationLots)
             .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-            .reduce((sum, [data]) => sum + data.totalWeight, 0);
+            .reduce((sum, [_, data]) => sum + data.totalWeight, 0);
             
         const newAvgWeight = newAnimalCount > 0 ? remainingWeight / newAnimalCount : 0;
         
