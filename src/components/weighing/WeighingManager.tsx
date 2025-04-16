@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -439,7 +440,10 @@ const WeighingManager = () => {
     } else {
       const transferredAnimalsCount = Object.entries(destinationLots)
         .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-        .reduce((sum, [data]) => sum + data.count, 0);
+        .reduce((sum, entry) => {
+          const [_, data] = entry;
+          return sum + data.count;
+        }, 0);
         
       const newAnimalCount = selectedLot.numberOfAnimals - transferredAnimalsCount;
       
@@ -447,7 +451,10 @@ const WeighingManager = () => {
         const remainingWeight = (selectedLot.averageWeight || 0) * selectedLot.numberOfAnimals - 
           Object.entries(destinationLots)
             .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-            .reduce((sum, [data]) => sum + data.totalWeight, 0);
+            .reduce((sum, entry) => {
+              const [_, data] = entry;
+              return sum + data.totalWeight;
+            }, 0);
             
         const newAvgWeight = newAnimalCount > 0 ? remainingWeight / newAnimalCount : 0;
         

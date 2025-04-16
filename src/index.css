@@ -1,87 +1,101 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
+    --background: 40 30% 96%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 24 9.8% 10%;
-    --primary-foreground: 60 9.1% 97.8%;
+    --primary: 142 68% 35%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 60 4.8% 95.9%;
-    --secondary-foreground: 24 9.8% 10%;
+    --secondary: 222 44% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 222 47% 40%;
 
-    --accent: 125 39% 36%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 27 56% 90%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 125 39% 36%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142 68% 35%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 125 39% 36%;
+    --sidebar-background: 222 44% 15%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 142 68% 35%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 125 39% 36%;
+    --sidebar-accent: 210 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 222 33% 20%;
+    --sidebar-ring: 142 68% 35%;
+
+    /* New farm-related colors */
+    --pasture: 135 50% 40%;
+    --cattle: 25 60% 55%;
+    --soil: 30 30% 35%;
+    --sky: 200 70% 70%;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
+    --background: 222 47% 11%;
+    --foreground: 0 0% 98%;
 
-    --card: 20 14.3% 4.1%;
-    --card-foreground: 60 9.1% 97.8%;
+    --card: 222 44% 15%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
+    --popover: 222 44% 15%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 60 9.1% 97.8%;
-    --primary-foreground: 24 9.8% 10%;
+    --primary: 142 68% 35%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
+    --secondary: 210 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
+    --muted: 210 3.7% 15.9%;
+    --muted-foreground: 224 5.4% 60.9%;
 
-    --accent: 125 39% 30%;
-    --accent-foreground: 60 9.1% 97.8%;
+    --accent: 30 40% 25%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 125 39% 30%;
+    --border: 210 3.7% 15.9%;
+    --input: 210 3.7% 15.9%;
+    --ring: 142 68% 35%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 125 39% 30%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 125 39% 30%;
+    --sidebar-background: 222 44% 15%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 142 68% 35%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 210 3.7% 15.9%;
+    --sidebar-ring: 142 68% 35%;
+
+    /* Farm-related colors - dark mode */
+    --pasture: 135 45% 35%;
+    --cattle: 25 50% 45%;
+    --soil: 30 25% 30%;
+    --sky: 200 40% 40%;
   }
 }
 
@@ -90,8 +104,13 @@
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', sans-serif;
+  }
+
   body {
     @apply bg-background text-foreground;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239ab887' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
   }
 }
 
@@ -102,29 +121,71 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--secondary));
+  background: hsl(var(--secondary) / 0.1);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--primary) / 0.5);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: hsl(var(--primary) / 0.7);
 }
 
+/* Card effects */
 .card-hover-effect {
-  @apply transition-all duration-300 ease-in-out;
+  @apply transition-all duration-300 ease-in-out shadow-sm;
 }
 
 .card-hover-effect:hover {
-  @apply shadow-lg transform translate-y-[-5px];
+  @apply shadow-md transform translate-y-[-2px];
+}
+
+.card-primary {
+  @apply bg-gradient-to-br from-primary/90 to-primary text-primary-foreground;
+}
+
+.card-secondary {
+  @apply bg-gradient-to-br from-secondary/90 to-secondary text-secondary-foreground;
+}
+
+.card-accent {
+  @apply bg-gradient-to-br from-accent/90 to-accent text-accent-foreground;
 }
 
 .glass-effect {
-  @apply bg-white/80 dark:bg-black/50 backdrop-blur-md;
+  @apply bg-white/90 dark:bg-black/50 backdrop-blur-md;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .page-transition-enter {
@@ -141,4 +202,58 @@
 
 .page-transition-exit-active {
   @apply opacity-0 transition-opacity duration-300;
+}
+
+/* Farm-specific styles */
+.farm-icon {
+  @apply text-primary bg-primary/10 p-2 rounded-full;
+}
+
+.stat-card {
+  @apply card-hover-effect rounded-xl overflow-hidden border border-border/50;
+}
+
+.stat-value {
+  @apply text-2xl sm:text-3xl font-bold;
+}
+
+.stat-label {
+  @apply text-xs sm:text-sm text-muted-foreground font-medium;
+}
+
+.trend-up {
+  @apply text-emerald-600 dark:text-emerald-400;
+}
+
+.trend-down {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.dashboard-section {
+  @apply space-y-4 animate-fade-in;
+}
+
+.dashboard-title {
+  @apply text-2xl font-bold tracking-tight flex items-center gap-2;
+}
+
+.dashboard-subtitle {
+  @apply text-muted-foreground mt-1;
+}
+
+/* Cattle specific styles */
+.cattle-tag {
+  @apply inline-flex items-center justify-center rounded-full text-xs font-medium px-2.5 py-0.5;
+}
+
+.pasture-healthy {
+  @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-800/30 dark:text-emerald-300;
+}
+
+.pasture-warning {
+  @apply bg-amber-100 text-amber-800 dark:bg-amber-800/30 dark:text-amber-300;
+}
+
+.pasture-danger {
+  @apply bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-300;
 }
