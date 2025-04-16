@@ -78,7 +78,6 @@ const WeighingManager = () => {
   const [creatingDestinationLot, setCreatingDestinationLot] = useState<string | null>(null);
   const [isNewLot, setIsNewLot] = useState(false);
   
-  // Health record configuration
   const [healthRecordConfig, setHealthRecordConfig] = useState<HealthRecord>({
     enabled: false,
     type: 'vaccination',
@@ -365,7 +364,6 @@ const WeighingManager = () => {
       destinationLots[destinationId].totalWeight += weight;
     }
     
-    // Create weighing record
     addWeighingRecord({
       date: new Date(),
       lotId: selectedLotId,
@@ -375,7 +373,6 @@ const WeighingManager = () => {
       notes: `Pesados ${validWeights.length} animais. Transferências registradas para ${Object.keys(destinationLots).filter(id => id && id !== selectedLotId).length} lotes de destino.`
     });
     
-    // Create health records for animals marked during weighing
     if (healthRecordConfig.enabled && validHealthRecords.some(record => record)) {
       const animalsWithHealthRecord = validHealthRecords.filter(Boolean).length;
       
@@ -407,7 +404,6 @@ const WeighingManager = () => {
       }
     }
     
-    // Update lot information based on transfers
     Object.entries(destinationLots).forEach(([destLotId, data]) => {
       if (destLotId && destLotId !== selectedLotId) {
         addWeighingRecord({
@@ -443,7 +439,7 @@ const WeighingManager = () => {
     } else {
       const transferredAnimalsCount = Object.entries(destinationLots)
         .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-        .reduce((sum, [_, data]) => sum + data.count, 0);
+        .reduce((sum, [data]) => sum + data.count, 0);
         
       const newAnimalCount = selectedLot.numberOfAnimals - transferredAnimalsCount;
       
@@ -451,7 +447,7 @@ const WeighingManager = () => {
         const remainingWeight = (selectedLot.averageWeight || 0) * selectedLot.numberOfAnimals - 
           Object.entries(destinationLots)
             .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-            .reduce((sum, [_, data]) => sum + data.totalWeight, 0);
+            .reduce((sum, [data]) => sum + data.totalWeight, 0);
             
         const newAvgWeight = newAnimalCount > 0 ? remainingWeight / newAnimalCount : 0;
         
@@ -926,3 +922,10 @@ const WeighingManager = () => {
           disabled={!selectedLotId}
         >
           Iniciar Sessão de Pesagem
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default WeighingManager;
