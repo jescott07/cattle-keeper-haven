@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import {
@@ -438,19 +437,17 @@ const WeighingManager = () => {
         averageWeight: avgWeight
       });
     } else {
-      // Fixed: Properly destructuring the array elements in the reduce function
       const transferredAnimalsCount = Object.entries(destinationLots)
         .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-        .reduce((sum, [_, data]) => sum + data.count, 0);
+        .reduce((sum, [data]) => sum + data.count, 0);
         
       const newAnimalCount = selectedLot.numberOfAnimals - transferredAnimalsCount;
       
       if (transferredAnimalsCount > 0) {
-        // Fixed: Properly destructuring the array elements in the reduce function
         const remainingWeight = (selectedLot.averageWeight || 0) * selectedLot.numberOfAnimals - 
           Object.entries(destinationLots)
             .filter(([destId, _]) => destId !== selectedLotId && destId !== '')
-            .reduce((sum, [_, data]) => sum + data.totalWeight, 0);
+            .reduce((sum, [data]) => sum + data.totalWeight, 0);
             
         const newAvgWeight = newAnimalCount > 0 ? remainingWeight / newAnimalCount : 0;
         
@@ -495,9 +492,6 @@ const WeighingManager = () => {
       applicationRoute: 'injection',
     });
   };
-  
-  const activeLots = lots.filter(lot => lot.status === 'active');
-  const selectedLot = selectedLotId ? lots.find(lot => lot.id === selectedLotId) : null;
   
   if (showSummary) {
     return (
